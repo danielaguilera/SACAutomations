@@ -129,7 +129,11 @@ dmypy.json
 .pyre/
 
 # Reports
-Reports/
+GeneratedReports/
 
 # DB
 SAC/
+
+# Images
+Images/
+
