@@ -5,7 +5,8 @@ from datetime import datetime
 from BillingColumn import BillingColumn
 import requests
 
-numBoleta : int = 6110
+numBoleta : int = 6002
+year : int = 2022
 
 def transformDateToSpanish(date : datetime) -> str:
     weekDays = {0: 'lunes', 1: 'martes', 2:'miércoles', 3:'jueves', 4:'viernes', 5:'sábado', 6:'domingo'}
@@ -15,7 +16,6 @@ def transformDateToSpanish(date : datetime) -> str:
 def transformDateToSpanishBrief(date : datetime) -> str:
     monthNames = {1: 'ene', 2: 'feb', 3:'mar', 4:'abr', 5:'may', 6:'jun', 7:'jul', 8:'ago', 9:'sep', 10:'oct', 11:'nov', 12:'dic'}
     return f'{date.day}-{monthNames[date.month]}-{str(date.year)[2::]}'
-
 
 if __name__ == '__main__':
 
@@ -30,17 +30,20 @@ if __name__ == '__main__':
         rutBeneficiario = dataReceived[7]
         idBoleta = dataReceived[0]
         montoBoleta = int(dataReceived[3])
-        fechaBoleta = dataReceived[2]
+        fechaBoleta : datetime = dataReceived[2]
         notaBoleta = dataReceived[4]
         codigoBoleta = dataReceived[9]
+
+        if fechaBoleta.year != year:
+            continue
 
         # Gathering data from SAC Data
         connData = pyodbc.connect(r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:\Users\daguilera\Desktop\SAC\SAC Data.accdb;")
         cursorData = connData.cursor()
         cursorData.execute(f'SELECT "Apellido Deudor", "Rut Deudor", Cliente FROM Mapsa WHERE IdMapsa = {idBoleta}')
         apellidoDeudor, rutDeudor, idCliente = list(cursorData.fetchall())[0]
-        cursorData.execute(f'SELECT Cliente FROM "Tabla Clientes" WHERE IdCliente = {idCliente}')
-        nombreCliente = list(cursorData.fetchall())[0][0]
+        cursorData.execute(f'SELECT Cliente, Contacto, "Correo Contacto" FROM "Tabla Clientes" WHERE IdCliente = {idCliente}')
+        nombreCliente, contactoReporte, correoReporte = list(cursorData.fetchall())[0]
         query = '''
                     SELECT "Nombre o Razón Social" 
                     FROM Beneficiarios
@@ -48,15 +51,19 @@ if __name__ == '__main__':
                 '''.format(rutBeneficiario)
         cursorData.execute(query)
         nombreBeneficiario = list(cursorData.fetchall())[0][0]
-
-        nombreResponse = requests.get('https://api.libreapi.cl/rut/activities', params = {'rut': f'{rutDeudor}'} ).json()
-        nombreDeudor = nombreResponse['data']['name'] if nombreResponse['status'] == 'success' else ''
-        nombreDeudorToList = nombreDeudor.strip().split(' ')
-        print(nombreDeudor)
-        if len(nombreDeudorToList) == 3:
-            nombreDeudor = nombreDeudorToList[0]
-        elif len(nombreDeudorToList) == 4:
-            nombreDeudor = ' '.join(nombreDeudorToList[0:2])
+        
+        nombreResponse: requests.Response = requests.get(url='https://api.libreapi.cl/rut/activities', params={'rut': rutDeudor})
+        if nombreResponse.status_code == 200:
+            nombreDeudor: str = nombreResponse.json()['data']['name']
+            nombreDeudorToList: list[str] = list(map(lambda x: x.capitalize(), nombreDeudor.strip().split(' ')))
+            if len(nombreDeudorToList) == 3:
+                nombreDeudor = nombreDeudorToList[0]
+            elif len(nombreDeudorToList) > 3:
+                nombreDeudor = ' '.join(nombreDeudorToList[0:2])
+            else:
+                nombreDeudor = ''
+        else:
+            nombreDeudor = ''
 
         # Print data in console:
         print(f'Fecha boleta: {fechaBoleta}')
@@ -71,6 +78,7 @@ if __name__ == '__main__':
         print(f'Id Cliente: {idCliente}')
         print(f'Nombre cliente: {nombreCliente}')
         print(f'Nombre beneficiario: {nombreBeneficiario}')
+        print(f'Contacto reporte: {contactoReporte}')
         print('----------------------------------------------\n')
 
         # Append column object:
@@ -78,6 +86,10 @@ if __name__ == '__main__':
         columnasFactura.append(columna)
 
     # Generating PDF
+    contactoReporte : str
+    prefijo = contactoReporte[0: contactoReporte.find('.') + 1]
+    encabezado = contactoReporte[contactoReporte.find('.') + 2::]
+
     pdf = FPDF('P', 'mm', 'Letter')
     pdf.add_page()
     pdf.set_font('helvetica', 'BI', 10)
@@ -89,9 +101,9 @@ if __name__ == '__main__':
     pdf.set_xy(x=18, y=40)
     pdf.set_font('Times', 'BI', 11)
     pdf.set_text_color(0, 0, 0)
-    pdf.cell(40, 10, 'Sra.')
+    pdf.cell(40, 10, prefijo)
     pdf.set_xy(x=18, y=48)
-    pdf.cell(40, 10, 'Valeria Lara')
+    pdf.cell(40, 10, encabezado)
     pdf.set_xy(x=18, y=56)
     pdf.cell(40, 10, 'MV SA')
     pdf.set_xy(x=18, y=64)
@@ -121,7 +133,7 @@ if __name__ == '__main__':
     pdf.cell(40, 10, 'RUT Deudor')
     pdf.set_xy(x=45, y=100)
     pdf.cell(40, 10, 'Apellido Deudor')
-    pdf.set_xy(x=85, y=100)
+    pdf.set_xy(x=80, y=100)
     pdf.cell(40, 10, 'Nombre Deudor')
     pdf.set_xy(x=115, y=100)
     pdf.cell(40, 10, 'Boleta')
@@ -141,10 +153,12 @@ if __name__ == '__main__':
     for index, columnaFactura in enumerate(columnasFactura):
         pdf.set_xy(x=18, y=106 + index*delta)
         pdf.cell(40, 10, columnaFactura.rutDeudor)
+        pdf.set_font(size=9)
         pdf.set_xy(x=45, y=106 + index*delta)
         pdf.cell(40, 10, columnaFactura.apellidoDeudor)
-        pdf.set_xy(x=85, y=106 + index*delta)
+        pdf.set_xy(x=80, y=106 + index*delta)
         pdf.cell(40, 10, columnaFactura.nombreDeudor)
+        pdf.set_font(size=11)
         pdf.set_xy(x=115, y=106 + index*delta)
         pdf.cell(40, 10, columnaFactura.boleta)
         pdf.set_xy(x=130, y=106 + index*delta)
@@ -172,7 +186,5 @@ if __name__ == '__main__':
 
     pdf.output(f'GeneratedReports/{numBoleta}.pdf')
 
-    # for row in cursor.fetchall():
-    #     print (row)
-    #     break
+
 
