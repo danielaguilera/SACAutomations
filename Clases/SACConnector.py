@@ -1,19 +1,22 @@
-from Metadata import *
+from Utils.Metadata import *
 import pyodbc
 import requests
-from Deudor import Deudor
-from Cliente import Cliente
-from Servicio import Servicio
-from Beneficiario import Beneficiario
-from Destinatario import Destinatario
-from ReporteData import ReporteData
+from Clases.Deudor import Deudor
+from Clases.Cliente import Cliente
+from Clases.Servicio import Servicio
+from Clases.Beneficiario import Beneficiario
+from Clases.Destinatario import Destinatario
+from Clases.ReporteData import ReporteData
 from datetime import datetime
-from GlobalFunctions import *
+from Utils.GlobalFunctions import *
 
 class SACConnector:
     def __init__(self):
+        pyodbc.pooling = False
         self.cursorBoleta: pyodbc.Cursor = pyodbc.connect(SACBOLETASPATH).cursor()
+        self.cursorBoleta.fast_executemany = True
         self.cursorData: pyodbc.Cursor = pyodbc.connect(SACDATAPATH).cursor()
+        self.cursorData.fast_executemany = True
         
         self.beneficiariosTable: str = 'Beneficiarios'
         self.clientesTable:str = 'Tabla_Clientes'
@@ -22,7 +25,7 @@ class SACConnector:
         
         self.year: int = 2022 #Hardcoded
         
-    def getDeudorData(self, idBoleta: int) -> Deudor:
+    def getDeudorData(self, idBoleta: int) -> Deudor | None:
         self.cursorData.execute(f'SELECT "Apellido Deudor", "Rut Deudor", Cliente FROM {self.mapsaTable} WHERE IdMapsa = {idBoleta}')
         apellidoDeudor, rutDeudor, idCliente = list(self.cursorData.fetchall())[0]
         nombreResponse: requests.Response = requests.get(url=LIBREAPIURL, params={'rut': rutDeudor})
@@ -38,13 +41,13 @@ class SACConnector:
         else:
             nombreDeudor = ''
         return Deudor(apellidoDeudor=apellidoDeudor, nombreDeudor=nombreDeudor, rutDeudor=rutDeudor, idCliente=idCliente)
-    
-    def getClienteData(self, idCliente: int) -> Cliente:
+
+    def getClienteData(self, idCliente: int) -> Cliente | None:
         self.cursorData.execute(f'SELECT Cliente FROM {self.clientesTable} WHERE IdCliente = {idCliente}')
         nombreCliente = list(self.cursorData.fetchall())[0][0]
         return Cliente(idCliente=idCliente, nombreCliente=nombreCliente)
     
-    def getDestinatarioData(self, numBoleta: int) -> Destinatario:
+    def getDestinatarioData(self, numBoleta: int) -> Destinatario | None:
         self.cursorBoleta.execute(f"SELECT * FROM {self.boletasTable} WHERE Numero = {numBoleta}")
         for dataReceived in self.cursorBoleta.fetchall(): 
             idBoleta: int = dataReceived[0]
@@ -59,7 +62,7 @@ class SACConnector:
         nombreDestinatario, correoDestinatario = list(self.cursorData.fetchall())[0]
         return Destinatario(nombreDestinatario=nombreDestinatario, correoDestinatario=correoDestinatario)
     
-    def getBeneficiarioData(self, numBoleta: int) -> Beneficiario:
+    def getBeneficiarioData(self, numBoleta: int) -> Beneficiario | None:
         self.cursorBoleta.execute(f"SELECT * FROM {self.boletasTable} WHERE Numero = {numBoleta}")
         for dataReceived in self.cursorBoleta.fetchall(): 
             rutBeneficiario: str = dataReceived[7]
@@ -73,7 +76,7 @@ class SACConnector:
         nombreBeneficiario = list(self.cursorData.fetchall())[0][0]
         return Beneficiario(nombreBeneficiario=nombreBeneficiario, rutBeneficiario=rutBeneficiario)
     
-    def getServicios(self, numBoleta: int) -> list[Servicio]:
+    def getServicios(self, numBoleta: int) -> list[Servicio] | None:
         self.cursorBoleta.execute(f"SELECT * FROM {self.boletasTable} WHERE Numero = {numBoleta}")
         servicios: list[Servicio] = []
         for dataReceived in self.cursorBoleta.fetchall(): 
@@ -101,11 +104,14 @@ class SACConnector:
             servicios.append(servicio)
         return servicios
     
-    def getReporteData(self, numBoleta: int) -> ReporteData: 
-        destinatario: Destinatario = self.getDestinatarioData(numBoleta=numBoleta)
-        beneficiario: Beneficiario = self.getBeneficiarioData(numBoleta=numBoleta)
-        servicios: list[Servicio] = self.getServicios(numBoleta=numBoleta)
-        return ReporteData(destinatario=destinatario, beneficiario=beneficiario, servicios=servicios, numBoleta=numBoleta)
-            
+    def getReporteData(self, numBoleta: int) -> ReporteData | None:
+        try: 
+            destinatario: Destinatario = self.getDestinatarioData(numBoleta=numBoleta)
+            beneficiario: Beneficiario = self.getBeneficiarioData(numBoleta=numBoleta)
+            servicios: list[Servicio] = self.getServicios(numBoleta=numBoleta)
+            return ReporteData(destinatario=destinatario, beneficiario=beneficiario, servicios=servicios, numBoleta=numBoleta)
+        except Exception:
+            print(f'Datos no encontrados para boleta n°{numBoleta}')
+            return
             
         

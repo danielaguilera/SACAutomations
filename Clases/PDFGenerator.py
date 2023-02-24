@@ -1,7 +1,10 @@
 from fpdf import FPDF
-from ReporteData import ReporteData
-from GlobalFunctions import *
-from Servicio import Servicio
+from Clases.ReporteData import ReporteData
+from Utils.GlobalFunctions import *
+from Clases.Servicio import Servicio
+from Utils.Metadata import *
+import os
+import shutil
 
 class PDFGenerator:
     def __init__(self):
@@ -19,7 +22,7 @@ class PDFGenerator:
         pdf.set_text_color(0, 0, 255)
         pdf.set_xy(x=130, y=10)
         pdf.cell(40, 10, transformDateToSpanish(date=datetime.now()))
-        pdf.image('Images/Logo.PNG', x=18, y=15, w=60, h=20)
+        pdf.image(LOGOPATH, x=18, y=15, w=60, h=20)
 
         pdf.set_xy(x=18, y=40)
         pdf.set_font('Times', 'BI', 11)
@@ -69,27 +72,27 @@ class PDFGenerator:
 
         pdf.line(x1=18, y1=108, x2=190, y2=108)
 
-        columnaFactura : Servicio
+        servicio : Servicio
         delta = 13
         pdf.set_font(size=11, family='Arial')
         pdf.set_text_color(0, 0, 0)
-        for index, columnaFactura in enumerate(reporteData.servicios):
+        for index, servicio in enumerate(reporteData.servicios):
             pdf.set_xy(x=18, y=106 + index*delta)
-            pdf.cell(40, 10, columnaFactura.rutDeudor)
+            pdf.cell(40, 10, servicio.rutDeudor)
             pdf.set_font(size=9, family='Arial')
             pdf.set_xy(x=45, y=106 + index*delta)
-            pdf.cell(40, 10, columnaFactura.apellidoDeudor)
+            pdf.cell(40, 10, servicio.apellidoDeudor)
             pdf.set_xy(x=80, y=106 + index*delta)
-            pdf.cell(40, 10, columnaFactura.nombreDeudor)
+            pdf.cell(40, 10, servicio.nombreDeudor)
             pdf.set_font(size=11, family='Arial')
             pdf.set_xy(x=115, y=106 + index*delta)
-            pdf.cell(40, 10, str(columnaFactura.boleta))
+            pdf.cell(40, 10, str(servicio.boleta))
             pdf.set_xy(x=130, y=106 + index*delta)
-            pdf.cell(40, 10, columnaFactura.fecha)
+            pdf.cell(40, 10, servicio.fecha)
             pdf.set_xy(x=150, y=106 + index*delta)
-            pdf.cell(40, 10, f'${columnaFactura.monto}')
+            pdf.cell(40, 10, setPriceFormat(servicio.monto))
             pdf.set_xy(x=170, y=106 + index*delta)
-            pdf.cell(40, 10, columnaFactura.nota)
+            pdf.cell(40, 10, servicio.nota)
             pdf.set_text_color(0, 0, 255)
             pdf.set_font('helvetica', 'BI', 10)
             pdf.set_xy(x=18, y=112 + index*delta)
@@ -99,14 +102,24 @@ class PDFGenerator:
             pdf.set_font(size=11, family='Arial')
             pdf.set_text_color(0, 0, 0)
             pdf.set_xy(x=45, y=112 + index*delta)
-            pdf.cell(40, 10, f'{str(columnaFactura.idCliente)}    | {columnaFactura.nombreCliente}')
+            pdf.cell(40, 10, f'{str(servicio.idCliente)}    | {servicio.nombreCliente}')
             pdf.set_xy(x=120, y=112 + index*delta)
-            pdf.cell(40, 10, columnaFactura.codigo)
+            pdf.cell(40, 10, servicio.codigo)
             pdf.line(x1=18, y1=120 + index*delta, x2=190, y2=120 + index*delta)
 
 
-        pdf.image('Images/Signing.PNG', x=18, y=130 + index*delta, w=140, h=40)        
+        pdf.set_xy(x=18, y=122 + index*delta)
+        pdf.set_font(size=13, family='Arial')
+        pdf.set_text_color(0, 0, 20)
+        pdf.cell(40, 10, 'Suma total')
+        pdf.set_xy(x=170, y=122 + index*delta)
+        pdf.cell(40, 10, setPriceFormat(reporteData.sumaTotal))
+        pdf.image(SIGNINGPATH, x=18, y=150 + index*delta, w=140, h=40)        
 
-        pdf.output(f'GeneratedReports/{reporteData.numBoleta}.pdf')
+        if not os.path.exists(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}'):
+            os.makedirs(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}')
+        pdf.output(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/Reporte_{reporteData.numBoleta}.pdf')
+        
+        print(f'Reporte n°{reporteData.numBoleta} generado!')
         
             

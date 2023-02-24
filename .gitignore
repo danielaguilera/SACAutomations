@@ -129,7 +129,9 @@ dmypy.json
 .pyre/
 
 # Reports
-GeneratedReports/
+DatosRecibidos/
+Resultados/
+ReportesGenerados/
 
 # DB
 SAC/

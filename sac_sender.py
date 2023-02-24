@@ -1,17 +1,28 @@
-from ReporteData import ReporteData
-from Metadata import *
-from GlobalFunctions import *
-from SACConnector import SACConnector
-from PDFGenerator import PDFGenerator
+from Clases.ReporteData import ReporteData
+from Utils.Metadata import *
+from Utils.GlobalFunctions import *
+from Clases.SACConnector import SACConnector
+from Clases.PDFGenerator import PDFGenerator
+from Clases.FileGrouper import FileGrouper
+import os
 
-numBoleta : int = 6109
-year = 2022
-
-if __name__ == '__main__':    
-    sacConnector: SACConnector = SACConnector()
-    reporteData: ReporteData = sacConnector.getReporteData(numBoleta=numBoleta)
-    pdfGenerator: PDFGenerator = PDFGenerator()
-    pdfGenerator.generateReporte(reporteData=reporteData)
+if __name__ == '__main__':
+    fileGrouper: FileGrouper = FileGrouper()
+    
+    # Generating reports:
+    numsBoleta: list[int] = [int(dirName) for dirName in os.listdir(DELIVEREDDATAPATH)]
+    for numBoleta in numsBoleta:
+        sacConnector: SACConnector = SACConnector()
+        reporteData: ReporteData = sacConnector.getReporteData(numBoleta=numBoleta)
+        if reporteData:
+            pdfGenerator: PDFGenerator = PDFGenerator()
+            reporte: ReporteData = pdfGenerator.generateReporte(reporteData=reporteData)
+            fileGrouper.addReporte(reporte=reporte)
+            
+    # Exporting full documents:
+    
+    
+        
 
 
 
