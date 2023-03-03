@@ -16,7 +16,7 @@ receivers = ['daniel.aguilera.habbo@gmail.com', 'draguilera@uc.cl']
 mail_subject = 'ejemplo'
 mail_content = 'este es un ejemplo'
 sender_address = 'draguilera@uc.cl'
-sender_pass = 'Npphq599123%'
+sender_pass = 'anything'
 
 if __name__ == '__main__':
     #Setup the MIME
