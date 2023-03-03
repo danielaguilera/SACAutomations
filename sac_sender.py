@@ -16,10 +16,11 @@ if __name__ == '__main__':
         reporteData: ReporteData = sacConnector.getReporteData(numBoleta=numBoleta)
         if reporteData:
             pdfGenerator: PDFGenerator = PDFGenerator()
-            reporte: ReporteData = pdfGenerator.generateReporte(reporteData=reporteData)
-            fileGrouper.addReporte(reporte=reporte)
+            pdfGenerator.generateReporte(reporteData=reporteData)
+            fileGrouper.addReporte(reporte=reporteData)
             
     # Exporting full documents:
+    fileGrouper.generateUnifiedPDFs()
     
     
         

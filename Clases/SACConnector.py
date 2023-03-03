@@ -84,7 +84,7 @@ class SACConnector:
             montoBoleta: int = int(dataReceived[3])
             fechaBoleta : datetime = dataReceived[2]
             notaBoleta: str = dataReceived[4]
-            codigoBoleta: str = dataReceived[9]
+            codigoBoleta: str = dataReceived[9] if dataReceived[9] else ''
 
             if fechaBoleta.year != self.year:
                 continue

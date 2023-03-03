@@ -70,7 +70,7 @@ class PDFGenerator:
         pdf.set_xy(x=170, y=100)
         pdf.cell(40, 10, 'Nota')
 
-        pdf.line(x1=18, y1=108, x2=190, y2=108)
+        pdf.line(x1=18, y1=108, x2=200, y2=108)
 
         servicio : Servicio
         delta = 13
@@ -92,6 +92,7 @@ class PDFGenerator:
             pdf.set_xy(x=150, y=106 + index*delta)
             pdf.cell(40, 10, setPriceFormat(servicio.monto))
             pdf.set_xy(x=170, y=106 + index*delta)
+            pdf.set_font(size=8, family='Arial')
             pdf.cell(40, 10, servicio.nota)
             pdf.set_text_color(0, 0, 255)
             pdf.set_font('helvetica', 'BI', 10)
@@ -105,14 +106,14 @@ class PDFGenerator:
             pdf.cell(40, 10, f'{str(servicio.idCliente)}    | {servicio.nombreCliente}')
             pdf.set_xy(x=120, y=112 + index*delta)
             pdf.cell(40, 10, servicio.codigo)
-            pdf.line(x1=18, y1=120 + index*delta, x2=190, y2=120 + index*delta)
+            pdf.line(x1=18, y1=120 + index*delta, x2=200, y2=120 + index*delta)
 
 
-        pdf.set_xy(x=18, y=122 + index*delta)
+        pdf.set_xy(x=18, y=120 + index*delta)
         pdf.set_font(size=13, family='Arial')
         pdf.set_text_color(0, 0, 20)
         pdf.cell(40, 10, 'Suma total')
-        pdf.set_xy(x=170, y=122 + index*delta)
+        pdf.set_xy(x=170, y=120 + index*delta)
         pdf.cell(40, 10, setPriceFormat(reporteData.sumaTotal))
         pdf.image(SIGNINGPATH, x=18, y=150 + index*delta, w=140, h=40)        
 

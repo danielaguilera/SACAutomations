@@ -12,3 +12,9 @@ class ReporteData:
     @property
     def sumaTotal(self):
         return sum([servicio.monto for servicio in self.servicios])
+    
+    def __repr__(self):
+        return self.__dict__
+        
+    def __str__(self):
+        return self.__dict__
