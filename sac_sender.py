@@ -22,6 +22,9 @@ if __name__ == '__main__':
     # Exporting full documents:
     fileGrouper.generateUnifiedPDFs()
     
+    # Sending emails:
+    
+    
     
         
 

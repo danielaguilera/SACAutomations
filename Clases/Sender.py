@@ -23,7 +23,7 @@ with open('Resultados/Sra. Cecilia Vielma.pdf', 'rb') as file:
 smtp_server = 'smtp-mail.outlook.com'
 smtp_port = 587
 smtp_username = 'draguilera@uc.cl'
-smtp_password = 'Npphq599123%'
+smtp_password = ''
 
 with smtplib.SMTP(smtp_server, smtp_port) as server:
     server.starttls()
