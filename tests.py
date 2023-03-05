@@ -1,45 +1,56 @@
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.mime.application import MIMEApplication
-from Utils.Metadata import *
+import tkinter as tk
+from tkinter import filedialog
+from tkinter import messagebox
+import PyPDF2
 
-class Sender:
-    def __init__(self, senderUsername: str, senderPassword: str, smtpServer: str, smtpPort: str):
-        self.senderUserName: str = senderUsername
-        self.senderPassword: str = senderPassword
-        self.smtpServer: str = smtpServer
-        self.smtpPort: str = smtpPort
-        self.receivers: list[str] = []
+class Application(tk.Frame):
+    def __init__(self, master: tk.Tk = None):
+        super().__init__(master)
+        self.master = master
+        self.master.title("PDF File Menu")
+        self.master.geometry("300x200")
 
-receivers = ['daniel.aguilera.habbo@gmail.com', 'draguilera@uc.cl']
-mail_subject = 'ejemplo'
-mail_content = 'este es un ejemplo'
-sender_address = 'draguilera@uc.cl'
-sender_pass = 'anything'
+        # Create a label for the file list
+        self.label = tk.Label(self.master, text="Drop PDF files here")
+        self.label.pack(fill=tk.BOTH, expand=True)
 
-if __name__ == '__main__':
-    #Setup the MIME
-    message = MIMEMultipart()
-    message.add_header('from', sender_address)
-    message.add_header('to', ','.join(receivers))
-    message.add_header('subject', mail_subject) #The subject line
-    #The body and the attachments for the mail
-    message.attach(MIMEText(mail_content, 'plain'))
-    #Create SMTP session for sending the mail
+        # Allow the label to accept drops
+        self.label.bind("<Button-1>", self.browse_file)
+        self.label.bind("<B1-Motion>", self.drag)
+        self.label.bind("<ButtonRelease-1>", self.drop)
+        
+        # Initialize the file list
+        self.files = []
 
-    filename = f'{RESULTPATH}/Sra. Cecilia Vielma.pdf'
-    # Attach the pdf to the msg going by e-mail
-    with open(filename, "rb") as f:
-        #attach = email.mime.application.MIMEApplication(f.read(),_subtype="pdf")
-        attach = MIMEApplication(f.read(),_subtype="pdf")
-    attach.add_header('Content-Disposition','attachment',filename='Conjunto de reportes')
-    message.attach(attach)
-    
-    session = smtplib.SMTP('smtp-mail.outlook.com', 587) #use gmail with port
-    session.starttls() #enable security
-    print(session.login(sender_address, sender_pass)) #login with mail_id and password
-    session.send_message(message)
-    session.quit()
-    print('Mail sent succesfully')
+    def browse_file(self, event=None):
+        # Open a file dialog to browse for PDF files
+        filetypes = [('PDF files', '*.pdf')]
+        filenames = filedialog.askopenfilenames(filetypes=filetypes)
+
+        # Add the selected files to the file list
+        for filename in filenames:
+            self.files.append(filename)
+
+        # Update the label with the current file list
+        self.update_label()
+
+    def drag(self, event=None):
+        # Highlight the label during a drag
+        self.label.config(bg="#D9D9D9")
+
+    def drop(self, event=None):
+        # Unhighlight the label after a drop
+        self.label.config(bg="white")
+        print('Dropped')
+
+    def update_label(self):
+        # Update the label with the current file list
+        text = "PDF files:\n"
+        for filename in self.files:
+            text += "- " + filename + "\n"
+        self.label.config(text=text)
+
+root = tk.Tk()
+app = Application(master=root)
+app.mainloop()
     

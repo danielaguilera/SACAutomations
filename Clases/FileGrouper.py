@@ -53,6 +53,8 @@ class DocumentoUnificado:
         path: str
         for path in paths:
             pdfMerger.append(path)
+        if not os.path.exists(RESULTPATH):
+            os.makedirs(RESULTPATH)
         pdfMerger.write(f'{RESULTPATH}/{self.destinatario.nombreDestinatario}.pdf')
         pdfMerger.close()       
 

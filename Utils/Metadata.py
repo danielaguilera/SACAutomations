@@ -17,3 +17,8 @@ SIGNINGPATH: str = "Images/Signing.PNG"
 ANEXO: str = 'Anexo'
 BOLETA: str = 'Boleta'
 REPORTE: str = 'Reporte'
+
+MAILDATA: str = 'MailData/SenderData.txt'
+
+SMTPSERVER: str = 'smtp-mail.outlook.com'
+SMTPPORT: int = 587
