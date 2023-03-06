@@ -1,8 +1,10 @@
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.mime.application import MIMEApplication
+from email.mime.base import MIMEBase
+from email import encoders
 from Utils.Metadata import *
+from Utils.GlobalFunctions import *
 from Clases.FileGrouper import DocumentoUnificado
 
 class MailSender:
@@ -16,7 +18,7 @@ class MailSender:
     def startSession(self):
         self.session = smtplib.SMTP(self.smtpServer, self.smtpPort)
         self.session.starttls()
-        self.session.login(self.senderUserName, self.senderUserName)
+        self.session.login(self.senderUserName, self.senderPassword)
         
     def endSession(self):
         if self.session:
@@ -29,51 +31,20 @@ class MailSender:
         message.add_header('to', receiverAddresss)
         message.add_header('subject', mailSubject)
         message.attach(MIMEText(mailContent, 'plain'))
-        with open(mailAttachment, "rb") as f:
-            attachment: MIMEApplication = MIMEApplication(f.read(),_subtype="pdf")
-        attachment.add_header('Content-Disposition', 'attachment', filename='Reportes')
-        message.attach(attachment)
+        binaryPDF = open(mailAttachment, 'rb')
+        pdfName: str = f'Reportes_semana_{getWeekMondayTimeStamp()}.pdf'
+        payload = MIMEBase('application', 'octate-stream', Name=pdfName)
+        payload.set_payload((binaryPDF).read())
+        encoders.encode_base64(payload)
+        payload.add_header('Content-Decomposition', 'attachment', filename=pdfName)
+        message.attach(payload)
         self.session.send_message(message)
         self.endSession()
         
     def sendUnifiedDocument(self, document: DocumentoUnificado):
         receiverAddress: str = document.destinatario.correoDestinatario
-        receiverAddress: str = 'draguilera@uc.cl'
-        mailSubject: str = 'Envío reportes'
-        mailContent: str = 'Se adjuntan las boletas'
+        receiverAddress: str = 'draguilera@uc.cl' #Hardcoded
+        mailSubject: str = f'Envío reportes semana {getWeekMondayTimeStamp()}'
+        mailContent: str = f'Estimad@ {document.destinatario.nombreDestinatario}: \n\n Junto con saludar, se adjunta el resumen de las facturas correspondientes a la semana de {getWeekMondayTimeStamp("long")}'
         mailAttachment: str = f'{RESULTPATH}/{document.destinatario.nombreDestinatario}.pdf'
         self.sendMail(receiverAddresss=receiverAddress, mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)        
-        
-
-
-# receivers = ['daniel.aguilera.habbo@gmail.com', 'draguilera@uc.cl']
-# mail_subject = 'ejemplo'
-# mail_content = 'este es un ejemplo'
-# sender_address = 'draguilera@uc.cl'
-# sender_pass = 'anything'
-
-# if __name__ == '__main__':
-#     #Setup the MIME
-#     message = MIMEMultipart()
-#     message.add_header('from', sender_address)
-#     message.add_header('to', ','.join(receivers))
-#     message.add_header('subject', mail_subject) #The subject line
-#     #The body and the attachments for the mail
-#     message.attach(MIMEText(mail_content, 'plain'))
-#     #Create SMTP session for sending the mail
-
-#     filename = f'{RESULTPATH}/Sra. Cecilia Vielma.pdf'
-#     # Attach the pdf to the msg going by e-mail
-#     with open(filename, "rb") as f:
-#         #attach = email.mime.application.MIMEApplication(f.read(),_subtype="pdf")
-#         attach = MIMEApplication(f.read(),_subtype="pdf")
-#     attach.add_header('Content-Disposition','attachment',filename='Conjunto de reportes')
-#     message.attach(attach)
-    
-#     session = smtplib.SMTP('smtp-mail.outlook.com', 587) #use gmail with port
-#     session.starttls() #enable security
-#     print(session.login(sender_address, sender_pass)) #login with mail_id and password
-#     session.send_message(message)
-#     session.quit()
-#     print('Mail sent succesfully')
-    

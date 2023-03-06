@@ -8,9 +8,10 @@ def transformDateToSpanish(date : datetime) -> str:
 def transformDateToSpanishBrief(date : datetime) -> str:
     return f'{date.day}-{SHORTMONTHNAMES[date.month]}-{str(date.year)[2::]}'
 
-def getWeekMondayTimeStamp() -> str:
+def getWeekMondayTimeStamp(format: str = 'short') -> str:
     now: datetime = datetime.now()
-    return transformDateToSpanishBrief(now - timedelta(days=now.weekday()))
+    timeDelta: timedelta = now - timedelta(days=now.weekday())
+    return transformDateToSpanishBrief(timeDelta) if format == 'short' else transformDateToSpanish(timeDelta)
 
 def setPriceFormat(price: int) -> str:
     locale.setlocale(locale.LC_ALL, '')
