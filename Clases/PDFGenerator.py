@@ -114,7 +114,7 @@ class PDFGenerator:
         pdf.set_text_color(0, 0, 20)
         pdf.cell(40, 10, 'Suma líquida a pagar')
         pdf.set_xy(x=170, y=120 + index*delta)
-        pdf.cell(40, 10, setPriceFormat(reporteData.sumaLiquida))
+        pdf.cell(40, 10, setPriceFormat(reporteData.sumaTotal))
         pdf.image(SIGNINGPATH, x=18, y=150 + index*delta, w=140, h=40)        
 
         if not os.path.exists(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}'):

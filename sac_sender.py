@@ -34,8 +34,8 @@ if __name__ == '__main__':
         mailSender.sendUnifiedDocument(documento)
     
     # Erasing generated folders:
-    shutil.rmtree(GENERATEDREPORTSPATH)
-    shutil.rmtree(RESULTPATH)
+    # shutil.rmtree(GENERATEDREPORTSPATH)
+    # shutil.rmtree(RESULTPATH)
     
     
     

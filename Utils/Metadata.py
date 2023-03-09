@@ -1,3 +1,5 @@
+import os
+
 SACDATAPATH: str = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:\Users\User\Desktop\SAC\SAC Data.accdb;"
 SACBOLETASPATH: str = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:\Users\User\Desktop\SAC\SAC Boletas.accdb;"
 
@@ -7,12 +9,12 @@ WEEKDAYS: dict[str] = {0: 'lunes', 1: 'martes', 2:'miércoles', 3:'jueves', 4:'v
 
 LIBREAPIURL: str = 'https://api.libreapi.cl/rut/activities'
 
-GENERATEDREPORTSPATH: str = "ReportesGenerados"
-DELIVEREDDATAPATH: str = "DatosRecibidos"
-RESULTPATH: str = "Resultados"
+GENERATEDREPORTSPATH: str = os.path.abspath("ReportesGenerados")
+DELIVEREDDATAPATH: str = os.path.abspath("DatosRecibidos")
+RESULTPATH: str = os.path.abspath("Resultados")
 
-LOGOPATH: str = "Images/Logo.PNG"
-SIGNINGPATH: str = "Images/Signing.PNG"
+LOGOPATH: str = os.path.abspath("Images/Logo.PNG")
+SIGNINGPATH: str = os.path.abspath("Images/Signing.PNG")
 
 ANEXO: str = 'Anexo'
 BOLETA: str = 'Boleta'

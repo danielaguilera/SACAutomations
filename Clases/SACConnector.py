@@ -66,6 +66,9 @@ class SACConnector:
         self.cursorBoleta.execute(f"SELECT * FROM {self.boletasTable} WHERE Numero = {numBoleta}")
         for dataReceived in self.cursorBoleta.fetchall(): 
             rutBeneficiario: str = dataReceived[7]
+            fechaBoleta : datetime = dataReceived[2]
+            if fechaBoleta.year != self.year:
+                continue
             break
         query = '''
                     SELECT "Nombre o Razón Social" 
