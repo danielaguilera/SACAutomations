@@ -7,11 +7,17 @@ from Clases.FileGrouper import FileGrouper
 from Clases.MailSender import MailSender
 import os
 import shutil
+import sys
 
 if __name__ == '__main__':
-    fileGrouper: FileGrouper = FileGrouper()
+    
+    # Checking whether there is data to send:
+    if not os.path.exists(DELIVEREDDATAPATH):
+        print('No se han recibido datos, saliendo...')
+        sys.exit()
     
     # Generating reports:
+    fileGrouper: FileGrouper = FileGrouper()
     numsBoleta: list[int] = [int(dirName) for dirName in os.listdir(DELIVEREDDATAPATH)]
     for numBoleta in numsBoleta:
         sacConnector: SACConnector = SACConnector()
@@ -34,8 +40,9 @@ if __name__ == '__main__':
         mailSender.sendUnifiedDocument(documento)
     
     # Erasing generated folders:
-    # shutil.rmtree(GENERATEDREPORTSPATH)
-    # shutil.rmtree(RESULTPATH)
+    deleteIfExists(GENERATEDREPORTSPATH)
+    deleteIfExists(RESULTPATH)
+    deleteIfExists(DELIVEREDDATAPATH)
     
     
     
