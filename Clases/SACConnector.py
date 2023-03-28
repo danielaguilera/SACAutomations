@@ -13,13 +13,15 @@ from Utils.GlobalFunctions import *
 class SACConnector:
     def __init__(self):
         pyodbc.pooling = False
-        self.cursorBoleta: pyodbc.Cursor = pyodbc.connect(SACBOLETASPATH).cursor()
+        self.connBoleta: pyodbc.Connection = pyodbc.connect(SACBOLETASPATH)
+        self.connData: pyodbc.Connection = pyodbc.connect(SACDATAPATH)
+        self.cursorBoleta: pyodbc.Cursor = self.connBoleta.cursor()
         self.cursorBoleta.fast_executemany = True
-        self.cursorData: pyodbc.Cursor = pyodbc.connect(SACDATAPATH).cursor()
+        self.cursorData: pyodbc.Cursor = self.connData.cursor()
         self.cursorData.fast_executemany = True
         
         self.beneficiariosTable: str = 'Beneficiarios'
-        self.clientesTable:str = 'Tabla_Clientes'
+        self.clientesTable: str = 'Tabla_Clientes'
         self.mapsaTable: str = 'Mapsa'
         self.boletasTable: str = 'Tabla_nueva_de_boletas'
         
@@ -116,5 +118,30 @@ class SACConnector:
         except Exception:
             print(f'Datos no encontrados para boleta n°{numBoleta}')
             return
+        
+    def getAllClientes(self) -> list[Cliente]:
+        clientesData: list[Cliente] = []
+        self.cursorData.execute(f'''
+                                    SELECT IdCliente, Cliente
+                                    FROM {self.clientesTable}
+                                ''')
+        for data in self.cursorData.fetchall():
+            idCliente, nombreCliente = data
+            print(f'{idCliente} -> {nombreCliente}')
+            clientesData.append(Cliente(idCliente=idCliente, nombreCliente=nombreCliente))
+        return clientesData
+        
+    def insertBoletaData(self):
+        self.cursorBoleta.execute(f'''
+                                  INSERT INTO Tabla_nueva_de_boletas (IdBoleta, Numero, Fecha, Monto, Nota, Print, Mes, "RUT Beneficiario")
+                                  VALUES (1111, 1111, '21-mar.-23' , '77777', 'Test Daniel', False, 'abr./2023', '19.618.378-7')                              
+                                  ''')
+        self.connBoleta.commit()
+        
+    def getBoletaData(self):
+        self.cursorBoleta.execute(f'''
+                                  SELECT * FROM Tabla_nueva_de_boletas
+                                  WHERE IdBoleta = 1111''')
+        print(self.cursorBoleta.fetchall())
             
         

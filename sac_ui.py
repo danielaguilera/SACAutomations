@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import messagebox
+from tkinter import ttk
 import shutil
 import os
 from tkinter import filedialog
@@ -7,14 +8,20 @@ from Utils.Metadata import *
 from Utils.GlobalFunctions import *
 from PyPDF2 import PdfReader, PdfMerger
 from PyPDF2.errors import PdfReadError
+from Clases.SACConnector import SACConnector
+from Clases.Cliente import Cliente
 import re
 
 class SACUI:
     def __init__(self, master: Tk):
+        
+        self.sacConnector: SACConnector = SACConnector()
+        self.clientes: list[Cliente] = self.sacConnector.getAllClientes()
+        
         self.master = master
         self.master.title("SAC App")
         
-        self.uploadFrame = LabelFrame(master=self.master, text='Upload frame')
+        self.uploadFrame = LabelFrame(master=self.master)
         self.uploadFrame.pack(expand=True, fill=BOTH)
 
         self.boletaUploadButton = Button(self.uploadFrame, text="Subir boleta SII", width=20, height=1, font=('Helvetica bold', 26), command=self.selectBoletaPDF)
@@ -28,30 +35,84 @@ class SACUI:
 
         self.anexoResetButton = Button(self.uploadFrame, text="Reestablecer anexos", width=20, height=1, font=('Helvetica bold', 15), command=self.resetAnexos)
         self.anexoResetButton.grid(row=1, column=1, sticky=NSEW, padx=5, pady=5)
+
+
         
-        self.stateFrame = LabelFrame(master=self.master, text="State Frame")
+        self.stateFrame = LabelFrame(master=self.master)
         self.stateFrame.pack(expand=True, fill=BOTH)
         
-        self.numBoletaLabel = Label(master=self.stateFrame, text='# Boleta', font=('Helvetica bold', 15))
-        self.numBoletaLabel.grid(row=0, column=0, sticky=W, padx=5, pady=5)
+        self.numBoletaFrame = Frame(master=self.stateFrame)
+        self.numBoletaFrame.pack(expand=True, fill=BOTH)
+        self.numBoletaLabel = Label(master=self.numBoletaFrame, text='N° Boleta')
+        self.numBoletaLabel.pack(side=LEFT)
+        self.numBoletaEntry = Entry(master=self.numBoletaFrame)
+        self.numBoletaEntry.pack(side=LEFT, padx=5)
         
-        self.numBoletaEntry = Entry(master=self.stateFrame, font=('Helvetica bold', 15))
-        self.numBoletaEntry.grid(row=0, column=1, sticky=W, padx=5, pady=5)
+        self.fechaBoletaFrame = Frame(master=self.stateFrame)
+        self.fechaBoletaFrame.pack(expand=True, fill=BOTH)
+        self.fechaBoletaLabel = Label(master=self.fechaBoletaFrame, text='Fecha (dd-mm-AAAA)')
+        self.fechaBoletaLabel.pack(side=LEFT) 
+        self.fechaBoletaEntry = Entry(master=self.fechaBoletaFrame)
+        self.fechaBoletaEntry.pack(side=LEFT, padx=5)
         
-        self.uploadedBoletaLabel = Label(master=self.stateFrame, font=('Helvetica bold', 10), text='No se ha subido boleta')
-        self.uploadedBoletaLabel.grid(row=1, column=0, sticky=W, padx=5, pady=5)
+        self.rutBeneficiarioFrame = Frame(master=self.stateFrame)
+        self.rutBeneficiarioFrame.pack(expand=True, fill=BOTH)
+        self.rutBeneficiarioLabel = Label(master=self.rutBeneficiarioFrame, text='RUT Beneficiario')
+        self.rutBeneficiarioLabel.pack(side=LEFT) 
+        self.rutBeneficiarioEntry = Entry(master=self.rutBeneficiarioFrame)
+        self.rutBeneficiarioEntry.pack(side=LEFT, padx=5)
         
-        self.uploadedAnexosLabel = Label(master=self.stateFrame, font=('Helvetica bold', 10), text='No se han subido anexos')
-        self.uploadedAnexosLabel.grid(row=2, column=0, sticky=W, padx=5, pady=5)
+        self.rutDeudorFrame = Frame(master=self.stateFrame)
+        self.rutDeudorFrame.pack(expand=True, fill=BOTH)
+        self.rutDeudorLabel = Label(master=self.rutDeudorFrame, text='RUT Deudor')
+        self.rutDeudorLabel.pack(side=LEFT) 
+        self.rutDeudorEntry = Entry(master=self.rutDeudorFrame)
+        self.rutDeudorEntry.pack(side=LEFT, padx=5)
+        
+        self.nombreDeudorFrame = Frame(master=self.stateFrame)
+        self.nombreDeudorFrame.pack(expand=True, fill=BOTH)
+        self.nombreDeudorLabel = Label(master=self.nombreDeudorFrame, text='Nombre Deudor')
+        self.nombreDeudorLabel.pack(side=LEFT) 
+        self.nombreDeudorEntry = Entry(master=self.nombreDeudorFrame)
+        self.nombreDeudorEntry.pack(side=LEFT, padx=5)
+
+        self.apellidoDeudorFrame = Frame(master=self.stateFrame)
+        self.apellidoDeudorFrame.pack(expand=True, fill=BOTH)
+        self.apellidoDeudorLabel = Label(master=self.apellidoDeudorFrame, text='Apellido Deudor')
+        self.apellidoDeudorLabel.pack(side=LEFT) 
+        self.apellidoDeudorEntry = Entry(master=self.apellidoDeudorFrame)
+        self.apellidoDeudorEntry.pack(side=LEFT, padx=5)
+        
+        self.clienteFrame =  Frame(master=self.stateFrame)
+        self.clienteFrame.pack(expand=True, fill=BOTH)
+        self.clienteLabel = Label(master=self.clienteFrame, text='Cliente')
+        self.clienteLabel.pack(side=LEFT)
+        self.clienteDropdown = ttk.Combobox(master=self.clienteFrame, state='readonly', values=[cliente.nombreCliente for cliente in self.clientes])
+        self.clienteDropdown.pack(side=LEFT, padx=5)
+        
+        self.fileFrame = LabelFrame(master=self.master)
+        self.fileFrame.pack(expand=True, fill=BOTH)
+        
+        self.uploadedBoletaLabel = Label(master=self.fileFrame, font=('Helvetica bold', 10), text='No se ha subido boleta')
+        self.uploadedBoletaLabel.grid(row=2, column=0, sticky=W, padx=5, pady=5)
+        
+        self.uploadedAnexosLabel = Label(master=self.fileFrame, font=('Helvetica bold', 10), text='No se han subido anexos')
+        self.uploadedAnexosLabel.grid(row=3, column=0, sticky=W, padx=5, pady=5)
         
         self.boletaPath: str = ''
         self.anexosPaths: list[str] = []
         
-        self.saveFrame = LabelFrame(master=self.master, text='Save frame')
+        self.saveFrame = LabelFrame(master=self.master)
         self.saveFrame.pack(expand=True, fill=BOTH)
         
         self.saveButton = Button(self.saveFrame, text='Guardar', width=40, height=1, font=('Helvetica bold', 20), command=self.saveChanges)
         self.saveButton.pack(expand=True, fill=BOTH)
+        
+        self.sendFrame = LabelFrame(master=self.master)
+        self.sendFrame.pack(expand=True, fill=BOTH)
+        
+        self.sendButton = Button(self.saveFrame, text='Enviar reportes', width=40, height=1, font=('Helvetica bold', 20), command=self.runSender)
+        self.sendButton.pack(expand=True, fill=BOTH)
         
     @property
     def numAnexos(self):
@@ -127,6 +188,9 @@ class SACUI:
             self.uploadedAnexosLabel.config(text=f'Anexos subidos: {self.numAnexos}')
         else:
             messagebox.showerror(title='Error', message='Archivo no válido')
+        
+    def runSender(self):
+        os.system('cmd /c start sac_sender.exe') 
 
 root = Tk()
 pdf_app = SACUI(root)

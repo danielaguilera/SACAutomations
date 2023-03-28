@@ -1,4 +1,6 @@
 from Clases.SACConnector import SACConnector
 
-sacConnector = SACConnector()
-sacConnector.getBeneficiarioData
+conn = SACConnector()
+
+conn.insertBoletaData()
+conn.getBoletaData()
