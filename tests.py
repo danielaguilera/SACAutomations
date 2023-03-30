@@ -2,5 +2,10 @@ from Clases.SACConnector import SACConnector
 
 conn = SACConnector()
 
-conn.insertBoletaData()
-conn.getBoletaData()
+conn.cursorData.execute('''
+                            SELECT *
+                            FROM Mapsa
+                            WHERE IdMapsa = 4096
+                        ''')
+
+print(conn.cursorData.fetchall())

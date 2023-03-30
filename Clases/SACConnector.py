@@ -9,6 +9,7 @@ from Clases.Destinatario import Destinatario
 from Clases.ReporteData import ReporteData
 from datetime import datetime
 from Utils.GlobalFunctions import *
+from Clases.Caso import Caso
 
 class SACConnector:
     def __init__(self):
@@ -141,16 +142,39 @@ class SACConnector:
             codigosData.append(data[0])
         return codigosData
     
-    def getPossibleMapsaCasos(self, rutDeudor: str, idCliente: int) -> int:
-        idsCasos: list[int] = []
-        self.cursorData.execute(f'''
-                                    SELECT IdMapsa
-                                    FROM {self.mapsaTable}
-                                    WHERE "RUT Deudor" LIKE "%{rutDeudor}%" AND Cliente = {idCliente}
-                                ''')
+    def getPossibleMapsaCasos(self, rutDeudor: str = None, idCliente: int = None) -> list[Caso]:
+        casosFound : list[Caso] = []
+        if rutDeudor and idCliente:
+            query: str = f'''
+                        SELECT IdMapsa, Estado, Asignado, Bsecs, "Apellido Deudor", "RUT Deudor"
+                        FROM {self.mapsaTable}
+                        WHERE "RUT Deudor" LIKE '%{rutDeudor}%' AND Cliente = {idCliente}
+                        '''
+        elif rutDeudor and not idCliente:
+            query: str = f'''
+                        SELECT IdMapsa, Estado, Asignado, Bsecs, "Apellido Deudor", "RUT Deudor"
+                        FROM {self.mapsaTable}
+                        WHERE "RUT Deudor" LIKE '{rutDeudor}%'
+                        '''
+                        
+        elif idCliente and not rutDeudor:
+            query: str = f'''
+                        SELECT IdMapsa, Estado, Asignado, Bsecs, "Apellido Deudor", "RUT Deudor"
+                        FROM {self.mapsaTable}
+                        WHERE Cliente = {idCliente}
+                        '''
+        else:
+            return []
+        self.cursorData.execute(query)
         for data in self.cursorData.fetchall():
-            idsCasos.append(data[0])
-        return idsCasos
+            idMapsa, nombreEstado, fechaAsignado, bsecs, apellidoDeudor, rutDeudor = data
+            casosFound.append(Caso(idMapsa=idMapsa, 
+                                   nombreEstado=nombreEstado, 
+                                   fechaAsignado=fechaAsignado, 
+                                   bsecs=bsecs, 
+                                   rutDeudor=rutDeudor,
+                                   apellidoDeudor=apellidoDeudor))
+        return casosFound
 
     def insertBoletaData(self):
         self.cursorBoleta.execute(f'''
