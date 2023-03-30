@@ -1,7 +1,7 @@
 from datetime import datetime
 
 class Servicio:
-    def __init__(self, rutDeudor : str, apellidoDeudor : str, nombreDeudor : str, idCliente : int, nombreCliente : str, boleta : int, fecha : str, monto : int, nota : str, codigo : str):
+    def __init__(self, monto : int = 0, nota : str = '', codigo : str = '', rutDeudor : str = '', apellidoDeudor : str = '', nombreDeudor : str = '', idCliente : int = 0, nombreCliente : str = '', boleta : int = 0, fecha : str = ''):
         self.rutDeudor: str = rutDeudor
         self.apellidoDeudor: str = apellidoDeudor
         self.nombreDeudor: str = nombreDeudor

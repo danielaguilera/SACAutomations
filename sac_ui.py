@@ -10,6 +10,8 @@ from PyPDF2 import PdfReader, PdfMerger
 from PyPDF2.errors import PdfReadError
 from Clases.SACConnector import SACConnector
 from Clases.Cliente import Cliente
+from Clases.AddServicioGUI import AddServicioGUI
+from Clases.Servicio import Servicio
 import re
 
 class SACUI:
@@ -17,6 +19,7 @@ class SACUI:
         
         self.sacConnector: SACConnector = SACConnector()
         self.clientes: list[Cliente] = self.sacConnector.getAllClientes()
+        self.codigos: list[str] = self.sacConnector.getAllCodigos()
         
         self.master = master
         self.master.title("SAC App")
@@ -83,12 +86,32 @@ class SACUI:
         self.apellidoDeudorEntry = Entry(master=self.apellidoDeudorFrame)
         self.apellidoDeudorEntry.pack(side=LEFT, padx=5)
         
-        self.clienteFrame =  Frame(master=self.stateFrame)
+        self.clienteFrame = Frame(master=self.stateFrame)
         self.clienteFrame.pack(expand=True, fill=BOTH)
         self.clienteLabel = Label(master=self.clienteFrame, text='Cliente')
         self.clienteLabel.pack(side=LEFT)
         self.clienteDropdown = ttk.Combobox(master=self.clienteFrame, state='readonly', values=[cliente.nombreCliente for cliente in self.clientes])
         self.clienteDropdown.pack(side=LEFT, padx=5)
+        
+        self.serviciosFrame = Frame(master=self.master)
+        self.serviciosFrame.pack(expand=True, fill=BOTH)
+        self.addedServiciosLabel = Label(master=self.master, text='No se han agregado servicios')
+        self.addedServiciosLabel.pack(expand=True, fill=BOTH)
+        self.columns = ['Código', 'Nota', 'Monto']
+        self.serviciosTable = ttk.Treeview(master=self.serviciosFrame, columns=self.columns, show='headings', height=0)
+        self.serviciosTable.heading('Código', text='Código')
+        self.serviciosTable.heading('Nota', text='Nota')
+        self.serviciosTable.heading('Monto', text='Monto')
+        self.serviciosTable.pack(expand=True, fill=BOTH, anchor=CENTER)
+        self.addServicioButton = Button(master=self.serviciosFrame, text='Agregar servicio', command=self.openServicioGUI)
+        self.addServicioButton.pack(expand=True, fill=BOTH)
+        self.deleteServicioButton = Button(master=self.serviciosFrame, text='Eliminar servicio', command=self.removeServicio)
+        self.deleteServicioButton.pack(expand=True, fill=BOTH)
+        
+        
+        
+        
+        
         
         self.fileFrame = LabelFrame(master=self.master)
         self.fileFrame.pack(expand=True, fill=BOTH)
@@ -105,7 +128,7 @@ class SACUI:
         self.saveFrame = LabelFrame(master=self.master)
         self.saveFrame.pack(expand=True, fill=BOTH)
         
-        self.saveButton = Button(self.saveFrame, text='Guardar', width=40, height=1, font=('Helvetica bold', 20), command=self.saveChanges)
+        self.saveButton = Button(self.saveFrame, text='Guardar', width=40, height=1, font=('Helvetica bold', 20), command=self.getMapsaCasos)
         self.saveButton.pack(expand=True, fill=BOTH)
         
         self.sendFrame = LabelFrame(master=self.master)
@@ -117,6 +140,14 @@ class SACUI:
     @property
     def numAnexos(self):
         return len(self.anexosPaths)
+    
+    def getMapsaCasos(self):
+        idCliente: int = 0
+        for cliente in self.clientes:
+            if cliente.nombreCliente == self.clienteDropdown.get():
+                idCliente = cliente.idCliente
+        rutDeudor: str = self.rutDeudorEntry.get()
+        print(self.sacConnector.getPossibleMapsaCasos(idCliente=idCliente, rutDeudor=rutDeudor))
                 
     def saveChanges(self):
         if not self.boletaPath:
@@ -191,7 +222,20 @@ class SACUI:
         
     def runSender(self):
         os.system('cmd /c start sac_sender.exe') 
+        
+    def openServicioGUI(self):
+        addServicioGUI: AddServicioGUI = AddServicioGUI(container=self)
+        
+    def removeServicio(self):
+        selectedItem = self.serviciosTable.selection()[0]
+        self.serviciosTable.delete(selectedItem)
+        self.serviciosTable.configure(height=len(self.serviciosTable.get_children()))
+    
+    def addServicio(self, servicio: Servicio):
+        self.serviciosTable.insert('', END, values=(servicio.codigo, servicio.nota, servicio.monto))
+        self.serviciosTable.configure(height=len(self.serviciosTable.get_children()))
 
-root = Tk()
-pdf_app = SACUI(root)
-root.mainloop()
+if __name__ == '__main__':
+    root = Tk()
+    pdf_app = SACUI(root)
+    root.mainloop()

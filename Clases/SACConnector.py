@@ -24,6 +24,7 @@ class SACConnector:
         self.clientesTable: str = 'Tabla_Clientes'
         self.mapsaTable: str = 'Mapsa'
         self.boletasTable: str = 'Tabla_nueva_de_boletas'
+        self.gastosTable: str = 'ITEM_Gastos'
         
         self.year: int = 2022 #Hardcoded
         
@@ -127,10 +128,30 @@ class SACConnector:
                                 ''')
         for data in self.cursorData.fetchall():
             idCliente, nombreCliente = data
-            print(f'{idCliente} -> {nombreCliente}')
             clientesData.append(Cliente(idCliente=idCliente, nombreCliente=nombreCliente))
         return clientesData
-        
+    
+    def getAllCodigos(self) -> list[str]:
+        codigosData: list[str] = []
+        self.cursorData.execute(f'''
+                                    SELECT ITEM
+                                    FROM {self.gastosTable}
+                                ''')
+        for data in self.cursorData.fetchall():
+            codigosData.append(data[0])
+        return codigosData
+    
+    def getPossibleMapsaCasos(self, rutDeudor: str, idCliente: int) -> int:
+        idsCasos: list[int] = []
+        self.cursorData.execute(f'''
+                                    SELECT IdMapsa
+                                    FROM {self.mapsaTable}
+                                    WHERE "RUT Deudor" LIKE "%{rutDeudor}%" AND Cliente = {idCliente}
+                                ''')
+        for data in self.cursorData.fetchall():
+            idsCasos.append(data[0])
+        return idsCasos
+
     def insertBoletaData(self):
         self.cursorBoleta.execute(f'''
                                   INSERT INTO Tabla_nueva_de_boletas (IdBoleta, Numero, Fecha, Monto, Nota, Print, Mes, "RUT Beneficiario")
