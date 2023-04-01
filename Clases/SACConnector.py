@@ -146,22 +146,22 @@ class SACConnector:
         casosFound : list[Caso] = []
         if rutDeudor and idCliente:
             query: str = f'''
-                        SELECT IdMapsa, Estado, Asignado, Bsecs, "Apellido Deudor", "RUT Deudor"
+                        SELECT IdMapsa, Estado, Asignado, Bsecs, "Apellido Deudor", "RUT Deudor", Cliente, 
                         FROM {self.mapsaTable}
                         WHERE "RUT Deudor" LIKE '%{rutDeudor}%' AND Cliente = {idCliente}
                         '''
         elif rutDeudor and not idCliente:
             query: str = f'''
-                        SELECT IdMapsa, Estado, Asignado, Bsecs, "Apellido Deudor", "RUT Deudor"
-                        FROM {self.mapsaTable}
-                        WHERE "RUT Deudor" LIKE '{rutDeudor}%'
+                            SELECT IdMapsa, Estado, Asignado, Bsecs, "Apellido Deudor", "RUT Deudor"
+                            FROM {self.mapsaTable}
+                            WHERE "RUT Deudor" LIKE '{rutDeudor}%'
                         '''
                         
         elif idCliente and not rutDeudor:
             query: str = f'''
-                        SELECT IdMapsa, Estado, Asignado, Bsecs, "Apellido Deudor", "RUT Deudor"
-                        FROM {self.mapsaTable}
-                        WHERE Cliente = {idCliente}
+                            SELECT IdMapsa, Estado, Asignado, Bsecs, "Apellido Deudor", "RUT Deudor"
+                            FROM {self.mapsaTable}
+                            WHERE Cliente = {idCliente}
                         '''
         else:
             return []

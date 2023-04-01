@@ -12,6 +12,7 @@ from Clases.SACConnector import SACConnector
 from Clases.Cliente import Cliente
 from Clases.AddServicioGUI import AddServicioGUI
 from Clases.Servicio import Servicio
+from Clases.Caso import Caso
 import re
 
 class SACUI:
@@ -20,6 +21,7 @@ class SACUI:
         self.sacConnector: SACConnector = SACConnector()
         self.clientes: list[Cliente] = self.sacConnector.getAllClientes()
         self.codigos: list[str] = self.sacConnector.getAllCodigos()
+        self.casos: list[Caso] = []
         
         self.master = master
         self.master.title("SAC App")
@@ -97,8 +99,8 @@ class SACUI:
         self.serviciosFrame.pack(expand=True, fill=BOTH)
         self.addedServiciosLabel = Label(master=self.master, text='No se han agregado servicios')
         self.addedServiciosLabel.pack(expand=True, fill=BOTH)
-        self.columns = ['Código', 'Nota', 'Monto']
-        self.serviciosTable = ttk.Treeview(master=self.serviciosFrame, columns=self.columns, show='headings', height=0)
+        self.serviciosColumns = ['Código', 'Nota', 'Monto']
+        self.serviciosTable = ttk.Treeview(master=self.serviciosFrame, columns=self.serviciosColumns, show='headings', height=0)
         self.serviciosTable.heading('Código', text='Código')
         self.serviciosTable.heading('Nota', text='Nota')
         self.serviciosTable.heading('Monto', text='Monto')
@@ -121,6 +123,15 @@ class SACUI:
         
         self.uploadedAnexosLabel = Label(master=self.fileFrame, font=('Helvetica bold', 10), text='No se han subido anexos')
         self.uploadedAnexosLabel.grid(row=3, column=0, sticky=W, padx=5, pady=5)
+        
+        self.casosFrame = Frame(master=self.master)
+        self.casosFrame.pack(expand=True, fill=BOTH)
+        
+        self.casosColumns = ['ID Mapsa', 'Estado', 'Fecha Asignación', 'Bsecs', 'RUT Deudor', 'Apellido Deudor']
+        self.casosTable = ttk.Treeview(master=self.serviciosFrame, columns=self.casosColumns, show='headings', height=5)
+        for heading in self.casosColumns:
+            self.casosTable.heading(heading, text=heading)
+        self.casosTable.pack(expand=True, fill=BOTH, anchor=CENTER)
         
         self.boletaPath: str = ''
         self.anexosPaths: list[str] = []
