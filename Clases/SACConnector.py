@@ -146,34 +146,48 @@ class SACConnector:
         casosFound : list[Caso] = []
         if rutDeudor and idCliente:
             query: str = f'''
-                        SELECT IdMapsa, Estado, Asignado, Bsecs, "Apellido Deudor", "RUT Deudor", Cliente, 
-                        FROM {self.mapsaTable}
-                        WHERE "RUT Deudor" LIKE '%{rutDeudor}%' AND Cliente = {idCliente}
+                            SELECT IdMapsa, Estado, Asignado, Bsecs, "Apellido Deudor", "RUT Deudor", Mapsa.Cliente, Tabla_Clientes.Cliente 
+                            FROM {self.mapsaTable}
+                            INNER JOIN {self.clientesTable}
+                            ON Tabla_Clientes.IdCliente = Mapsa.Cliente 
+                            WHERE 
+                            "RUT Deudor" LIKE '{rutDeudor}%' 
+                            AND Mapsa.Cliente = {idCliente}
+                            AND Estado LIKE '%Activo%'
                         '''
         elif rutDeudor and not idCliente:
             query: str = f'''
-                            SELECT IdMapsa, Estado, Asignado, Bsecs, "Apellido Deudor", "RUT Deudor"
+                            SELECT IdMapsa, Estado, Asignado, Bsecs, "Apellido Deudor", "RUT Deudor", Mapsa.Cliente, Tabla_Clientes.Cliente 
                             FROM {self.mapsaTable}
-                            WHERE "RUT Deudor" LIKE '{rutDeudor}%'
+                            INNER JOIN {self.clientesTable}
+                            ON Tabla_Clientes.IdCliente = Mapsa.Cliente 
+                            WHERE 
+                            "RUT Deudor" LIKE '{rutDeudor}%' 
+                            AND Estado LIKE '%Activo%'
                         '''
-                        
         elif idCliente and not rutDeudor:
             query: str = f'''
-                            SELECT IdMapsa, Estado, Asignado, Bsecs, "Apellido Deudor", "RUT Deudor"
+                            SELECT IdMapsa, Estado, Asignado, Bsecs, "Apellido Deudor", "RUT Deudor", Mapsa.Cliente, Tabla_Clientes.Cliente 
                             FROM {self.mapsaTable}
-                            WHERE Cliente = {idCliente}
+                            INNER JOIN {self.clientesTable}
+                            ON Tabla_Clientes.IdCliente = Mapsa.Cliente 
+                            WHERE 
+                            Mapsa.Cliente = {idCliente}
+                            AND Estado LIKE '%Activo%'
                         '''
         else:
             return []
         self.cursorData.execute(query)
         for data in self.cursorData.fetchall():
-            idMapsa, nombreEstado, fechaAsignado, bsecs, apellidoDeudor, rutDeudor = data
+            idMapsa, nombreEstado, fechaAsignado, bsecs, apellidoDeudor, rutDeudor, idCliente, nombreCliente = data
             casosFound.append(Caso(idMapsa=idMapsa, 
                                    nombreEstado=nombreEstado, 
                                    fechaAsignado=fechaAsignado, 
                                    bsecs=bsecs, 
                                    rutDeudor=rutDeudor,
-                                   apellidoDeudor=apellidoDeudor))
+                                   apellidoDeudor=apellidoDeudor,
+                                   idCliente=idCliente,
+                                   nombreCliente=nombreCliente))
         return casosFound
 
     def insertBoletaData(self):

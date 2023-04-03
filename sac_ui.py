@@ -73,6 +73,7 @@ class SACUI:
         self.rutDeudorLabel.pack(side=LEFT) 
         self.rutDeudorEntry = Entry(master=self.rutDeudorFrame)
         self.rutDeudorEntry.pack(side=LEFT, padx=5)
+        self.rutDeudorEntry.bind("<KeyRelease>", self.populateCasos) 
         
         self.nombreDeudorFrame = Frame(master=self.stateFrame)
         self.nombreDeudorFrame.pack(expand=True, fill=BOTH)
@@ -92,8 +93,9 @@ class SACUI:
         self.clienteFrame.pack(expand=True, fill=BOTH)
         self.clienteLabel = Label(master=self.clienteFrame, text='Cliente')
         self.clienteLabel.pack(side=LEFT)
-        self.clienteDropdown = ttk.Combobox(master=self.clienteFrame, state='readonly', values=[cliente.nombreCliente for cliente in self.clientes])
+        self.clienteDropdown = ttk.Combobox(master=self.clienteFrame, state='readonly', values=[cliente.nombreCliente for cliente in self.clientes] + ['Ninguno'])
         self.clienteDropdown.pack(side=LEFT, padx=5)
+        self.clienteDropdown.bind("<<ComboboxSelected>>", self.populateCasos)
         
         self.serviciosFrame = Frame(master=self.master)
         self.serviciosFrame.pack(expand=True, fill=BOTH)
@@ -127,11 +129,13 @@ class SACUI:
         self.casosFrame = Frame(master=self.master)
         self.casosFrame.pack(expand=True, fill=BOTH)
         
-        self.casosColumns = ['ID Mapsa', 'Estado', 'Fecha Asignación', 'Bsecs', 'RUT Deudor', 'Apellido Deudor']
-        self.casosTable = ttk.Treeview(master=self.serviciosFrame, columns=self.casosColumns, show='headings', height=5)
+        self.casosColumns = ['ID Mapsa', 'Estado', 'Fecha Asignación', 'Bsecs', 'RUT Deudor', 'Apellido Deudor', 'Cliente']
+        self.casosTable = ttk.Treeview(master=self.casosFrame, columns=self.casosColumns, show='headings', height=5)
         for heading in self.casosColumns:
             self.casosTable.heading(heading, text=heading)
         self.casosTable.pack(expand=True, fill=BOTH, anchor=CENTER)
+        # scrollbar = ttk.Scrollbar(self.casosTable, orient=VERTICAL, command=self.casosTable.yview)
+        # scrollbar.pack(side=RIGHT, fill=Y)
         
         self.boletaPath: str = ''
         self.anexosPaths: list[str] = []
@@ -245,6 +249,23 @@ class SACUI:
     def addServicio(self, servicio: Servicio):
         self.serviciosTable.insert('', END, values=(servicio.codigo, servicio.nota, servicio.monto))
         self.serviciosTable.configure(height=len(self.serviciosTable.get_children()))
+        
+    def populateCasos(self, key=None):
+        rutDeudor: str = self.rutDeudorEntry.get()
+        selectedClienteName: str = self.clienteDropdown.get()
+        idCliente: int | None = None
+        if selectedClienteName:
+            cliente: Cliente
+            for cliente in self.clientes:
+                if cliente.nombreCliente == selectedClienteName:
+                    idCliente = cliente.idCliente
+                    break
+        self.casos = self.sacConnector.getPossibleMapsaCasos(rutDeudor=rutDeudor, idCliente=idCliente)
+        caso: Caso
+        self.casosTable.delete(*self.casosTable.get_children())
+        for caso in self.casos:
+            self.casosTable.insert('', END, values=(caso.idMapsa, caso.nombreEstado, caso.fechaAsignado, caso.bsecs, caso.rutDeudor, caso.apellidoDeudor, caso.nombreCliente))
+            
 
 if __name__ == '__main__':
     root = Tk()
