@@ -88,6 +88,7 @@ class SACUI:
         self.apellidoDeudorLabel.pack(side=LEFT) 
         self.apellidoDeudorEntry = Entry(master=self.apellidoDeudorFrame)
         self.apellidoDeudorEntry.pack(side=LEFT, padx=5)
+        self.apellidoDeudorEntry.bind("<KeyRelease>", self.populateCasos)
         
         self.clienteFrame = Frame(master=self.stateFrame)
         self.clienteFrame.pack(expand=True, fill=BOTH)
@@ -134,8 +135,7 @@ class SACUI:
         for heading in self.casosColumns:
             self.casosTable.heading(heading, text=heading)
         self.casosTable.pack(expand=True, fill=BOTH, anchor=CENTER)
-        # scrollbar = ttk.Scrollbar(self.casosTable, orient=VERTICAL, command=self.casosTable.yview)
-        # scrollbar.pack(side=RIGHT, fill=Y)
+        self.casosTable.bind('<<TreeviewSelect>>', self.selectCaso)
         
         self.boletaPath: str = ''
         self.anexosPaths: list[str] = []
@@ -185,30 +185,30 @@ class SACUI:
         messagebox.showinfo(title='Mensaje', message=f'Archivos guardados para boleta n°{numBoleta}')
         self.master.destroy()
 
-    def selectBoletaPDF(self):
-        filePath = filedialog.askopenfilename(filetypes=[("PDF Files", "*.pdf")])
-        if self.fileIsPDF(filePath):
-            self.boletaPath = filePath
-            self.uploadedBoletaLabel.config(text='Boleta subida')
-            try:
-                reader: PdfReader = PdfReader(filePath)
-                numberIndex: int = reader.pages[0].extract_text().find('°')
-                if numberIndex == -1:
-                    numberIndex = reader.pages[0].extract_text().find('º')
-                subString: str = reader.pages[0].extract_text()[numberIndex::]
-                endIndex: int = subString.find('\n')
-                subString = subString[0: endIndex + 1]
-                numBoleta = extractNumberFromText(subString)
-                if numBoleta.isdigit():
-                    self.numBoletaEntry.delete(0, END)
-                    self.numBoletaEntry.insert(0, numBoleta)
-                    messagebox.showinfo(title='Mensaje', message='Boleta subida correctamente')
-                else:
-                    messagebox.showerror(title='Error', message='No se pudo encontrar el número de boleta en el documento. \nPor favor, ingréselo manualmente.')
-            except Exception:
-                messagebox.showerror(title='Error', message='No se pudo encontrar el número de boleta en el documento. \nPor favor, ingréselo manualmente.')
-        else:
-            messagebox.showerror(title='Error', message='Archivo no válido')
+    # def selectBoletaPDF(self):
+    #     filePath = filedialog.askopenfilename(filetypes=[("PDF Files", "*.pdf")])
+    #     if self.fileIsPDF(filePath):
+    #         self.boletaPath = filePath
+    #         self.uploadedBoletaLabel.config(text='Boleta subida')
+    #         try:
+    #             reader: PdfReader = PdfReader(filePath)
+    #             numberIndex: int = reader.pages[0].extract_text().find('°')
+    #             if numberIndex == -1:
+    #                 numberIndex = reader.pages[0].extract_text().find('º')
+    #             subString: str = reader.pages[0].extract_text()[numberIndex::]
+    #             endIndex: int = subString.find('\n')
+    #             subString = subString[0: endIndex + 1]
+    #             numBoleta = extractNumberFromText(subString)
+    #             if numBoleta.isdigit():
+    #                 self.numBoletaEntry.delete(0, END)
+    #                 self.numBoletaEntry.insert(0, numBoleta)
+    #                 messagebox.showinfo(title='Mensaje', message='Boleta subida correctamente')
+    #             else:
+    #                 messagebox.showerror(title='Error', message='No se pudo encontrar el número de boleta en el documento. \nPor favor, ingréselo manualmente.')
+    #         except Exception:
+    #             messagebox.showerror(title='Error', message='No se pudo encontrar el número de boleta en el documento. \nPor favor, ingréselo manualmente.')
+    #     else:
+    #         messagebox.showerror(title='Error', message='Archivo no válido')
             
     def fileIsPDF(self, filePath: str):
         try:
@@ -234,6 +234,54 @@ class SACUI:
             self.uploadedAnexosLabel.config(text=f'Anexos subidos: {self.numAnexos}')
         else:
             messagebox.showerror(title='Error', message='Archivo no válido')
+            
+    def selectBoletaPDF(self):
+        filePath = filedialog.askopenfilename(filetypes=[("PDF Files", "*.pdf")])
+        if self.fileIsPDF(filePath):
+            self.boletaPath = filePath
+            messagebox.showinfo(title='Mensaje', message='Boleta subida correctamente')
+            self.uploadedBoletaLabel.config(text=f'Boleta subida')
+            self.getNumeroBoletaFromFile()
+            self.getRUTBeneficiarioFromFile()
+            self.getFechaFromFile()
+        else:
+            messagebox.showerror(title='Error', message='Archivo no válido')
+    
+    def getNumeroBoletaFromFile(self):
+        try:
+            reader: PdfReader = PdfReader(self.boletaPath)
+            numberIndex: int = reader.pages[0].extract_text().find('°')
+            if numberIndex == -1:
+                numberIndex = reader.pages[0].extract_text().find('º')
+            subString: str = reader.pages[0].extract_text()[numberIndex::]
+            endIndex: int = subString.find('\n')
+            subString = subString[0: endIndex + 1]
+            numBoleta = extractNumberFromText(subString)
+            if numBoleta.isdigit():
+                self.numBoletaEntry.delete(0, END)
+                self.numBoletaEntry.insert(0, numBoleta)
+        except Exception:
+            pass
+        
+    def getRUTBeneficiarioFromFile(self):
+        try:
+            reader: PdfReader = PdfReader(self.boletaPath)
+            rutBeneficiario: str = reader.pages[0].extract_text().strip().split('\n')[3][5::]
+            self.rutBeneficiarioEntry.delete(0, END)
+            self.rutBeneficiarioEntry.insert(0, rutBeneficiario)
+        except Exception:
+            pass
+        
+    def getFechaFromFile(self):
+        try:
+            reader: PdfReader = PdfReader(self.boletaPath)
+            beginIndex: str = reader.pages[0].extract_text().find('Fecha / Hora Emisión')
+            endIndex: str = reader.pages[0].extract_text()[beginIndex::].find('\n')
+            dateString: str = reader.pages[0].extract_text()[beginIndex:beginIndex+endIndex].strip().split(' ')[4]
+            print(dateString)
+        except Exception:
+            pass
+            
         
     def runSender(self):
         os.system('cmd /c start sac_sender.exe') 
@@ -251,6 +299,8 @@ class SACUI:
         self.serviciosTable.configure(height=len(self.serviciosTable.get_children()))
         
     def populateCasos(self, key=None):
+        if len(self.casosTable.selection()) > 0:
+            self.casosTable.selection_remove(self.casosTable.selection()[0])
         rutDeudor: str = self.rutDeudorEntry.get()
         selectedClienteName: str = self.clienteDropdown.get()
         idCliente: int | None = None
@@ -260,12 +310,29 @@ class SACUI:
                 if cliente.nombreCliente == selectedClienteName:
                     idCliente = cliente.idCliente
                     break
-        self.casos = self.sacConnector.getPossibleMapsaCasos(rutDeudor=rutDeudor, idCliente=idCliente)
+        apellidoDeudor: str = self.apellidoDeudorEntry.get()
+        self.casos = self.sacConnector.getPossibleMapsaCasos(rutDeudor=rutDeudor, idCliente=idCliente, apellidoDeudor=apellidoDeudor)
         caso: Caso
         self.casosTable.delete(*self.casosTable.get_children())
         for caso in self.casos:
             self.casosTable.insert('', END, values=(caso.idMapsa, caso.nombreEstado, caso.fechaAsignado, caso.bsecs, caso.rutDeudor, caso.apellidoDeudor, caso.nombreCliente))
-            
+
+    def selectCaso(self, key=None):
+        dataSelected: list = self.casosTable.item(self.casosTable.focus())['values']
+        if dataSelected:
+            rutDeudor: str = dataSelected[4]
+            apellidoDeudor: str = dataSelected[5]
+            nombreDeudor: str = self.sacConnector.getDeudorName(rutDeudor=rutDeudor)
+            nombreCliente: str = dataSelected[6]
+            indexCliente: int = ([cliente.nombreCliente for cliente in self.clientes] + ['Ninguno']).index(nombreCliente)
+            self.clienteDropdown.current(newindex=indexCliente)
+            self.rutDeudorEntry.delete(0, END)
+            self.rutDeudorEntry.insert(0, rutDeudor)
+            self.nombreDeudorEntry.delete(0, END)
+            self.nombreDeudorEntry.insert(0, nombreDeudor)
+            self.apellidoDeudorEntry.delete(0, END)
+            self.apellidoDeudorEntry.insert(0, apellidoDeudor)
+        
 
 if __name__ == '__main__':
     root = Tk()

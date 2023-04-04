@@ -45,7 +45,22 @@ class SACConnector:
         else:
             nombreDeudor = ''
         return Deudor(apellidoDeudor=apellidoDeudor, nombreDeudor=nombreDeudor, rutDeudor=rutDeudor, idCliente=idCliente)
-
+    
+    def getDeudorName(self, rutDeudor: str):
+        nombreResponse: requests.Response = requests.get(url=LIBREAPIURL, params={'rut': rutDeudor})
+        if nombreResponse.status_code == 200:
+            nombreDeudor: str = nombreResponse.json()['data']['name']
+            nombreDeudorToList: list[str] = list(map(lambda x: x.capitalize(), nombreDeudor.strip().split(' ')))
+            if len(nombreDeudorToList) == 3:
+                nombreDeudor = nombreDeudorToList[0]
+            elif len(nombreDeudorToList) > 3:
+                nombreDeudor = ' '.join(nombreDeudorToList[0:2])
+            else:
+                nombreDeudor = ''
+        else:
+            nombreDeudor = ''
+        return nombreDeudor
+        
     def getClienteData(self, idCliente: int) -> Cliente | None:
         self.cursorData.execute(f'SELECT Cliente FROM {self.clientesTable} WHERE IdCliente = {idCliente}')
         nombreCliente = list(self.cursorData.fetchall())[0][0]
@@ -142,41 +157,24 @@ class SACConnector:
             codigosData.append(data[0])
         return codigosData
     
-    def getPossibleMapsaCasos(self, rutDeudor: str = None, idCliente: int = None) -> list[Caso]:
+    def getPossibleMapsaCasos(self, rutDeudor: str = '', apellidoDeudor: str = '', idCliente: int = None) -> list[Caso]:
         casosFound : list[Caso] = []
-        if rutDeudor and idCliente:
-            query: str = f'''
-                            SELECT IdMapsa, Estado, Asignado, Bsecs, "Apellido Deudor", "RUT Deudor", Mapsa.Cliente, Tabla_Clientes.Cliente 
-                            FROM {self.mapsaTable}
-                            INNER JOIN {self.clientesTable}
-                            ON Tabla_Clientes.IdCliente = Mapsa.Cliente 
-                            WHERE 
-                            "RUT Deudor" LIKE '{rutDeudor}%' 
-                            AND Mapsa.Cliente = {idCliente}
-                            AND Estado LIKE '%Activo%'
-                        '''
-        elif rutDeudor and not idCliente:
-            query: str = f'''
-                            SELECT IdMapsa, Estado, Asignado, Bsecs, "Apellido Deudor", "RUT Deudor", Mapsa.Cliente, Tabla_Clientes.Cliente 
-                            FROM {self.mapsaTable}
-                            INNER JOIN {self.clientesTable}
-                            ON Tabla_Clientes.IdCliente = Mapsa.Cliente 
-                            WHERE 
-                            "RUT Deudor" LIKE '{rutDeudor}%' 
-                            AND Estado LIKE '%Activo%'
-                        '''
-        elif idCliente and not rutDeudor:
-            query: str = f'''
-                            SELECT IdMapsa, Estado, Asignado, Bsecs, "Apellido Deudor", "RUT Deudor", Mapsa.Cliente, Tabla_Clientes.Cliente 
-                            FROM {self.mapsaTable}
-                            INNER JOIN {self.clientesTable}
-                            ON Tabla_Clientes.IdCliente = Mapsa.Cliente 
-                            WHERE 
-                            Mapsa.Cliente = {idCliente}
-                            AND Estado LIKE '%Activo%'
-                        '''
-        else:
-            return []
+        query: str = f'''
+                        SELECT IdMapsa, Estado, Asignado, Bsecs, "Apellido Deudor", "RUT Deudor", Mapsa.Cliente, Tabla_Clientes.Cliente
+                        FROM {self.mapsaTable}
+                        INNER JOIN {self.clientesTable}
+                        ON {self.clientesTable}.IdCliente = {self.mapsaTable}.Cliente
+                        WHERE
+                        Estado LIKE '%Activo%'\n
+                    '''
+                    
+        if idCliente:
+            query += f'AND {self.mapsaTable}.Cliente = {idCliente}\n'   
+        if rutDeudor:
+            query += f"""AND "RUT Deudor" LIKE '{rutDeudor}%'\n"""
+        if apellidoDeudor:
+            query += f"""AND "Apellido Deudor" LIKE '{apellidoDeudor}%'"""    
+        
         self.cursorData.execute(query)
         for data in self.cursorData.fetchall():
             idMapsa, nombreEstado, fechaAsignado, bsecs, apellidoDeudor, rutDeudor, idCliente, nombreCliente = data
