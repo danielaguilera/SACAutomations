@@ -4,6 +4,7 @@ from tkinter import ttk
 import shutil
 import os
 from tkinter import filedialog
+from tkcalendar import Calendar, DateEntry
 from Utils.Metadata import *
 from Utils.GlobalFunctions import *
 from PyPDF2 import PdfReader, PdfMerger
@@ -13,6 +14,7 @@ from Clases.Cliente import Cliente
 from Clases.AddServicioGUI import AddServicioGUI
 from Clases.Servicio import Servicio
 from Clases.Caso import Caso
+from datetime import date
 import re
 
 class SACUI:
@@ -55,9 +57,9 @@ class SACUI:
         
         self.fechaBoletaFrame = Frame(master=self.stateFrame)
         self.fechaBoletaFrame.pack(expand=True, fill=BOTH)
-        self.fechaBoletaLabel = Label(master=self.fechaBoletaFrame, text='Fecha (dd-mm-AAAA)')
+        self.fechaBoletaLabel = Label(master=self.fechaBoletaFrame, text='Fecha Emisión')
         self.fechaBoletaLabel.pack(side=LEFT) 
-        self.fechaBoletaEntry = Entry(master=self.fechaBoletaFrame)
+        self.fechaBoletaEntry: DateEntry = DateEntry(master=self.fechaBoletaFrame)
         self.fechaBoletaEntry.pack(side=LEFT, padx=5)
         
         self.rutBeneficiarioFrame = Frame(master=self.stateFrame)
@@ -266,7 +268,11 @@ class SACUI:
     def getRUTBeneficiarioFromFile(self):
         try:
             reader: PdfReader = PdfReader(self.boletaPath)
-            rutBeneficiario: str = reader.pages[0].extract_text().strip().split('\n')[3][5::]
+            text: str = reader.pages[0].extract_text().strip()
+            if DUARTE in text:
+                rutBeneficiario: str = text.split('\n')[14].split(':')[2].replace(' ', '').strip()
+            else:
+                rutBeneficiario: str = text.split('\n')[3][5::].strip()
             self.rutBeneficiarioEntry.delete(0, END)
             self.rutBeneficiarioEntry.insert(0, rutBeneficiario)
         except Exception:
@@ -275,10 +281,13 @@ class SACUI:
     def getFechaFromFile(self):
         try:
             reader: PdfReader = PdfReader(self.boletaPath)
-            beginIndex: str = reader.pages[0].extract_text().find('Fecha / Hora Emisión')
-            endIndex: str = reader.pages[0].extract_text()[beginIndex::].find('\n')
-            dateString: str = reader.pages[0].extract_text()[beginIndex:beginIndex+endIndex].strip().split(' ')[4]
-            print(dateString)
+            text: str = reader.pages[0].extract_text().strip()
+            if DUARTE in text:
+                fechaEmisionString: str = text.split('\n')[19][15::].strip()
+            else:
+                fechaEmisionString: str = text.split('\n')[9][7::].strip()
+            fechaEmision: date = getDateFromSpanishFormat(stringDate=fechaEmisionString)
+            self.fechaBoletaEntry.set_date(date=fechaEmision)
         except Exception:
             pass
             

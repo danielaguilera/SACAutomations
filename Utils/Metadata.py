@@ -1,7 +1,15 @@
 import os
 
-SACDATAPATH: str = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:\Users\User\Desktop\SAC\SAC Data.accdb;"
-SACBOLETASPATH: str = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:\Users\User\Desktop\SAC\SAC Boletas.accdb;"
+ENV: str = 'TST'
+
+SACDATAPATH_PROD: str = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:\Users\User\Desktop\SAC\SAC Data.accdb;"
+SACBOLETASPATH_PROD: str = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:\Users\User\Desktop\SAC\SAC Boletas.accdb;"
+
+SACDATAPATH_TEST: str = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:\Users\User\Desktop\SAC_TST\SAC Data.accdb;"
+SACBOLETASPATH_TEST: str = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:\Users\User\Desktop\SAC_TST\SAC Boletas.accdb;"
+
+SACDATAPATH: str = SACDATAPATH_TEST if ENV == 'TST' else SACDATAPATH_PROD
+SACBOLETASPATH: str = SACBOLETASPATH_TEST if ENV == 'TST' else SACBOLETASPATH_PROD
 
 MONTHNAMES: dict[str] = {1: 'enero', 2: 'febrero', 3:'marzo', 4:'abril', 5:'mayo', 6:'junio', 7:'julio', 8:'agosto', 9:'septiembre', 10:'octubre', 11:'noviembre', 12:'diciembre'}
 SHORTMONTHNAMES: dict[str] = {1: 'ene', 2: 'feb', 3:'mar', 4:'abr', 5:'may', 6:'jun', 7:'jul', 8:'ago', 9:'sep', 10:'oct', 11:'nov', 12:'dic'}
@@ -24,3 +32,5 @@ MAILDATA: str = 'MailData/SenderData.txt'
 
 SMTPSERVER: str = 'smtp-mail.outlook.com'
 SMTPPORT: int = 587
+
+DUARTE: str = 'DUARTE SPA'

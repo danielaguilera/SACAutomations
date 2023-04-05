@@ -7,6 +7,7 @@ from Clases.Servicio import Servicio
 from Clases.Beneficiario import Beneficiario
 from Clases.Destinatario import Destinatario
 from Clases.ReporteData import ReporteData
+from Clases.Boleta import Boleta
 from datetime import datetime
 from Utils.GlobalFunctions import *
 from Clases.Caso import Caso
@@ -188,17 +189,31 @@ class SACConnector:
                                    nombreCliente=nombreCliente))
         return casosFound
 
-    def insertBoletaData(self):
+    def insertBoletaDataExample(self):
         self.cursorBoleta.execute(f'''
-                                  INSERT INTO Tabla_nueva_de_boletas (IdBoleta, Numero, Fecha, Monto, Nota, Print, Mes, "RUT Beneficiario")
-                                  VALUES (1111, 1111, '21-mar.-23' , '77777', 'Test Daniel', False, 'abr./2023', '19.618.378-7')                              
+                                  INSERT INTO Tabla_nueva_de_boletas (IdBoleta, Numero, Fecha, Monto, Nota, Print, "RUT Beneficiario")
+                                  VALUES (1111, 1111, {datetime.now()} , '77777', 'Test Daniel', False, '19.618.378-7')                              
                                   ''')
         self.connBoleta.commit()
+        
+    def insertBoletaData(self, boleta: Boleta):
+        servicio: Servicio
+        for servicio in boleta:
+            self.cursorBoleta.execute(f'''
+                                        INSERT INTO {self.boletasTable} (IdBoleta, Numero, Fecha, Monto, Nota, Print, "RUT Beneficiario")
+                                        VALUES ({boleta.idMapsa, boleta.numBoleta, boleta.fechaEmision, })
+                                      ''')
         
     def getBoletaData(self):
         self.cursorBoleta.execute(f'''
                                   SELECT * FROM Tabla_nueva_de_boletas
                                   WHERE IdBoleta = 1111''')
         print(self.cursorBoleta.fetchall())
+        
+    def clearAllBoletaData(self):
+        self.cursorBoleta.execute(f'''
+                                    DELETE FROM {self.boletasTable}
+                                  ''')
+        self.cursorBoleta.commit()
             
         

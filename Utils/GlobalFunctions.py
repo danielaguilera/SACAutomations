@@ -1,5 +1,5 @@
 from Utils.Metadata import *
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import locale
 import os
 import shutil
@@ -14,6 +14,18 @@ def getWeekMondayTimeStamp(format: str = 'short') -> str:
     now: datetime = datetime.now()
     timeDelta: timedelta = now - timedelta(days=now.weekday())
     return transformDateToSpanishBrief(timeDelta) if format == 'short' else transformDateToSpanish(timeDelta)
+
+def getDateFromSpanishFormat(stringDate: str) -> datetime:
+    stringDate = stringDate.replace('del', 'de').lower()
+    dayString, monthString, yearString = stringDate.split('de')
+    day: int = int(dayString)
+    month: int = 0
+    for monthNumber in MONTHNAMES:
+        if MONTHNAMES[monthNumber] == monthString.strip():
+            month = monthNumber
+            break
+    year: int = int(yearString)
+    return date(year=year, month=month, day=day)
 
 def setPriceFormat(price: int) -> str:
     locale.setlocale(locale.LC_ALL, '')
