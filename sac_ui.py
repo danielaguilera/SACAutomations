@@ -5,6 +5,7 @@ import shutil
 import os
 from tkinter import filedialog
 from tkcalendar import Calendar, DateEntry
+from Clases.Boleta import Boleta
 from Utils.Metadata import *
 from Utils.GlobalFunctions import *
 from PyPDF2 import PdfReader, PdfMerger
@@ -145,7 +146,7 @@ class SACUI:
         self.saveFrame = LabelFrame(master=self.master)
         self.saveFrame.pack(expand=True, fill=BOTH)
         
-        self.saveButton = Button(self.saveFrame, text='Guardar', width=40, height=1, font=('Helvetica bold', 20), command=self.getMapsaCasos)
+        self.saveButton = Button(self.saveFrame, text='Guardar', width=40, height=1, font=('Helvetica bold', 20), command=self.insertBoletainDB)
         self.saveButton.pack(expand=True, fill=BOTH)
         
         self.sendFrame = LabelFrame(master=self.master)
@@ -186,6 +187,22 @@ class SACUI:
         shutil.copy(self.boletaPath, f'{DELIVEREDDATAPATH}/{numBoleta}/Boleta_{numBoleta}.pdf')
         messagebox.showinfo(title='Mensaje', message=f'Archivos guardados para boleta n°{numBoleta}')
         self.master.destroy()
+        
+    def insertBoletainDB(self):
+        dataSelected: list = self.casosTable.item(self.casosTable.focus())['values']
+        idMapsa: int = dataSelected[0]
+        numBoleta: int = int(self.numBoletaEntry.get())
+        fechaEmision: date = self.fechaBoletaEntry.get_date()
+        rutBeneficiario: str = self.rutBeneficiarioEntry.get()
+        servicios: list[Servicio] = []
+        for iid in self.serviciosTable.get_children():
+            codigo, nota, monto = self.serviciosTable.item(iid)['values']
+            servicios.append(Servicio(codigo=codigo, nota=nota, monto=monto))
+        boleta: Boleta = Boleta(idMapsa=idMapsa, 
+                                numBoleta=numBoleta, 
+                                fechaEmision=fechaEmision, 
+                                rutBeneficiario=rutBeneficiario, 
+                                servicios=servicios)
 
     # def selectBoletaPDF(self):
     #     filePath = filedialog.askopenfilename(filetypes=[("PDF Files", "*.pdf")])
