@@ -7,8 +7,11 @@ import shutil
 def transformDateToSpanish(date : datetime) -> str:
     return f'{WEEKDAYS[date.weekday()]}, {date.day} de {MONTHNAMES[date.month]} de {date.year}'
 
-def transformDateToSpanishBrief(date : datetime) -> str:
-    return f'{date.day}-{SHORTMONTHNAMES[date.month]}-{str(date.year)[2::]}'
+def transformDateToSpanishBrief(date : datetime, point: bool = False) -> str:
+    return f'{date.day}-{SHORTMONTHNAMES[date.month]}{"." if point else ""}-{str(date.year)[2::]}'
+
+def getFormattedMonthFromDate(date: datetime) -> str:
+    return f'{SHORTMONTHNAMES[date.month]}./{date.year}'
 
 def getWeekMondayTimeStamp(format: str = 'short') -> str:
     now: datetime = datetime.now()

@@ -146,7 +146,7 @@ class SACUI:
         self.saveFrame = LabelFrame(master=self.master)
         self.saveFrame.pack(expand=True, fill=BOTH)
         
-        self.saveButton = Button(self.saveFrame, text='Guardar', width=40, height=1, font=('Helvetica bold', 20), command=self.insertBoletainDB)
+        self.saveButton = Button(self.saveFrame, text='Guardar', width=40, height=1, font=('Helvetica bold', 20), command=self.saveChanges)
         self.saveButton.pack(expand=True, fill=BOTH)
         
         self.sendFrame = LabelFrame(master=self.master)
@@ -185,6 +185,7 @@ class SACUI:
         merger.write(f'{DELIVEREDDATAPATH}/{numBoleta}/Anexo_{numBoleta}.pdf')
         merger.close()
         shutil.copy(self.boletaPath, f'{DELIVEREDDATAPATH}/{numBoleta}/Boleta_{numBoleta}.pdf')
+        self.insertBoletainDB()
         messagebox.showinfo(title='Mensaje', message=f'Archivos guardados para boleta n°{numBoleta}')
         self.master.destroy()
         
@@ -203,6 +204,7 @@ class SACUI:
                                 fechaEmision=fechaEmision, 
                                 rutBeneficiario=rutBeneficiario, 
                                 servicios=servicios)
+        self.sacConnector.insertBoletaData(boleta=boleta)
 
     # def selectBoletaPDF(self):
     #     filePath = filedialog.askopenfilename(filetypes=[("PDF Files", "*.pdf")])

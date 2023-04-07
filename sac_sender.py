@@ -40,9 +40,9 @@ if __name__ == '__main__':
         mailSender.sendUnifiedDocument(documento)
     
     # Erasing generated folders:
-    deleteIfExists(GENERATEDREPORTSPATH)
-    deleteIfExists(RESULTPATH)
-    deleteIfExists(DELIVEREDDATAPATH)
+    # deleteIfExists(GENERATEDREPORTSPATH)
+    # deleteIfExists(RESULTPATH)
+    # deleteIfExists(DELIVEREDDATAPATH)
     
     
     

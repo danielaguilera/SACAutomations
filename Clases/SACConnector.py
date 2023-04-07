@@ -72,12 +72,11 @@ class SACConnector:
         for dataReceived in self.cursorBoleta.fetchall(): 
             idBoleta: int = dataReceived[0]
             fechaBoleta : datetime = dataReceived[2]
-            if fechaBoleta.year != self.year:
-                continue
+            # if fechaBoleta.year != self.year:
+            #     continue
             deudorData: Deudor = self.getDeudorData(idBoleta=idBoleta)
             idCliente: int = deudorData.idCliente
             break
-        
         self.cursorData.execute(f'SELECT Contacto, "Correo Contacto" FROM {self.clientesTable} WHERE IdCliente = {idCliente}')
         nombreDestinatario, correoDestinatario = list(self.cursorData.fetchall())[0]
         return Destinatario(nombreDestinatario=nombreDestinatario, correoDestinatario=correoDestinatario)
@@ -87,8 +86,8 @@ class SACConnector:
         for dataReceived in self.cursorBoleta.fetchall(): 
             rutBeneficiario: str = dataReceived[7]
             fechaBoleta : datetime = dataReceived[2]
-            if fechaBoleta.year != self.year:
-                continue
+            # if fechaBoleta.year != self.year:
+            #     continue
             break
         query = '''
                     SELECT "Nombre o Razón Social" 
@@ -109,8 +108,8 @@ class SACConnector:
             notaBoleta: str = dataReceived[4]
             codigoBoleta: str = dataReceived[9] if dataReceived[9] else ''
 
-            if fechaBoleta.year != self.year:
-                continue
+            # if fechaBoleta.year != self.year:
+            #     continue
             
             deudorData: Deudor = self.getDeudorData(idBoleta=idBoleta)
             clienteData: Cliente = self.getClienteData(idCliente=deudorData.idCliente)
@@ -128,15 +127,11 @@ class SACConnector:
         return servicios
     
     def getReporteData(self, numBoleta: int) -> ReporteData | None:
-        try: 
-            destinatario: Destinatario = self.getDestinatarioData(numBoleta=numBoleta)
-            beneficiario: Beneficiario = self.getBeneficiarioData(numBoleta=numBoleta)
-            servicios: list[Servicio] = self.getServicios(numBoleta=numBoleta)
-            return ReporteData(destinatario=destinatario, beneficiario=beneficiario, servicios=servicios, numBoleta=numBoleta)
-        except Exception:
-            print(f'Datos no encontrados para boleta n°{numBoleta}')
-            return
-        
+        destinatario: Destinatario = self.getDestinatarioData(numBoleta=numBoleta)
+        beneficiario: Beneficiario = self.getBeneficiarioData(numBoleta=numBoleta)
+        servicios: list[Servicio] = self.getServicios(numBoleta=numBoleta)
+        return ReporteData(destinatario=destinatario, beneficiario=beneficiario, servicios=servicios, numBoleta=numBoleta)
+ 
     def getAllClientes(self) -> list[Cliente]:
         clientesData: list[Cliente] = []
         self.cursorData.execute(f'''
@@ -190,19 +185,24 @@ class SACConnector:
         return casosFound
 
     def insertBoletaDataExample(self):
-        self.cursorBoleta.execute(f'''
-                                  INSERT INTO Tabla_nueva_de_boletas (IdBoleta, Numero, Fecha, Monto, Nota, Print, "RUT Beneficiario")
-                                  VALUES (1111, 1111, {datetime.now()} , '77777', 'Test Daniel', False, '19.618.378-7')                              
-                                  ''')
+        query = f'''
+                    INSERT INTO Tabla_nueva_de_boletas (IdBoleta, Numero, Fecha, Monto, Nota, Print, Mes, "RUT Beneficiario")
+                    VALUES (1111, 1111, '{transformDateToSpanishBrief(date=datetime.now(), point=True)}' , 88888, 'Test Daniel', False, '{getFormattedMonthFromDate(datetime.now())}', '19.618.378-7')                              
+                '''
+        print(query)
+        self.cursorBoleta.execute(query)
         self.connBoleta.commit()
         
     def insertBoletaData(self, boleta: Boleta):
         servicio: Servicio
-        for servicio in boleta:
+        for servicio in boleta.servicios:
+            formattedDate: str = transformDateToSpanishBrief(date=boleta.fechaEmision, point=True)
+            formattedMonth: str = getFormattedMonthFromDate(date=boleta.fechaEmision)
             self.cursorBoleta.execute(f'''
-                                        INSERT INTO {self.boletasTable} (IdBoleta, Numero, Fecha, Monto, Nota, Print, "RUT Beneficiario")
-                                        VALUES ({boleta.idMapsa, boleta.numBoleta, boleta.fechaEmision, })
+                                        INSERT INTO {self.boletasTable} (IdBoleta, Numero, Fecha, Monto, Nota, Print, Mes, "RUT Beneficiario")
+                                        VALUES ({boleta.idMapsa}, {boleta.numBoleta}, '{formattedDate}', {servicio.monto}, '{servicio.nota}', False, '{formattedMonth}', '{boleta.rutBeneficiario}')
                                       ''')
+            self.connBoleta.commit()
         
     def getBoletaData(self):
         self.cursorBoleta.execute(f'''
