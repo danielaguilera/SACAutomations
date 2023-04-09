@@ -46,3 +46,15 @@ def extractNumberFromText(text: str) -> str:
             result += char
     return result
 
+def correctRUTFormat(originalRUT: str) -> str:
+    numbers: str = ''
+    chr: str
+    for chr in originalRUT:
+        if chr.isdigit():
+            numbers += chr
+    if originalRUT[-1].lower() == 'k':
+        numbers += 'k'
+    if len(numbers) == 8:
+        numbers = '0' + numbers
+    return numbers[0:2] + '.' + numbers[2:5] + '.' + numbers[5:8] + '-' + numbers[8]        
+        

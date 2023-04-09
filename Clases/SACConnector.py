@@ -68,7 +68,7 @@ class SACConnector:
         return Cliente(idCliente=idCliente, nombreCliente=nombreCliente)
     
     def getDestinatarioData(self, numBoleta: int) -> Destinatario | None:
-        self.cursorBoleta.execute(f"SELECT * FROM {self.boletasTable} WHERE Numero = {numBoleta}")
+        self.cursorBoleta.execute(f"SELECT * FROM {self.boletasTable} WHERE Numero = {numBoleta} AND Print = False")
         for dataReceived in self.cursorBoleta.fetchall(): 
             idBoleta: int = dataReceived[0]
             fechaBoleta : datetime = dataReceived[2]
@@ -98,6 +98,22 @@ class SACConnector:
         nombreBeneficiario = list(self.cursorData.fetchall())[0][0]
         return Beneficiario(nombreBeneficiario=nombreBeneficiario, rutBeneficiario=rutBeneficiario)
     
+    def findBeneficiario(self, rutBeneficiario: str) -> Beneficiario | None:
+        self.cursorData.execute(f"""SELECT "Nombre o Razón Social" FROM {self.beneficiariosTable} WHERE "RUT Beneficiario" LIKE '%{rutBeneficiario}%'""")
+        data = self.cursorData.fetchall()
+        if data:
+            nombreBeneficiario: str = data[0][0]
+            return Beneficiario(rutBeneficiario=rutBeneficiario, nombreBeneficiario=nombreBeneficiario)
+        return None
+    
+    def getPossibleBeneficiarios(self, rutBeneficiario: str) -> list[Beneficiario]:
+        beneficiarios: list[Beneficiario] = []
+        self.cursorData.execute(f"""SELECT "RUT Beneficiario", "Nombre o Razón Social" FROM {self.beneficiariosTable} WHERE "RUT Beneficiario" LIKE '{rutBeneficiario}%'""")
+        for data in self.cursorData.fetchall():
+            rutBeneficiarioFound, nombreBeneficiarioFound = data
+            beneficiarios.append(Beneficiario(rutBeneficiario=rutBeneficiarioFound, nombreBeneficiario=nombreBeneficiarioFound)) 
+        return beneficiarios
+        
     def getServicios(self, numBoleta: int) -> list[Servicio] | None:
         self.cursorBoleta.execute(f"SELECT * FROM {self.boletasTable} WHERE Numero = {numBoleta}")
         servicios: list[Servicio] = []
@@ -152,6 +168,17 @@ class SACConnector:
         for data in self.cursorData.fetchall():
             codigosData.append(data[0])
         return codigosData
+    
+    def getAllBeneficiarios(self) -> list[Beneficiario]:
+        beneficiariosData: list[Beneficiario] = []
+        self.cursorData.execute(f'''
+                                    SELECT "RUT Beneficiario", "Nombre o Razón Social"
+                                    FROM {self.beneficiariosTable}
+                                ''')
+        for data in self.cursorData.fetchall():
+            rutBeneficiario, nombreBeneficiario = data
+            beneficiariosData.append(Beneficiario(rutBeneficiario=rutBeneficiario, nombreBeneficiario=nombreBeneficiario))
+        return beneficiariosData 
     
     def getPossibleMapsaCasos(self, rutDeudor: str = '', apellidoDeudor: str = '', idCliente: int = None) -> list[Caso]:
         casosFound : list[Caso] = []
@@ -215,5 +242,12 @@ class SACConnector:
                                     DELETE FROM {self.boletasTable}
                                   ''')
         self.cursorBoleta.commit()
+        
+    # def setDataAsPrinted(self, reporte: ReporteData):
+    #     self.cursorBoleta.execute(f'''
+    #                                 UPDATE {self.boletasTable}
+    #                                 SET Print = True
+    #                                 WHERE idMapsa = {}  
+    #                               ''')
             
         

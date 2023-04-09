@@ -14,6 +14,7 @@ from Clases.SACConnector import SACConnector
 from Clases.Cliente import Cliente
 from Clases.AddServicioGUI import AddServicioGUI
 from Clases.Servicio import Servicio
+from Clases.Beneficiario import Beneficiario
 from Clases.Caso import Caso
 from datetime import date
 import re
@@ -24,6 +25,7 @@ class SACUI:
         self.sacConnector: SACConnector = SACConnector()
         self.clientes: list[Cliente] = self.sacConnector.getAllClientes()
         self.codigos: list[str] = self.sacConnector.getAllCodigos()
+        self.beneficiarios: list[Beneficiario] = self.sacConnector.getAllBeneficiarios()
         self.casos: list[Caso] = []
         
         self.master = master
@@ -69,6 +71,15 @@ class SACUI:
         self.rutBeneficiarioLabel.pack(side=LEFT) 
         self.rutBeneficiarioEntry = Entry(master=self.rutBeneficiarioFrame)
         self.rutBeneficiarioEntry.pack(side=LEFT, padx=5)
+        self.rutBeneficiarioEntry.bind("<KeyRelease>", self.findBeneficiario)
+        
+        self.nombreBeneficiarioFrame = Frame(master=self.stateFrame)
+        self.nombreBeneficiarioFrame.pack(expand=True, fill=BOTH)
+        self.nombreBeneficiarioLabel = Label(master=self.nombreBeneficiarioFrame, text='Nombre o Razón Social')
+        self.nombreBeneficiarioLabel.pack(side=LEFT)
+        self.nombreBeneficiarioDropdown = ttk.Combobox(master=self.nombreBeneficiarioFrame, state='readonly', values=[beneficiario.nombreBeneficiario for beneficiario in self.beneficiarios])
+        self.nombreBeneficiarioDropdown.pack(side=LEFT, padx=5)
+        self.nombreBeneficiarioDropdown.bind("<<ComboboxSelected>>", self.assignBeneficiario)
         
         self.rutDeudorFrame = Frame(master=self.stateFrame)
         self.rutDeudorFrame.pack(expand=True, fill=BOTH)
@@ -101,6 +112,13 @@ class SACUI:
         self.clienteDropdown.pack(side=LEFT, padx=5)
         self.clienteDropdown.bind("<<ComboboxSelected>>", self.populateCasos)
         
+        self.gastoTotalFrame = Frame(master=self.stateFrame)
+        self.gastoTotalFrame.pack(expand=True, fill=BOTH)
+        self.gastoTotalLabel = Label(master=self.gastoTotalFrame, text='Total ($)')
+        self.gastoTotalLabel.pack(side=LEFT)
+        self.gastoTotalEntry = Entry(master=self.gastoTotalFrame)
+        self.gastoTotalEntry.pack(side=LEFT, padx=5)
+        
         self.serviciosFrame = Frame(master=self.master)
         self.serviciosFrame.pack(expand=True, fill=BOTH)
         self.addedServiciosLabel = Label(master=self.master, text='No se han agregado servicios')
@@ -115,11 +133,6 @@ class SACUI:
         self.addServicioButton.pack(expand=True, fill=BOTH)
         self.deleteServicioButton = Button(master=self.serviciosFrame, text='Eliminar servicio', command=self.removeServicio)
         self.deleteServicioButton.pack(expand=True, fill=BOTH)
-        
-        
-        
-        
-        
         
         self.fileFrame = LabelFrame(master=self.master)
         self.fileFrame.pack(expand=True, fill=BOTH)
@@ -205,31 +218,6 @@ class SACUI:
                                 rutBeneficiario=rutBeneficiario, 
                                 servicios=servicios)
         self.sacConnector.insertBoletaData(boleta=boleta)
-
-    # def selectBoletaPDF(self):
-    #     filePath = filedialog.askopenfilename(filetypes=[("PDF Files", "*.pdf")])
-    #     if self.fileIsPDF(filePath):
-    #         self.boletaPath = filePath
-    #         self.uploadedBoletaLabel.config(text='Boleta subida')
-    #         try:
-    #             reader: PdfReader = PdfReader(filePath)
-    #             numberIndex: int = reader.pages[0].extract_text().find('°')
-    #             if numberIndex == -1:
-    #                 numberIndex = reader.pages[0].extract_text().find('º')
-    #             subString: str = reader.pages[0].extract_text()[numberIndex::]
-    #             endIndex: int = subString.find('\n')
-    #             subString = subString[0: endIndex + 1]
-    #             numBoleta = extractNumberFromText(subString)
-    #             if numBoleta.isdigit():
-    #                 self.numBoletaEntry.delete(0, END)
-    #                 self.numBoletaEntry.insert(0, numBoleta)
-    #                 messagebox.showinfo(title='Mensaje', message='Boleta subida correctamente')
-    #             else:
-    #                 messagebox.showerror(title='Error', message='No se pudo encontrar el número de boleta en el documento. \nPor favor, ingréselo manualmente.')
-    #         except Exception:
-    #             messagebox.showerror(title='Error', message='No se pudo encontrar el número de boleta en el documento. \nPor favor, ingréselo manualmente.')
-    #     else:
-    #         messagebox.showerror(title='Error', message='Archivo no válido')
             
     def fileIsPDF(self, filePath: str):
         try:
@@ -265,6 +253,7 @@ class SACUI:
             self.getNumeroBoletaFromFile()
             self.getRUTBeneficiarioFromFile()
             self.getFechaFromFile()
+            self.getGastoTotalFromFile()
         else:
             messagebox.showerror(title='Error', message='Archivo no válido')
     
@@ -292,8 +281,16 @@ class SACUI:
                 rutBeneficiario: str = text.split('\n')[14].split(':')[2].replace(' ', '').strip()
             else:
                 rutBeneficiario: str = text.split('\n')[3][5::].strip()
+            rutBeneficiario = correctRUTFormat(rutBeneficiario)
             self.rutBeneficiarioEntry.delete(0, END)
             self.rutBeneficiarioEntry.insert(0, rutBeneficiario)
+            beneficiarioFound: Beneficiario = self.sacConnector.findBeneficiario(rutBeneficiario=rutBeneficiario)
+            if beneficiarioFound:
+                for index, beneficiario in enumerate(self.beneficiarios):
+                    if beneficiario.nombreBeneficiario == beneficiarioFound.nombreBeneficiario:
+                        self.nombreBeneficiarioDropdown.current(newindex=index)
+                        return
+            self.nombreBeneficiarioDropdown.set('Sin resultados')
         except Exception:
             pass
         
@@ -307,6 +304,19 @@ class SACUI:
                 fechaEmisionString: str = text.split('\n')[9][7::].strip()
             fechaEmision: date = getDateFromSpanishFormat(stringDate=fechaEmisionString)
             self.fechaBoletaEntry.set_date(date=fechaEmision)
+        except Exception:
+            pass
+        
+    def getGastoTotalFromFile(self):
+        try:
+            reader: PdfReader = PdfReader(self.boletaPath)
+            text: str = reader.pages[0].extract_text().strip()
+            if DUARTE in text:
+                total: int = int(text.split('\n')[-1][7::].replace('.',''))
+            else:
+                total: int = int(text.split('\n')[16][20::].replace('.',''))
+            self.gastoTotalEntry.delete(0, END)
+            self.gastoTotalEntry.insert(0, total)
         except Exception:
             pass
             
@@ -344,6 +354,25 @@ class SACUI:
         self.casosTable.delete(*self.casosTable.get_children())
         for caso in self.casos:
             self.casosTable.insert('', END, values=(caso.idMapsa, caso.nombreEstado, caso.fechaAsignado, caso.bsecs, caso.rutDeudor, caso.apellidoDeudor, caso.nombreCliente))
+
+    def assignBeneficiario(self, key=None):
+        nombreBeneficiario: str = self.nombreBeneficiarioDropdown.get()
+        beneficiario: Beneficiario
+        for beneficiario in self.beneficiarios:
+            if beneficiario.nombreBeneficiario == nombreBeneficiario:
+                self.rutBeneficiarioEntry.delete(0, END)
+                self.rutBeneficiarioEntry.insert(0, beneficiario.rutBeneficiario)
+                return
+            
+    def findBeneficiario(self, key=None):
+        rutBeneficiario: str = self.rutBeneficiarioEntry.get()
+        beneficiariosFound: list[Beneficiario] = self.sacConnector.getPossibleBeneficiarios(rutBeneficiario=rutBeneficiario)
+        if beneficiariosFound:
+            self.nombreBeneficiarioDropdown.config(values=[beneficiario.nombreBeneficiario for beneficiario in beneficiariosFound])
+        else:
+            self.nombreBeneficiarioDropdown.set('Sin resultados')
+
+        
 
     def selectCaso(self, key=None):
         dataSelected: list = self.casosTable.item(self.casosTable.focus())['values']

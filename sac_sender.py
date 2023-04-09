@@ -38,11 +38,15 @@ if __name__ == '__main__':
     mailSender: MailSender = MailSender(senderUsername=senderUsername, senderPassword=senderPassword, smtpServer=smtpServer, smtpPort=smtpPort)
     for documento in fileGrouper.documentosUnificados:
         mailSender.sendUnifiedDocument(documento)
+        
+    # Setting boleta data as printed:
+    sacConnector
+    
     
     # Erasing generated folders:
-    # deleteIfExists(GENERATEDREPORTSPATH)
-    # deleteIfExists(RESULTPATH)
-    # deleteIfExists(DELIVEREDDATAPATH)
+    deleteIfExists(GENERATEDREPORTSPATH)
+    deleteIfExists(RESULTPATH)
+    deleteIfExists(DELIVEREDDATAPATH)
     
     
     
