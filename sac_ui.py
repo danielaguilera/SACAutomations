@@ -389,6 +389,19 @@ class SACUI:
             self.nombreDeudorEntry.insert(0, nombreDeudor)
             self.apellidoDeudorEntry.delete(0, END)
             self.apellidoDeudorEntry.insert(0, apellidoDeudor)
+            
+'''
+TODO:
+
+- En la carpeta DatosRecibidos agregar un archivo de texto donde se indique el numero del caso Mapsa al que se hace referencia.
+- Marcar como print = True ne la tabla Boletas cuando se haya generado el reporte.
+- Considerar tomar solo los casos donde print = False.
+- Guardar historial de reportes generados (con fecha de creación, caso Mapsa, # boleta)
+- Validar user input en el frmulario
+- Dejar el sacsender en una clase para poder manipularlo más fácilmente.
+- IDEA: Para las boletas de DUARTE SPA se podrían subir de inmediato los gastos (y probablemente los datos del deudor -> posiblemente identificar caso Mapsa automáticamente).
+
+'''
         
 
 if __name__ == '__main__':
