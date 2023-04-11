@@ -5,9 +5,12 @@ from Utils.GlobalFunctions import *
 from PyPDF2 import PdfMerger
 import os
 
+# BUG CON NUMS BOLETAS, HAY QUE AGREGAR EL ID MAPSA!!!
+
 class FileGrouper:
     def __init__(self):
         self.documentosUnificados: list[DocumentoUnificado] = []
+        self.reportes: list[ReporteData] = []
         
     def addReporte(self, reporte: ReporteData) -> None:
         documentoUnificado: DocumentoUnificado
@@ -16,8 +19,9 @@ class FileGrouper:
                 documentoUnificado.addNumBoleta(reporte.numBoleta)
                 return
         newDocumento: DocumentoUnificado = DocumentoUnificado(destinatario=reporte.destinatario)
-        newDocumento.addNumBoleta(reporte.numBoleta)
+        newDocumento.addNumBoleta(numBoleta=reporte.numBoleta, idMapsa=reporte.idMapsa)
         self.documentosUnificados.append(newDocumento)
+        self.reportes.append(reporte)
             
     def getGrupos(self) -> str:
         outputString: str = ''
@@ -35,17 +39,19 @@ class DocumentoUnificado:
     def __init__(self, destinatario: Destinatario):
         self.destinatario: Destinatario = destinatario
         self.numsBoletas: list[int] = []
+        self.idsMapsa: list[int] = []
         
-    def addNumBoleta(self, numBoleta: int):
+    def addNumBoleta(self, numBoleta: int, idMapsa: int):
         self.numsBoletas.append(numBoleta)
-        
+        self.idsMapsa.append(idMapsa)
+    
     def generateUnifiedPDF(self):
         paths: list[str] = []
         pdfMerger: PdfMerger = PdfMerger()
-        for numBoleta in self.numsBoletas:
-            reportePath: str = f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/Reporte_{numBoleta}.pdf'
-            boletaPath: str = f'{DELIVEREDDATAPATH}/{numBoleta}/Boleta_{numBoleta}.pdf'
-            anexoPath: str = f'{DELIVEREDDATAPATH}/{numBoleta}/Anexo_{numBoleta}.pdf'
+        for numBoleta, idMapsa in zip(self.numsBoletas, self.idsMapsa):
+            reportePath: str = f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/Reporte_{numBoleta}_{idMapsa}.pdf'
+            boletaPath: str = f'{DELIVEREDDATAPATH}/{numBoleta}_{idMapsa}/Boleta_{numBoleta}.pdf'
+            anexoPath: str = f'{DELIVEREDDATAPATH}/{numBoleta}_{idMapsa}/Anexo_{numBoleta}.pdf'
             paths.append(reportePath)
             paths.append(boletaPath)
             if os.path.exists(anexoPath):

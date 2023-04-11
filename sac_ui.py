@@ -31,20 +31,22 @@ class SACUI:
         self.master = master
         self.master.title("SAC App")
         
+        totalWidth: int = self.master.winfo_width()
+        
         self.uploadFrame = LabelFrame(master=self.master)
         self.uploadFrame.pack(expand=True, fill=BOTH)
 
-        self.boletaUploadButton = Button(self.uploadFrame, text="Subir boleta SII", width=20, height=1, font=('Helvetica bold', 26), command=self.selectBoletaPDF)
-        self.boletaUploadButton.grid(row=0, column=0, sticky=NSEW, padx=5, pady=5)
+        self.boletaUploadButton = Button(self.uploadFrame, text="Subir boleta SII", height=1, width = int(totalWidth/2), font=('Helvetica bold', 26), command=self.selectBoletaPDF)
+        self.boletaUploadButton.grid(row=0, column=0, padx=5, pady=5)
         
-        self.boletaResetButton = Button(self.uploadFrame, text="Reestablecer boleta", width=20, height=1, font=('Helvetica bold', 15), command=self.resetBoleta)
-        self.boletaResetButton.grid(row=1, column=0, sticky=NSEW, padx=5, pady=5)
+        self.boletaResetButton = Button(self.uploadFrame, text="Reestablecer boleta", height=1, width = int(totalWidth/2), font=('Helvetica bold', 15), command=self.resetBoleta)
+        self.boletaResetButton.grid(row=1, column=0, padx=5, pady=5)
         
-        self.anexoUploadButton = Button(self.uploadFrame, text="Subir anexo", width=20, height=1, font=('Helvetica bold', 26), command=self.selectAnexoPDF)
-        self.anexoUploadButton.grid(row=0, column=1, sticky=NSEW, padx=5, pady=5)
+        self.anexoUploadButton = Button(self.uploadFrame, text="Subir anexo", height=1, width = int(totalWidth/2), font=('Helvetica bold', 26), command=self.selectAnexoPDF)
+        self.anexoUploadButton.grid(row=0, column=1, padx=5, pady=5)
 
-        self.anexoResetButton = Button(self.uploadFrame, text="Reestablecer anexos", width=20, height=1, font=('Helvetica bold', 15), command=self.resetAnexos)
-        self.anexoResetButton.grid(row=1, column=1, sticky=NSEW, padx=5, pady=5)
+        self.anexoResetButton = Button(self.uploadFrame, text="Reestablecer anexos", height=1, width = int(totalWidth/2), font=('Helvetica bold', 15), command=self.resetAnexos)
+        self.anexoResetButton.grid(row=1, column=1, padx=5, pady=5)
 
 
         
@@ -178,7 +180,6 @@ class SACUI:
             if cliente.nombreCliente == self.clienteDropdown.get():
                 idCliente = cliente.idCliente
         rutDeudor: str = self.rutDeudorEntry.get()
-        print(self.sacConnector.getPossibleMapsaCasos(idCliente=idCliente, rutDeudor=rutDeudor))
                 
     def saveChanges(self):
         if not self.boletaPath:
@@ -187,22 +188,7 @@ class SACUI:
         if not self.numBoletaEntry.get().isdigit():
             messagebox.showerror(title='Error', message='El número de boleta debe ser un número entero')
             return 
-        numBoleta: int = int(self.numBoletaEntry.get())
-        if not os.path.exists(DELIVEREDDATAPATH):
-            os.makedirs(DELIVEREDDATAPATH)
-        if not os.path.exists(f'{DELIVEREDDATAPATH}/{numBoleta}'):
-            os.makedirs(f'{DELIVEREDDATAPATH}/{numBoleta}')
-        merger: PdfMerger = PdfMerger()
-        for root in self.anexosPaths:
-            merger.append(root)
-        merger.write(f'{DELIVEREDDATAPATH}/{numBoleta}/Anexo_{numBoleta}.pdf')
-        merger.close()
-        shutil.copy(self.boletaPath, f'{DELIVEREDDATAPATH}/{numBoleta}/Boleta_{numBoleta}.pdf')
-        self.insertBoletainDB()
-        messagebox.showinfo(title='Mensaje', message=f'Archivos guardados para boleta n°{numBoleta}')
-        self.master.destroy()
         
-    def insertBoletainDB(self):
         dataSelected: list = self.casosTable.item(self.casosTable.focus())['values']
         idMapsa: int = dataSelected[0]
         numBoleta: int = int(self.numBoletaEntry.get())
@@ -217,7 +203,28 @@ class SACUI:
                                 fechaEmision=fechaEmision, 
                                 rutBeneficiario=rutBeneficiario, 
                                 servicios=servicios)
-        self.sacConnector.insertBoletaData(boleta=boleta)
+        self.sacConnector.insertBoletaData(boleta=boleta)        
+
+        
+        
+        numBoleta: int = int(self.numBoletaEntry.get())
+        idMapsa: int = boleta.idMapsa
+        if not os.path.exists(DELIVEREDDATAPATH):
+            os.makedirs(DELIVEREDDATAPATH)
+        if not os.path.exists(f'{DELIVEREDDATAPATH}/{numBoleta}_{idMapsa}'):
+            os.makedirs(f'{DELIVEREDDATAPATH}/{numBoleta}_{idMapsa}')
+        merger: PdfMerger = PdfMerger()
+        for root in self.anexosPaths:
+            merger.append(root)
+        merger.write(f'{DELIVEREDDATAPATH}/{numBoleta}_{idMapsa}/Anexo_{numBoleta}.pdf')
+        merger.close()
+        shutil.copy(self.boletaPath, f'{DELIVEREDDATAPATH}/{numBoleta}_{idMapsa}/Boleta_{numBoleta}.pdf')
+
+
+
+
+        messagebox.showinfo(title='Mensaje', message=f'Archivos guardados para boleta n°{numBoleta}')
+        self.master.destroy()
             
     def fileIsPDF(self, filePath: str):
         try:
@@ -322,7 +329,7 @@ class SACUI:
             
         
     def runSender(self):
-        os.system('cmd /c start sac_sender.exe') 
+        os.system('cmd /c python sac_sender.py') 
         
     def openServicioGUI(self):
         addServicioGUI: AddServicioGUI = AddServicioGUI(container=self)
@@ -394,7 +401,7 @@ class SACUI:
 TODO:
 
 - En la carpeta DatosRecibidos agregar un archivo de texto donde se indique el numero del caso Mapsa al que se hace referencia.
-- Marcar como print = True ne la tabla Boletas cuando se haya generado el reporte.
+- Marcar como print = True en la tabla Boletas cuando se haya generado el reporte.
 - Considerar tomar solo los casos donde print = False.
 - Guardar historial de reportes generados (con fecha de creación, caso Mapsa, # boleta)
 - Validar user input en el frmulario

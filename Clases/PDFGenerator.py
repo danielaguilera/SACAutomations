@@ -119,7 +119,7 @@ class PDFGenerator:
 
         if not os.path.exists(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}'):
             os.makedirs(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}')
-        pdf.output(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/Reporte_{reporteData.numBoleta}.pdf')
+        pdf.output(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/Reporte_{reporteData.numBoleta}_{reporteData.idMapsa}.pdf')
         
         print(f'Reporte n°{reporteData.numBoleta} generado!')
         

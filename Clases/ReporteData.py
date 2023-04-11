@@ -3,8 +3,9 @@ from Clases.Servicio import Servicio
 from Clases.Destinatario import Destinatario
 
 class ReporteData:
-    def __init__(self, numBoleta: int, beneficiario: Beneficiario, servicios: list[Servicio], destinatario: Destinatario):
+    def __init__(self, numBoleta: int, beneficiario: Beneficiario, servicios: list[Servicio], destinatario: Destinatario, idMapsa: int = 0):
         self.numBoleta = numBoleta
+        self.idMapsa = idMapsa
         self.beneficiario = beneficiario
         self.servicios = servicios
         self.destinatario = destinatario

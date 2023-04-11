@@ -3,7 +3,7 @@ from Utils.Metadata import *
 from Utils.GlobalFunctions import *
 from Clases.SACConnector import SACConnector
 from Clases.PDFGenerator import PDFGenerator
-from Clases.FileGrouper import FileGrouper
+from Clases.FileGrouper import FileGrouper, DocumentoUnificado
 from Clases.MailSender import MailSender
 import os
 import shutil
@@ -18,10 +18,13 @@ if __name__ == '__main__':
     
     # Generating reports:
     fileGrouper: FileGrouper = FileGrouper()
-    numsBoleta: list[int] = [int(dirName) for dirName in os.listdir(DELIVEREDDATAPATH)]
-    for numBoleta in numsBoleta:
-        sacConnector: SACConnector = SACConnector()
-        reporteData: ReporteData = sacConnector.getReporteData(numBoleta=numBoleta)
+    dataReceived: list[str] = [dirName for dirName in os.listdir(DELIVEREDDATAPATH)]
+    sacConnector: SACConnector = SACConnector()
+    data: str
+    for data in dataReceived:
+        numBoleta: int = data.strip().split('_')[0]
+        idMapsa: int = data.strip().split('_')[1]
+        reporteData: ReporteData = sacConnector.getReporteData(numBoleta=numBoleta, idMapsa=idMapsa)
         if reporteData:
             pdfGenerator: PDFGenerator = PDFGenerator()
             pdfGenerator.generateReporte(reporteData=reporteData)
@@ -40,11 +43,11 @@ if __name__ == '__main__':
         mailSender.sendUnifiedDocument(documento)
         
     # Setting boleta data as printed:
-    sacConnector
-    
-    
+    reporte: ReporteData
+    for reporte in fileGrouper.reportes:
+        sacConnector.setBoletaAsPrinted(reporte=reporte)
+        
     # Erasing generated folders:
-    deleteIfExists(GENERATEDREPORTSPATH)
     deleteIfExists(RESULTPATH)
     deleteIfExists(DELIVEREDDATAPATH)
     
