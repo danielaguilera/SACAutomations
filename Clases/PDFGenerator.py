@@ -106,6 +106,7 @@ class PDFGenerator:
             pdf.cell(40, 10, f'{str(servicio.idCliente)}    | {servicio.nombreCliente}')
             pdf.set_xy(x=120, y=112 + index*delta)
             pdf.cell(40, 10, servicio.codigo)
+            print(servicio.codigo)
             pdf.line(x1=18, y1=120 + index*delta, x2=200, y2=120 + index*delta)
 
 

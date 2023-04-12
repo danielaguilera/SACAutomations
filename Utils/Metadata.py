@@ -1,12 +1,12 @@
 import os
 
-ENV: str = 'TST'
+with open('Params.txt', 'r') as file:
+    ENV, SACDATAFILE_PROD, SACBOLETASFILE_PROD, SACDATAFILE_TEST, SACBOLETASFILE_TEST = [line.strip() for line in file.readlines()]
 
-SACDATAPATH_PROD: str = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:\Users\User\Desktop\SAC\SAC Data.accdb;"
-SACBOLETASPATH_PROD: str = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:\Users\User\Desktop\SAC\SAC Boletas.accdb;"
-
-SACDATAPATH_TEST: str = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:\Users\User\Desktop\SAC_TST\SAC Data.accdb;"
-SACBOLETASPATH_TEST: str = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=C:\Users\User\Desktop\SAC_TST\SAC Boletas.accdb;"
+SACDATAPATH_PROD: str = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=" + SACDATAFILE_PROD + ";"
+SACBOLETASPATH_PROD: str = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=" + SACBOLETASFILE_PROD + ";"
+SACDATAPATH_TEST: str = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=" + SACDATAFILE_TEST + ";"
+SACBOLETASPATH_TEST: str = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=" + SACBOLETASFILE_TEST + ";"
 
 SACDATAPATH: str = SACDATAPATH_TEST if ENV == 'TST' else SACDATAPATH_PROD
 SACBOLETASPATH: str = SACBOLETASPATH_TEST if ENV == 'TST' else SACBOLETASPATH_PROD

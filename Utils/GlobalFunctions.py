@@ -56,5 +56,8 @@ def correctRUTFormat(originalRUT: str) -> str:
         numbers += 'k'
     if len(numbers) == 8:
         numbers = '0' + numbers
-    return numbers[0:2] + '.' + numbers[2:5] + '.' + numbers[5:8] + '-' + numbers[8]        
+    return numbers[0:2] + '.' + numbers[2:5] + '.' + numbers[5:8] + '-' + numbers[8]
+
+def validRUTFormat(originalRUT: str) -> bool:
+    return originalRUT == correctRUTFormat(originalRUT=originalRUT)        
         

@@ -171,8 +171,16 @@ class SACUI:
         self.sendButton.pack(expand=True, fill=BOTH)
         
     @property
-    def numAnexos(self):
+    def numAnexos(self) -> int:
         return len(self.anexosPaths)
+    
+    @property
+    def servicioSum(self) -> int:
+        total: int = 0
+        for iid in self.serviciosTable.get_children():
+            monto: int = self.serviciosTable.item(iid)['values'][2]
+            total += int(monto)
+        return total   
     
     def getMapsaCasos(self):
         idCliente: int = 0
@@ -180,15 +188,37 @@ class SACUI:
             if cliente.nombreCliente == self.clienteDropdown.get():
                 idCliente = cliente.idCliente
         rutDeudor: str = self.rutDeudorEntry.get()
-                
-    def saveChanges(self):
+        
+    def validData(self) -> bool:
         if not self.boletaPath:
             messagebox.showerror(title='Error', message='Falta agregar la boleta del SII')
-            return   
+            return False
         if not self.numBoletaEntry.get().isdigit():
             messagebox.showerror(title='Error', message='El número de boleta debe ser un número entero')
-            return 
-        
+            return False
+        if not self.rutBeneficiarioEntry.get() in [beneficiario.rutBeneficiario for beneficiario in self.beneficiarios]:
+            messagebox.showerror(title='Error', message='No existe beneficiario con ese rut')
+            return False
+        if not self.nombreBeneficiarioDropdown.get():
+            messagebox.showerror(title='Error', message='Beneficiario no identificado')
+            return False
+        if not self.casosTable.focus():
+            messagebox.showerror(title='Error', message='Debes seleccionar un caso')
+            return False
+        if not self.serviciosTable.get_children():
+            messagebox.showerror(title='Error', message='Debes agregar al menos 1 servicio en la boleta')
+            return False
+        if not self.gastoTotalEntry.get().isdigit():
+            messagebox.showerror(title='Error', message='El total de la boleta debe ser un número entero')
+            return False
+        if int(self.gastoTotalEntry.get()) != self.servicioSum:
+            messagebox.showerror(title='Error', message='El total de la boleta debe ser igual a la suma de los montos de los servicios')
+            return False
+        return True        
+                
+    def saveChanges(self):
+        if not self.validData():
+            return        
         dataSelected: list = self.casosTable.item(self.casosTable.focus())['values']
         idMapsa: int = dataSelected[0]
         numBoleta: int = int(self.numBoletaEntry.get())
