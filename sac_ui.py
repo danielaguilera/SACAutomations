@@ -17,7 +17,8 @@ from Clases.Servicio import Servicio
 from Clases.Beneficiario import Beneficiario
 from Clases.Caso import Caso
 from datetime import date
-import re
+from PIL import ImageTk, Image
+import glob, sys, fitz
 
 class SACUI:
     def __init__(self, master: Tk):
@@ -30,28 +31,48 @@ class SACUI:
         
         self.master = master
         self.master.title("SAC App")
+        self.master.size =(30,30)
+        self.master.resizable(0,0)
         
-        totalWidth: int = self.master.winfo_width()
+        self.thumbnailFrame = Frame(master=self.master)
+        self.thumbnailFrame.pack(side=RIGHT)
+        self.boletaImage = PhotoImage(file='thumbnail.png')
+        self.thumbnail = Label(master=self.thumbnailFrame)
         
         self.uploadFrame = LabelFrame(master=self.master)
         self.uploadFrame.pack(expand=True, fill=BOTH)
-
-        self.boletaUploadButton = Button(self.uploadFrame, text="Subir boleta SII", height=1, width = int(totalWidth/2), font=('Helvetica bold', 26), command=self.selectBoletaPDF)
-        self.boletaUploadButton.grid(row=0, column=0, padx=5, pady=5)
         
-        self.boletaResetButton = Button(self.uploadFrame, text="Reestablecer boleta", height=1, width = int(totalWidth/2), font=('Helvetica bold', 15), command=self.resetBoleta)
-        self.boletaResetButton.grid(row=1, column=0, padx=5, pady=5)
-        
-        self.anexoUploadButton = Button(self.uploadFrame, text="Subir anexo", height=1, width = int(totalWidth/2), font=('Helvetica bold', 26), command=self.selectAnexoPDF)
-        self.anexoUploadButton.grid(row=0, column=1, padx=5, pady=5)
+        self.uploadFrame.grid_columnconfigure(1, weight=1)
+        self.uploadFrame.grid_rowconfigure(1, weight=1)
 
-        self.anexoResetButton = Button(self.uploadFrame, text="Reestablecer anexos", height=1, width = int(totalWidth/2), font=('Helvetica bold', 15), command=self.resetAnexos)
-        self.anexoResetButton.grid(row=1, column=1, padx=5, pady=5)
+        self.boletaUploadButton = Button(self.uploadFrame, text="Subir boleta SII", font=('Helvetica bold', 15), command=self.selectBoletaPDF, width=30)
+        self.boletaUploadButton.grid(row=0, column=0)
+        
+        self.boletaResetButton = Button(self.uploadFrame, text="Reestablecer boleta", font=('Helvetica bold', 15), command=self.resetBoleta, width=30)
+        self.boletaResetButton.grid(row=1, column=0)
+        
+        self.anexoUploadButton = Button(self.uploadFrame, text="Subir anexo", font=('Helvetica bold', 15), command=self.selectAnexoPDF, width=30)
+        self.anexoUploadButton.grid(row=0, column=1)
+
+        self.anexoResetButton = Button(self.uploadFrame, text="Reestablecer anexos", font=('Helvetica bold', 15), command=self.resetAnexos, width=30)
+        self.anexoResetButton.grid(row=1, column=1)
 
 
         
         self.stateFrame = LabelFrame(master=self.master)
         self.stateFrame.pack(expand=True, fill=BOTH)
+        
+        Label(master=self.stateFrame, text='Datos generales: ', font=('Helvetica bold', 10, 'bold')).pack(side=TOP)
+        
+        self.uploadedBoletaFrame = Frame(master=self.stateFrame)
+        self.uploadedBoletaFrame.pack(expand=True, fill=BOTH)
+        self.uploadedBoletaLabel = Label(master=self.uploadedBoletaFrame, font=('Helvetica bold', 10), text='No se ha subido boleta')
+        self.uploadedBoletaLabel.pack(side=LEFT)
+        
+        self.uploadedAnexosFrame = Frame(master=self.stateFrame)
+        self.uploadedAnexosFrame.pack(expand=True, fill=BOTH)
+        self.uploadedAnexosLabel = Label(master=self.uploadedAnexosFrame, font=('Helvetica bold', 10), text='No se han subido anexos')
+        self.uploadedAnexosLabel.pack(side=LEFT)
         
         self.numBoletaFrame = Frame(master=self.stateFrame)
         self.numBoletaFrame.pack(expand=True, fill=BOTH)
@@ -121,8 +142,20 @@ class SACUI:
         self.gastoTotalEntry = Entry(master=self.gastoTotalFrame)
         self.gastoTotalEntry.pack(side=LEFT, padx=5)
         
+        self.casosFrame = Frame(master=self.master)
+        self.casosFrame.pack(expand=True, fill=BOTH)
+        Label(master=self.casosFrame, text='Asociar caso a boleta: ', font=('Helvetica bold', 10, 'bold')).pack(side=TOP)
+        self.casosColumns = ['ID Mapsa', 'Estado', 'Fecha Asignación', 'Bsecs', 'RUT Deudor', 'Apellido Deudor', 'Cliente']
+        self.casosTable = ttk.Treeview(master=self.casosFrame, columns=self.casosColumns, show='headings', height=5)
+        for heading in self.casosColumns:
+            self.casosTable.heading(heading, text=heading)
+            self.casosTable.column(heading, width=100)
+        self.casosTable.pack(expand=False, anchor=CENTER)
+        self.casosTable.bind('<<TreeviewSelect>>', self.selectCaso)
+        
         self.serviciosFrame = Frame(master=self.master)
         self.serviciosFrame.pack(expand=True, fill=BOTH)
+        Label(master=self.serviciosFrame, text='Asociar servicios a boleta: ', font=('Helvetica bold', 10, 'bold')).pack(side=TOP)
         self.addedServiciosLabel = Label(master=self.master, text='No se han agregado servicios')
         self.addedServiciosLabel.pack(expand=True, fill=BOTH)
         self.serviciosColumns = ['Código', 'Nota', 'Monto']
@@ -130,30 +163,11 @@ class SACUI:
         self.serviciosTable.heading('Código', text='Código')
         self.serviciosTable.heading('Nota', text='Nota')
         self.serviciosTable.heading('Monto', text='Monto')
-        self.serviciosTable.pack(expand=True, fill=BOTH, anchor=CENTER)
+        self.serviciosTable.pack(expand=False, fill=BOTH, anchor=CENTER)
         self.addServicioButton = Button(master=self.serviciosFrame, text='Agregar servicio', command=self.openServicioGUI)
         self.addServicioButton.pack(expand=True, fill=BOTH)
         self.deleteServicioButton = Button(master=self.serviciosFrame, text='Eliminar servicio', command=self.removeServicio)
         self.deleteServicioButton.pack(expand=True, fill=BOTH)
-        
-        self.fileFrame = LabelFrame(master=self.master)
-        self.fileFrame.pack(expand=True, fill=BOTH)
-        
-        self.uploadedBoletaLabel = Label(master=self.fileFrame, font=('Helvetica bold', 10), text='No se ha subido boleta')
-        self.uploadedBoletaLabel.grid(row=2, column=0, sticky=W, padx=5, pady=5)
-        
-        self.uploadedAnexosLabel = Label(master=self.fileFrame, font=('Helvetica bold', 10), text='No se han subido anexos')
-        self.uploadedAnexosLabel.grid(row=3, column=0, sticky=W, padx=5, pady=5)
-        
-        self.casosFrame = Frame(master=self.master)
-        self.casosFrame.pack(expand=True, fill=BOTH)
-        
-        self.casosColumns = ['ID Mapsa', 'Estado', 'Fecha Asignación', 'Bsecs', 'RUT Deudor', 'Apellido Deudor', 'Cliente']
-        self.casosTable = ttk.Treeview(master=self.casosFrame, columns=self.casosColumns, show='headings', height=5)
-        for heading in self.casosColumns:
-            self.casosTable.heading(heading, text=heading)
-        self.casosTable.pack(expand=True, fill=BOTH, anchor=CENTER)
-        self.casosTable.bind('<<TreeviewSelect>>', self.selectCaso)
         
         self.boletaPath: str = ''
         self.anexosPaths: list[str] = []
@@ -180,7 +194,11 @@ class SACUI:
         for iid in self.serviciosTable.get_children():
             monto: int = self.serviciosTable.item(iid)['values'][2]
             total += int(monto)
-        return total   
+        return total
+    
+    @property
+    def addedServicios(self) -> int:
+        return len(self.serviciosTable.get_children())
     
     def getMapsaCasos(self):
         idCliente: int = 0
@@ -291,8 +309,24 @@ class SACUI:
             self.getRUTBeneficiarioFromFile()
             self.getFechaFromFile()
             self.getGastoTotalFromFile()
+            self.displayThumbnail()
         else:
             messagebox.showerror(title='Error', message='Archivo no válido')
+            
+    def displayThumbnail(self):
+        zoom_x = 1.0  # horizontal zoom
+        zoom_y = 1.0  # vertical zoom
+        mat = fitz.Matrix(zoom_x, zoom_y)  # zoom factor 2 in each dimension
+
+        filename = self.boletaPath
+        doc = fitz.open(filename)  # open document
+        for page in doc:  # iterate through the pages
+            pix = page.get_pixmap(matrix=mat)  # render page to an image
+            pix.save("thumbnail.png")  # store image as a PNG
+            
+        self.boletaImage = PhotoImage(file='thumbnail.png')
+        self.thumbnail.config(image=self.boletaImage)
+        self.thumbnail.pack()
     
     def getNumeroBoletaFromFile(self):
         try:
@@ -365,13 +399,20 @@ class SACUI:
         addServicioGUI: AddServicioGUI = AddServicioGUI(container=self)
         
     def removeServicio(self):
+        if not self.serviciosTable.selection():
+            return
         selectedItem = self.serviciosTable.selection()[0]
         self.serviciosTable.delete(selectedItem)
-        self.serviciosTable.configure(height=len(self.serviciosTable.get_children()))
+        self.serviciosTable.configure(height=self.addedServicios)
+        if self.addedServicios:
+            self.addedServiciosLabel.config(text=f'Servicios agregados: {self.addedServicios} - Total: ${self.servicioSum}')
+        else:
+            self.addedServiciosLabel.config(text='No se han agregado servicios')
     
     def addServicio(self, servicio: Servicio):
         self.serviciosTable.insert('', END, values=(servicio.codigo, servicio.nota, servicio.monto))
-        self.serviciosTable.configure(height=len(self.serviciosTable.get_children()))
+        self.serviciosTable.configure(height=self.addedServicios)
+        self.addedServiciosLabel.config(text=f'Servicios agregados: {self.addedServicios} - Total: ${self.servicioSum}')
         
     def populateCasos(self, key=None):
         if len(self.casosTable.selection()) > 0:
@@ -443,5 +484,5 @@ TODO:
 
 if __name__ == '__main__':
     root = Tk()
-    pdf_app = SACUI(root)
+    app = SACUI(root)
     root.mainloop()
