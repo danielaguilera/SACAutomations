@@ -16,7 +16,7 @@ class FileGrouper:
         documentoUnificado: DocumentoUnificado
         for documentoUnificado in self.documentosUnificados:
             if documentoUnificado.destinatario.nombreDestinatario == reporte.destinatario.nombreDestinatario:
-                documentoUnificado.addNumBoleta(reporte.numBoleta)
+                documentoUnificado.addNumBoleta(numBoleta=reporte.numBoleta, idMapsa=reporte.idMapsa)
                 return
         newDocumento: DocumentoUnificado = DocumentoUnificado(destinatario=reporte.destinatario)
         newDocumento.addNumBoleta(numBoleta=reporte.numBoleta, idMapsa=reporte.idMapsa)
@@ -33,6 +33,7 @@ class FileGrouper:
     def generateUnifiedPDFs(self):
         documento: DocumentoUnificado
         for documento in self.documentosUnificados:
+            print(documento)
             documento.generateUnifiedPDF()
 
 class DocumentoUnificado:
@@ -59,10 +60,13 @@ class DocumentoUnificado:
         path: str
         for path in paths:
             pdfMerger.append(path)
-        if not os.path.exists(RESULTPATH):
-            os.makedirs(RESULTPATH)
-        pdfMerger.write(f'{RESULTPATH}/{self.destinatario.nombreDestinatario}.pdf')
-        pdfMerger.close()       
+        if not os.path.exists(f'{RESULTPATH}/{self.destinatario.nombreDestinatario}'):
+            os.makedirs(f'{RESULTPATH}/{self.destinatario.nombreDestinatario}')
+        pdfMerger.write(f'{RESULTPATH}/{self.destinatario.nombreDestinatario}/Documento.pdf')
+        with open(f'{RESULTPATH}/{self.destinatario.nombreDestinatario}/Boletas.txt','a') as file:
+            for numBoleta, idMapsa in zip(self.numsBoletas, self.idsMapsa):
+                file.write(f'{numBoleta},{idMapsa}\n')
+        pdfMerger.close()  ### Esta función debiese ejecutarse en sac sender, no en ui (ya que debe hacerse cuando todos los reportes estén ya generados)
 
         
         

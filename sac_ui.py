@@ -6,6 +6,9 @@ import os
 from tkinter import filedialog
 from tkcalendar import Calendar, DateEntry
 from Clases.Boleta import Boleta
+from Clases.FileGrouper import FileGrouper
+from Clases.PDFGenerator import PDFGenerator
+from Clases.ReporteData import ReporteData
 from Utils.Metadata import *
 from Utils.GlobalFunctions import *
 from PyPDF2 import PdfReader, PdfMerger
@@ -16,6 +19,7 @@ from Clases.AddServicioGUI import AddServicioGUI
 from Clases.Servicio import Servicio
 from Clases.Beneficiario import Beneficiario
 from Clases.Caso import Caso
+from Clases.ReportManager import ReportManager
 from datetime import date
 from PIL import ImageTk, Image
 import glob, sys, fitz
@@ -159,7 +163,7 @@ class SACUI:
         self.addedServiciosLabel = Label(master=self.master, text='No se han agregado servicios')
         self.addedServiciosLabel.pack(expand=True, fill=BOTH)
         self.serviciosColumns = ['Código', 'Nota', 'Monto']
-        self.serviciosTable = ttk.Treeview(master=self.serviciosFrame, columns=self.serviciosColumns, show='headings', height=0)
+        self.serviciosTable = ttk.Treeview(master=self.serviciosFrame, columns=self.serviciosColumns, show='headings', height=3)
         self.serviciosTable.heading('Código', text='Código')
         self.serviciosTable.heading('Nota', text='Nota')
         self.serviciosTable.heading('Monto', text='Monto')
@@ -184,6 +188,12 @@ class SACUI:
         self.sendButton = Button(self.saveFrame, text='Enviar reportes', width=40, height=1, font=('Helvetica bold', 20), command=self.runSender)
         self.sendButton.pack(expand=True, fill=BOTH)
         
+        self.manageReportsFrame = LabelFrame(master=self.master)
+        self.manageReportsFrame.pack(expand=True, fill=BOTH)
+        
+        self.manageReportsButton = Button(self.manageReportsFrame, text='Ver reportes a enviar', font=('Helvetica bold', 20), command=self.runReportManager)
+        self.manageReportsButton.pack(expand=True, fill=BOTH)
+        
     @property
     def numAnexos(self) -> int:
         return len(self.anexosPaths)
@@ -199,6 +209,9 @@ class SACUI:
     @property
     def addedServicios(self) -> int:
         return len(self.serviciosTable.get_children())
+    
+    def runReportManager(self):
+        reportManager: ReportManager = ReportManager(container=self)
     
     def getMapsaCasos(self):
         idCliente: int = 0
@@ -252,9 +265,6 @@ class SACUI:
                                 rutBeneficiario=rutBeneficiario, 
                                 servicios=servicios)
         self.sacConnector.insertBoletaData(boleta=boleta)        
-
-        
-        
         numBoleta: int = int(self.numBoletaEntry.get())
         idMapsa: int = boleta.idMapsa
         if not os.path.exists(DELIVEREDDATAPATH):
@@ -267,13 +277,36 @@ class SACUI:
         merger.write(f'{DELIVEREDDATAPATH}/{numBoleta}_{idMapsa}/Anexo_{numBoleta}.pdf')
         merger.close()
         shutil.copy(self.boletaPath, f'{DELIVEREDDATAPATH}/{numBoleta}_{idMapsa}/Boleta_{numBoleta}.pdf')
-
-
-
-
+        self.generateReport()
+        self.saveDeudorName()
         messagebox.showinfo(title='Mensaje', message=f'Archivos guardados para boleta n°{numBoleta}')
         self.master.destroy()
+        
+    def saveDeudorName(self):
+        idMapsaSet: int = self.casosTable.item(self.casosTable.focus())['values'][0]
+        numBoletaSet: int = int(self.numBoletaEntry.get())
+        with open(f'{DELIVEREDDATAPATH}/{numBoletaSet}_{idMapsaSet}/DeudorName.txt', 'w') as file:
+            file.write(self.nombreDeudorEntry.get())
+        
+    def generateReport(self):  
+        fileGrouper: FileGrouper = FileGrouper()
+        dataReceived: list[str] = [dirName for dirName in os.listdir(DELIVEREDDATAPATH)]
+        data: str
+        idMapsaSet: int = self.casosTable.item(self.casosTable.focus())['values'][0]
+        numBoletaSet: int = int(self.numBoletaEntry.get())
+        for data in dataReceived:
+            numBoleta: int = int(data.strip().split('_')[0])
+            idMapsa: int = int(data.strip().split('_')[1])
+            reporteData: ReporteData = self.sacConnector.getReporteData(numBoleta=numBoleta, idMapsa=idMapsa)
+            if reporteData and idMapsa == idMapsaSet and numBoleta == numBoletaSet:
+                pdfGenerator: PDFGenerator = PDFGenerator()
+                pdfGenerator.generateReporte(reporteData=reporteData)
+                fileGrouper.addReporte(reporte=reporteData)
+                break
             
+        # Exporting full documents:
+        fileGrouper.generateUnifiedPDFs()
+                    
     def fileIsPDF(self, filePath: str):
         try:
             PdfReader(filePath)
@@ -480,6 +513,8 @@ TODO:
 - IDEA: Para las boletas de DUARTE SPA se podrían subir de inmediato los gastos (y probablemente los datos del deudor -> posiblemente identificar caso Mapsa automáticamente).
 
 '''
+
+### generateUnifiedDocument debiese ejecutarse en sac sender, no en ui (ya que debe hacerse cuando todos los reportes estén ya generados)
         
 
 if __name__ == '__main__':

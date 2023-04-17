@@ -46,6 +46,6 @@ class MailSender:
         receiverAddress: str = 'draguilera@uc.cl' #Hardcoded
         mailSubject: str = f'Envío reportes semana {getWeekMondayTimeStamp()}'
         mailContent: str = f'Estimad@ {document.destinatario.nombreDestinatario}: \n\n Junto con saludar, se adjunta el resumen de las facturas correspondientes a la semana de {getWeekMondayTimeStamp("long")}'
-        mailAttachment: str = f'{RESULTPATH}/{document.destinatario.nombreDestinatario}.pdf'
+        mailAttachment: str = f'{RESULTPATH}/{document.destinatario.nombreDestinatario}/Documento.pdf'
         self.sendMail(receiverAddresss=receiverAddress, mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
         print(f'Email a {document.destinatario.correoDestinatario} enviado!')        

@@ -48,19 +48,22 @@ class SACConnector:
         return Deudor(apellidoDeudor=apellidoDeudor, nombreDeudor=nombreDeudor, rutDeudor=rutDeudor, idCliente=idCliente)
     
     def getDeudorName(self, rutDeudor: str):
-        nombreResponse: requests.Response = requests.get(url=LIBREAPIURL, params={'rut': rutDeudor})
-        if nombreResponse.status_code == 200:
-            nombreDeudor: str = nombreResponse.json()['data']['name']
-            nombreDeudorToList: list[str] = list(map(lambda x: x.capitalize(), nombreDeudor.strip().split(' ')))
-            if len(nombreDeudorToList) == 3:
-                nombreDeudor = nombreDeudorToList[0]
-            elif len(nombreDeudorToList) > 3:
-                nombreDeudor = ' '.join(nombreDeudorToList[0:2])
+        try:
+            nombreResponse: requests.Response = requests.get(url=LIBREAPIURL, params={'rut': rutDeudor})
+            if nombreResponse.status_code == 200:
+                nombreDeudor: str = nombreResponse.json()['data']['name']
+                nombreDeudorToList: list[str] = list(map(lambda x: x.capitalize(), nombreDeudor.strip().split(' ')))
+                if len(nombreDeudorToList) == 3:
+                    nombreDeudor = nombreDeudorToList[0]
+                elif len(nombreDeudorToList) > 3:
+                    nombreDeudor = ' '.join(nombreDeudorToList[0:2])
+                else:
+                    nombreDeudor = ''
             else:
                 nombreDeudor = ''
-        else:
-            nombreDeudor = ''
-        return nombreDeudor
+            return nombreDeudor
+        except Exception:
+            return ''
         
     def getClienteData(self, idCliente: int) -> Cliente | None:
         self.cursorData.execute(f'SELECT Cliente FROM {self.clientesTable} WHERE IdCliente = {idCliente}')
