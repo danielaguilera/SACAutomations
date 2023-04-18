@@ -9,6 +9,7 @@ from Clases.Boleta import Boleta
 from Clases.FileGrouper import FileGrouper
 from Clases.PDFGenerator import PDFGenerator
 from Clases.ReporteData import ReporteData
+from Clases.Destinatario import Destinatario
 from Utils.Metadata import *
 from Utils.GlobalFunctions import *
 from PyPDF2 import PdfReader, PdfMerger
@@ -31,6 +32,7 @@ class SACUI:
         self.clientes: list[Cliente] = self.sacConnector.getAllClientes()
         self.codigos: list[str] = self.sacConnector.getAllCodigos()
         self.beneficiarios: list[Beneficiario] = self.sacConnector.getAllBeneficiarios()
+        self.destinatarios: list[Destinatario] = self.sacConnector.getAllDestinatarios()
         self.casos: list[Caso] = []
         
         self.master = master
@@ -137,7 +139,7 @@ class SACUI:
         self.clienteLabel.pack(side=LEFT)
         self.clienteDropdown = ttk.Combobox(master=self.clienteFrame, state='readonly', values=[cliente.nombreCliente for cliente in self.clientes] + ['Ninguno'])
         self.clienteDropdown.pack(side=LEFT, padx=5)
-        self.clienteDropdown.bind("<<ComboboxSelected>>", self.populateCasos)
+        self.clienteDropdown.bind("<<ComboboxSelected>>", self.clienteSelectionEvent)
         
         self.gastoTotalFrame = Frame(master=self.stateFrame)
         self.gastoTotalFrame.pack(expand=True, fill=BOTH)
@@ -145,6 +147,13 @@ class SACUI:
         self.gastoTotalLabel.pack(side=LEFT)
         self.gastoTotalEntry = Entry(master=self.gastoTotalFrame)
         self.gastoTotalEntry.pack(side=LEFT, padx=5)
+        
+        self.destinatarioFrame = Frame(master=self.stateFrame)
+        self.destinatarioFrame.pack(expand=True, fill=BOTH)
+        self.destinatarioLabel = Label(master=self.destinatarioFrame, text='Se envía a:')
+        self.destinatarioLabel.pack(side=LEFT)
+        self.destinatarioDropdown = ttk.Combobox(master=self.destinatarioFrame, state='readonly', values=[destinatario.nombreDestinatario for destinatario in self.destinatarios])
+        self.destinatarioDropdown.pack(side=LEFT, padx=5)
         
         self.casosFrame = Frame(master=self.master)
         self.casosFrame.pack(expand=True, fill=BOTH)
@@ -303,9 +312,6 @@ class SACUI:
                 pdfGenerator.generateReporte(reporteData=reporteData)
                 fileGrouper.addReporte(reporte=reporteData)
                 break
-            
-        # Exporting full documents:
-        fileGrouper.generateUnifiedPDFs()
                     
     def fileIsPDF(self, filePath: str):
         try:
@@ -447,6 +453,19 @@ class SACUI:
         self.serviciosTable.configure(height=self.addedServicios)
         self.addedServiciosLabel.config(text=f'Servicios agregados: {self.addedServicios} - Total: ${self.servicioSum}')
         
+    def clienteSelectionEvent(self, key=None):
+        self.setDestinatario()
+        self.populateCasos()    
+    
+    def setDestinatario(self, key=None):
+        cliente: Cliente
+        for cliente in self.clientes:
+            if self.clienteDropdown.get() == cliente.nombreCliente:
+                idCliente: int = cliente.idCliente
+        selectedDestinatario: Destinatario = self.sacConnector.getDestinatarioByCliente(idCliente=idCliente)
+        index: int = [destinatario.nombreDestinatario for destinatario in self.destinatarios].index(selectedDestinatario.nombreDestinatario)
+        self.destinatarioDropdown.current(index)
+    
     def populateCasos(self, key=None):
         if len(self.casosTable.selection()) > 0:
             self.casosTable.selection_remove(self.casosTable.selection()[0])
@@ -500,6 +519,7 @@ class SACUI:
             self.nombreDeudorEntry.insert(0, nombreDeudor)
             self.apellidoDeudorEntry.delete(0, END)
             self.apellidoDeudorEntry.insert(0, apellidoDeudor)
+            self.setDestinatario()
             
 '''
 TODO:

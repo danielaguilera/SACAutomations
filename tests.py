@@ -1,6 +1,16 @@
-# from Clases.SACConnector import SACConnector
-# from Utils.GlobalFunctions import *
-# from datetime import *
+from Clases.SACConnector import SACConnector
+from Utils.GlobalFunctions import *
+from datetime import *
+from Clases.Destinatario import Destinatario
+
+conn = SACConnector()
+
+dest: Destinatario
+for dest in conn.getAllDestinatarios():
+    print(f'{dest.nombreDestinatario} - {dest.correoDestinatario}')
+    
+print(conn.getDestinatarioByCliente(idCliente=1).nombreDestinatario)
+
 
 # # now = datetime.now()
 # # print(transformDateToSpanishBrief(now, point=True))
@@ -41,29 +51,29 @@
 
 
 
-import glob, sys, fitz
-import tkinter as tk
-from PIL import ImageTk, Image
+# import glob, sys, fitz
+# import tkinter as tk
+# from PIL import ImageTk, Image
 
-# To get better resolution
-zoom_x = 1.0  # horizontal zoom
-zoom_y = 1.0  # vertical zoom
-mat = fitz.Matrix(zoom_x, zoom_y)  # zoom factor 2 in each dimension
+# # To get better resolution
+# zoom_x = 1.0  # horizontal zoom
+# zoom_y = 1.0  # vertical zoom
+# mat = fitz.Matrix(zoom_x, zoom_y)  # zoom factor 2 in each dimension
 
-filename = 'Boleta_3643.pdf'
-doc = fitz.open(filename)  # open document
-for page in doc:  # iterate through the pages
-    pix = page.get_pixmap(matrix=mat)  # render page to an image
-    pix.save("result.png")  # store image as a PNG
+# filename = 'Boleta_3643.pdf'
+# doc = fitz.open(filename)  # open document
+# for page in doc:  # iterate through the pages
+#     pix = page.get_pixmap(matrix=mat)  # render page to an image
+#     pix.save("result.png")  # store image as a PNG
 
-root = tk.Tk()
+# root = tk.Tk()
 
-# Load the PNG image
-image = Image.open("result.png")
-photo = ImageTk.PhotoImage(image)
+# # Load the PNG image
+# image = Image.open("result.png")
+# photo = ImageTk.PhotoImage(image)
 
-# Create a Label widget and set the image
-label = tk.Label(root, image=photo)
-label.pack()
+# # Create a Label widget and set the image
+# label = tk.Label(root, image=photo)
+# label.pack()
 
-root.mainloop()
+# root.mainloop()

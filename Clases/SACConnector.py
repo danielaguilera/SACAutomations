@@ -101,6 +101,15 @@ class SACConnector:
         nombreBeneficiario = list(self.cursorData.fetchall())[0][0]
         return Beneficiario(nombreBeneficiario=nombreBeneficiario, rutBeneficiario=rutBeneficiario)
     
+    def getDestinatarioByCliente(self, idCliente: int) -> Destinatario:
+        self.cursorData.execute(f'''
+                                    SELECT Contacto, "Correo Contacto"
+                                    FROM {self.clientesTable}
+                                    WHERE IdCliente = {idCliente}
+                                ''')
+        nombreDestinatario, correoDestinatario = self.cursorData.fetchall()[0]
+        return Destinatario(nombreDestinatario=nombreDestinatario, correoDestinatario=correoDestinatario)
+    
     def findBeneficiario(self, rutBeneficiario: str) -> Beneficiario | None:
         self.cursorData.execute(f"""SELECT "Nombre o Razón Social" FROM {self.beneficiariosTable} WHERE "RUT Beneficiario" LIKE '%{rutBeneficiario}%'""")
         data = self.cursorData.fetchall()
@@ -181,7 +190,18 @@ class SACConnector:
         for data in self.cursorData.fetchall():
             rutBeneficiario, nombreBeneficiario = data
             beneficiariosData.append(Beneficiario(rutBeneficiario=rutBeneficiario, nombreBeneficiario=nombreBeneficiario))
-        return beneficiariosData 
+        return beneficiariosData
+    
+    def getAllDestinatarios(self) -> list[Destinatario]:
+        destinatariosData: list[Destinatario] = []
+        self.cursorData.execute(f'''
+                                    SELECT DISTINCT Contacto, "Correo Contacto"
+                                    FROM {self.clientesTable}
+                                ''')
+        for data in self.cursorData.fetchall():
+            nombreDestinatario, correoDestinatario = data
+            destinatariosData.append(Destinatario(nombreDestinatario=nombreDestinatario, correoDestinatario=correoDestinatario))
+        return destinatariosData 
     
     def getPossibleMapsaCasos(self, rutDeudor: str = '', apellidoDeudor: str = '', idCliente: int = None) -> list[Caso]:
         casosFound : list[Caso] = []
