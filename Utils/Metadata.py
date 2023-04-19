@@ -17,9 +17,9 @@ WEEKDAYS: dict[str] = {0: 'lunes', 1: 'martes', 2:'miércoles', 3:'jueves', 4:'v
 
 LIBREAPIURL: str = 'https://api.libreapi.cl/rut/activities'
 
-GENERATEDREPORTSPATH: str = os.path.abspath("ReportesGenerados")
-DELIVEREDDATAPATH: str = os.path.abspath("DatosRecibidos")
-RESULTPATH: str = os.path.abspath("Resultados")
+GENERATEDREPORTSPATH: str = os.path.abspath("reportes_generados")
+DELIVEREDDATAPATH: str = os.path.abspath("boleta_data")
+RESULTPATH: str = os.path.abspath("results")
 
 LOGOPATH: str = os.path.abspath("Images/Logo.PNG")
 SIGNINGPATH: str = os.path.abspath("Images/Signing.PNG")

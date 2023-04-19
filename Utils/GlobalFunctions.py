@@ -38,6 +38,10 @@ def deleteIfExists(path: str) -> None:
     if os.path.exists(path):
         shutil.rmtree(path=path)
         
+def deleteIfEmpty(path: str) -> None:
+    if not os.listdir(path):
+        shutil.rmtree(path=path)
+        
 def extractNumberFromText(text: str) -> str:
     char: str
     result: str = ''

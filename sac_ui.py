@@ -42,7 +42,7 @@ class SACUI:
         
         self.thumbnailFrame = Frame(master=self.master)
         self.thumbnailFrame.pack(side=RIGHT)
-        self.boletaImage = PhotoImage(file='thumbnail.png')
+        self.boletaImage = None
         self.thumbnail = Label(master=self.thumbnailFrame)
         
         self.uploadFrame = LabelFrame(master=self.master)
@@ -188,19 +188,19 @@ class SACUI:
         self.saveFrame = LabelFrame(master=self.master)
         self.saveFrame.pack(expand=True, fill=BOTH)
         
-        self.saveButton = Button(self.saveFrame, text='Guardar', width=40, height=1, font=('Helvetica bold', 20), command=self.saveChanges)
+        self.saveButton = Button(self.saveFrame, text='Guardar', width=40, height=1, font=('Helvetica bold', 15), command=self.saveChanges)
         self.saveButton.pack(expand=True, fill=BOTH)
         
         self.sendFrame = LabelFrame(master=self.master)
         self.sendFrame.pack(expand=True, fill=BOTH)
         
-        self.sendButton = Button(self.saveFrame, text='Enviar reportes', width=40, height=1, font=('Helvetica bold', 20), command=self.runSender)
+        self.sendButton = Button(self.saveFrame, text='Enviar reportes', width=40, height=1, font=('Helvetica bold', 15), command=self.runSender)
         self.sendButton.pack(expand=True, fill=BOTH)
         
         self.manageReportsFrame = LabelFrame(master=self.master)
         self.manageReportsFrame.pack(expand=True, fill=BOTH)
         
-        self.manageReportsButton = Button(self.manageReportsFrame, text='Ver reportes a enviar', font=('Helvetica bold', 20), command=self.runReportManager)
+        self.manageReportsButton = Button(self.manageReportsFrame, text='Ver reportes a enviar', font=('Helvetica bold', 15), command=self.runReportManager)
         self.manageReportsButton.pack(expand=True, fill=BOTH)
         
     @property
@@ -278,35 +278,58 @@ class SACUI:
         idMapsa: int = boleta.idMapsa
         if not os.path.exists(DELIVEREDDATAPATH):
             os.makedirs(DELIVEREDDATAPATH)
-        if not os.path.exists(f'{DELIVEREDDATAPATH}/{numBoleta}_{idMapsa}'):
-            os.makedirs(f'{DELIVEREDDATAPATH}/{numBoleta}_{idMapsa}')
+        if not os.path.exists(f'{DELIVEREDDATAPATH}/{self.destinatarioDropdown.get()}/{numBoleta}_{idMapsa}'):
+            os.makedirs(f'{DELIVEREDDATAPATH}/{self.destinatarioDropdown.get()}/{numBoleta}_{idMapsa}')
         merger: PdfMerger = PdfMerger()
         for root in self.anexosPaths:
             merger.append(root)
-        merger.write(f'{DELIVEREDDATAPATH}/{numBoleta}_{idMapsa}/Anexo_{numBoleta}.pdf')
+        merger.write(f'{DELIVEREDDATAPATH}/{self.destinatarioDropdown.get()}/{numBoleta}_{idMapsa}/Anexo_{numBoleta}.pdf')
         merger.close()
-        shutil.copy(self.boletaPath, f'{DELIVEREDDATAPATH}/{numBoleta}_{idMapsa}/Boleta_{numBoleta}.pdf')
+        shutil.copy(self.boletaPath, f'{DELIVEREDDATAPATH}/{self.destinatarioDropdown.get()}/{numBoleta}_{idMapsa}/Boleta_{numBoleta}.pdf')
         self.generateReport()
         self.saveDeudorName()
+        self.saveParams()
         messagebox.showinfo(title='Mensaje', message=f'Archivos guardados para boleta n°{numBoleta}')
         self.master.destroy()
         
     def saveDeudorName(self):
         idMapsaSet: int = self.casosTable.item(self.casosTable.focus())['values'][0]
         numBoletaSet: int = int(self.numBoletaEntry.get())
-        with open(f'{DELIVEREDDATAPATH}/{numBoletaSet}_{idMapsaSet}/DeudorName.txt', 'w') as file:
+        with open(f'{DELIVEREDDATAPATH}/{self.destinatarioDropdown.get()}/{numBoletaSet}_{idMapsaSet}/DeudorName.txt', 'w') as file:
             file.write(self.nombreDeudorEntry.get())
+            
+    def saveParams(self):
+        idMapsaSet: int = self.casosTable.item(self.casosTable.focus())['values'][0]
+        numBoletaSet: int = int(self.numBoletaEntry.get())
+        destinatarioSet: Destinatario = None
+        destinatario: Destinatario
+        for destinatario in self.destinatarios:
+            if destinatario.nombreDestinatario == self.destinatarioDropdown.get():
+                destinatarioSet = destinatario
+                break
+        beneficiarioSet: str = self.nombreBeneficiarioDropdown.get()
+        clienteSet: str = self.clienteDropdown.get()
+        deudorSet: str = self.apellidoDeudorEntry.get()
+        montoTotalSet: str = self.gastoTotalEntry.get()     
+        with open(f'{DELIVEREDDATAPATH}/{destinatarioSet.nombreDestinatario}/{numBoletaSet}_{idMapsaSet}/Data_{numBoletaSet}.txt', 'w') as file:
+            file.write(f'{destinatarioSet.nombreDestinatario},{destinatarioSet.correoDestinatario},{numBoletaSet},{idMapsaSet},{beneficiarioSet},{clienteSet},{deudorSet},{montoTotalSet}')
         
     def generateReport(self):  
         fileGrouper: FileGrouper = FileGrouper()
-        dataReceived: list[str] = [dirName for dirName in os.listdir(DELIVEREDDATAPATH)]
+        dataReceived: list[str] = [dirName for dirName in os.listdir(f'{DELIVEREDDATAPATH}/{self.destinatarioDropdown.get()}')]
         data: str
         idMapsaSet: int = self.casosTable.item(self.casosTable.focus())['values'][0]
         numBoletaSet: int = int(self.numBoletaEntry.get())
+        destinatarioSet: Destinatario = None
+        destinatario: Destinatario
+        for destinatario in self.destinatarios:
+            if destinatario.nombreDestinatario == self.destinatarioDropdown.get():
+                destinatarioSet = destinatario
+                break        
         for data in dataReceived:
             numBoleta: int = int(data.strip().split('_')[0])
             idMapsa: int = int(data.strip().split('_')[1])
-            reporteData: ReporteData = self.sacConnector.getReporteData(numBoleta=numBoleta, idMapsa=idMapsa)
+            reporteData: ReporteData = self.sacConnector.getReporteData(numBoleta=numBoleta, idMapsa=idMapsa, destinatarioSet=destinatarioSet)
             if reporteData and idMapsa == idMapsaSet and numBoleta == numBoletaSet:
                 pdfGenerator: PDFGenerator = PDFGenerator()
                 pdfGenerator.generateReporte(reporteData=reporteData)

@@ -154,8 +154,11 @@ class SACConnector:
             servicios.append(servicio)
         return servicios
     
-    def getReporteData(self, numBoleta: int, idMapsa: int) -> ReporteData | None:
-        destinatario: Destinatario = self.getDestinatarioData(numBoleta=numBoleta, idMapsa=idMapsa)
+    def getReporteData(self, numBoleta: int, idMapsa: int, destinatarioSet: Destinatario | None = None) -> ReporteData | None:
+        if destinatarioSet:
+            destinatario: Destinatario = destinatarioSet
+        else:
+            destinatario: Destinatario = self.getDestinatarioData(numBoleta=numBoleta, idMapsa=idMapsa)
         beneficiario: Beneficiario = self.getBeneficiarioData(numBoleta=numBoleta, idMapsa=idMapsa)
         servicios: list[Servicio] = self.getServicios(numBoleta=numBoleta, idMapsa=idMapsa)
         return ReporteData(destinatario=destinatario, beneficiario=beneficiario, servicios=servicios, numBoleta=numBoleta, idMapsa=idMapsa)
@@ -253,7 +256,14 @@ class SACConnector:
                                         VALUES ({boleta.idMapsa}, {boleta.numBoleta}, '{formattedDate}', {servicio.monto}, '{servicio.nota if servicio.nota else " "}', False, '{formattedMonth}', '{boleta.rutBeneficiario}', '{servicio.codigo}')
                                       ''')
             self.connBoleta.commit()
-        
+            
+    def deleteBoletaData(self, numBoleta: int, idMapsa: int):
+        self.cursorBoleta.execute(f'''
+                                    DELETE FROM {self.boletasTable}
+                                    WHERE IdBoleta = {idMapsa} AND Numero = {numBoleta}
+                                  ''')
+        self.connBoleta.commit()
+                
     def getBoletaData(self):
         self.cursorBoleta.execute(f'''
                                   SELECT * FROM Tabla_nueva_de_boletas
