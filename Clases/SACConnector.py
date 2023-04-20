@@ -135,10 +135,6 @@ class SACConnector:
             fechaBoleta : datetime = dataReceived[2]
             notaBoleta: str = dataReceived[4]
             codigoBoleta: str = dataReceived[9] if dataReceived[9] else ''
-
-            # if fechaBoleta.year != self.year:
-            #     continue
-            
             deudorData: Deudor = self.getDeudorData(idBoleta=idBoleta)
             clienteData: Cliente = self.getClienteData(idCliente=deudorData.idCliente)
             servicio : Servicio = Servicio(rutDeudor=deudorData.rutDeudor, 
@@ -276,11 +272,11 @@ class SACConnector:
                                   ''')
         self.cursorBoleta.commit()
         
-    def setBoletaAsPrinted(self, reporte: ReporteData):
+    def setBoletaAsPrinted(self, numBoleta: int, idMapsa: int):
         self.cursorBoleta.execute(f'''
                                     UPDATE {self.boletasTable}
                                     SET Print = True
-                                    WHERE Idboleta = {reporte.idMapsa} AND Numero = {reporte.numBoleta}   
+                                    WHERE Idboleta = {idMapsa} AND Numero = {numBoleta}   
                                   ''')
         self.connBoleta.commit()
             

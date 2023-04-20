@@ -117,9 +117,9 @@ class PDFGenerator:
         pdf.cell(40, 10, setPriceFormat(reporteData.sumaTotal))
         pdf.image(SIGNINGPATH, x=18, y=150 + index*delta, w=140, h=40)        
 
-        if not os.path.exists(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}'):
-            os.makedirs(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}')
-        pdf.output(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/Reporte_{reporteData.numBoleta}_{reporteData.idMapsa}.pdf')
+        # if not os.path.exists(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}'):
+        #     os.makedirs(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}')
+        # pdf.output(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/Reporte_{reporteData.numBoleta}_{reporteData.idMapsa}.pdf')
         
         if not os.path.exists(f'{DELIVEREDDATAPATH}/{reporteData.destinatario.nombreDestinatario}/{reporteData.numBoleta}_{reporteData.idMapsa}'):
             os.makedirs(f'{DELIVEREDDATAPATH}/{reporteData.destinatario.nombreDestinatario}/{reporteData.numBoleta}_{reporteData.idMapsa}')

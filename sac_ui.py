@@ -4,7 +4,6 @@ from tkinter import ttk
 import shutil
 import os
 from tkinter import filedialog
-from tkcalendar import Calendar, DateEntry
 from Clases.Boleta import Boleta
 from Clases.FileGrouper import FileGrouper
 from Clases.PDFGenerator import PDFGenerator
@@ -91,7 +90,7 @@ class SACUI:
         self.fechaBoletaFrame.pack(expand=True, fill=BOTH)
         self.fechaBoletaLabel = Label(master=self.fechaBoletaFrame, text='Fecha Emisión')
         self.fechaBoletaLabel.pack(side=LEFT) 
-        self.fechaBoletaEntry: DateEntry = DateEntry(master=self.fechaBoletaFrame)
+        self.fechaBoletaEntry: Entry = Entry(master=self.fechaBoletaFrame)
         self.fechaBoletaEntry.pack(side=LEFT, padx=5)
         
         self.rutBeneficiarioFrame = Frame(master=self.stateFrame)
@@ -262,7 +261,7 @@ class SACUI:
         dataSelected: list = self.casosTable.item(self.casosTable.focus())['values']
         idMapsa: int = dataSelected[0]
         numBoleta: int = int(self.numBoletaEntry.get())
-        fechaEmision: date = self.fechaBoletaEntry.get_date()
+        fechaEmision: date = datetime.strptime(self.fechaBoletaEntry.get(), '%Y-%m-%d').date()
         rutBeneficiario: str = self.rutBeneficiarioEntry.get()
         servicios: list[Servicio] = []
         for iid in self.serviciosTable.get_children():
@@ -283,14 +282,35 @@ class SACUI:
         merger: PdfMerger = PdfMerger()
         for root in self.anexosPaths:
             merger.append(root)
-        merger.write(f'{DELIVEREDDATAPATH}/{self.destinatarioDropdown.get()}/{numBoleta}_{idMapsa}/Anexo_{numBoleta}.pdf')
+        if self.anexosPaths:
+            merger.write(f'{DELIVEREDDATAPATH}/{self.destinatarioDropdown.get()}/{numBoleta}_{idMapsa}/Anexo_{numBoleta}.pdf')
         merger.close()
         shutil.copy(self.boletaPath, f'{DELIVEREDDATAPATH}/{self.destinatarioDropdown.get()}/{numBoleta}_{idMapsa}/Boleta_{numBoleta}.pdf')
         self.generateReport()
         self.saveDeudorName()
         self.saveParams()
+        self.generateUnifiedDocument()
         messagebox.showinfo(title='Mensaje', message=f'Archivos guardados para boleta n°{numBoleta}')
-        self.master.destroy()
+        self.clearForm()
+        
+    def generateUnifiedDocument(self):
+        for nombreDestinatario in os.listdir(path=f'{DELIVEREDDATAPATH}'):
+            pdfMerger: PdfMerger = PdfMerger()
+            for path in os.listdir(path=f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
+                if path != 'Documento.pdf':
+                    numBoleta, idMapsa = (int(x) for x in path.strip().split('_'))
+                    reportePath: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{path}/Reporte_{numBoleta}.pdf'
+                    boletaPath: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{path}/Boleta_{numBoleta}.pdf'
+                    anexoPath: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{path}/Anexo_{numBoleta}.pdf'
+                    pdfMerger.append(reportePath)
+                    pdfMerger.append(boletaPath)
+                    if os.path.exists(anexoPath):
+                        pdfMerger.append(anexoPath)
+            pdfMerger.write(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf')
+            if not os.path.exists(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}'):
+                os.makedirs(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}')
+            shutil.copy(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf', f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}/Documento.pdf')
+        pdfMerger.close()
         
     def saveDeudorName(self):
         idMapsaSet: int = self.casosTable.item(self.casosTable.focus())['values'][0]
@@ -315,7 +335,6 @@ class SACUI:
             file.write(f'{destinatarioSet.nombreDestinatario},{destinatarioSet.correoDestinatario},{numBoletaSet},{idMapsaSet},{beneficiarioSet},{clienteSet},{deudorSet},{montoTotalSet}')
         
     def generateReport(self):  
-        fileGrouper: FileGrouper = FileGrouper()
         dataReceived: list[str] = [dirName for dirName in os.listdir(f'{DELIVEREDDATAPATH}/{self.destinatarioDropdown.get()}')]
         data: str
         idMapsaSet: int = self.casosTable.item(self.casosTable.focus())['values'][0]
@@ -333,7 +352,6 @@ class SACUI:
             if reporteData and idMapsa == idMapsaSet and numBoleta == numBoletaSet:
                 pdfGenerator: PDFGenerator = PDFGenerator()
                 pdfGenerator.generateReporte(reporteData=reporteData)
-                fileGrouper.addReporte(reporte=reporteData)
                 break
                     
     def fileIsPDF(self, filePath: str):
@@ -387,6 +405,7 @@ class SACUI:
             pix.save("thumbnail.png")  # store image as a PNG
             
         self.boletaImage = PhotoImage(file='thumbnail.png')
+        self.thumbnailFrame.pack(side=RIGHT)
         self.thumbnail.config(image=self.boletaImage)
         self.thumbnail.pack()
     
@@ -436,7 +455,7 @@ class SACUI:
             else:
                 fechaEmisionString: str = text.split('\n')[9][7::].strip()
             fechaEmision: date = getDateFromSpanishFormat(stringDate=fechaEmisionString)
-            self.fechaBoletaEntry.set_date(date=fechaEmision)
+            self.fechaBoletaEntry.insert(0, str(fechaEmision))
         except Exception:
             pass
         
@@ -452,10 +471,12 @@ class SACUI:
             self.gastoTotalEntry.insert(0, total)
         except Exception:
             pass
-            
         
     def runSender(self):
-        os.system('cmd /c python sac_sender.py') 
+        try:
+            os.system('cmd /c run sac_sender.exe') 
+        except Exception:
+            messagebox.showerror(title='ERROR', message='SAC Sender no pudo ejecutarse')
         
     def openServicioGUI(self):
         addServicioGUI: AddServicioGUI = AddServicioGUI(container=self)
@@ -525,8 +546,6 @@ class SACUI:
         else:
             self.nombreBeneficiarioDropdown.set('Sin resultados')
 
-        
-
     def selectCaso(self, key=None):
         dataSelected: list = self.casosTable.item(self.casosTable.focus())['values']
         if dataSelected:
@@ -543,6 +562,25 @@ class SACUI:
             self.apellidoDeudorEntry.delete(0, END)
             self.apellidoDeudorEntry.insert(0, apellidoDeudor)
             self.setDestinatario()
+    
+    def clearForm(self):
+        self.boletaPath = ''
+        self.anexosPaths.clear()
+        self.numBoletaEntry.delete(0, END)
+        self.fechaBoletaEntry.delete(0, END)
+        self.rutBeneficiarioEntry.delete(0, END)
+        self.nombreBeneficiarioDropdown.set('')
+        self.rutDeudorEntry.delete(0, END)
+        self.apellidoDeudorEntry.delete(0, END)
+        self.nombreDeudorEntry.delete(0, END)
+        self.clienteDropdown.set('')
+        self.gastoTotalEntry.delete(0, END)
+        self.destinatarioDropdown.set('')
+        self.casosTable.delete(*self.casosTable.get_children())
+        self.serviciosTable.delete(*self.serviciosTable.get_children())
+        self.uploadedAnexosLabel.config(text='No se han subido anexos')
+        self.uploadedBoletaLabel.config(text='No se ha subido boleta')
+        self.thumbnail.pack_forget()
             
 '''
 TODO:

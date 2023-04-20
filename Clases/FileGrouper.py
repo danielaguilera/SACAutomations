@@ -33,7 +33,6 @@ class FileGrouper:
     def generateUnifiedPDFs(self):
         documento: DocumentoUnificado
         for documento in self.documentosUnificados:
-            print(documento)
             documento.generateUnifiedPDF()
 
 class DocumentoUnificado:

@@ -1,5 +1,7 @@
 from tkinter import *
 from tkinter import ttk
+
+from PyPDF2 import PdfMerger
 from Clases.SACConnector import SACConnector
 from Utils.GlobalFunctions import *
 from Utils.Metadata import *
@@ -40,28 +42,27 @@ class ReportManager:
     def getReports(self):
         self.reportTable.delete(*self.reportTable.get_children())
         nombreDestinatario: str
-        print('GET REPORTS')
         if not os.path.exists(DELIVEREDDATAPATH):
-            print('AAAAAAAAAAAA')
             messagebox.showerror(title='ERROR', message='No se han cargado boletas para enviar.\nNo hay nada que mostrar.')
             return
         for nombreDestinatario in os.listdir(DELIVEREDDATAPATH):
             self.reportTable.insert('', END, iid=nombreDestinatario, values=(nombreDestinatario,'','','','','','',''), open=True)
             for dirName in os.listdir(f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
-                numBoleta, idMapsa = [int(x) for x in dirName.strip().split('_')]
-                with open(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{numBoleta}_{idMapsa}/Data_{numBoleta}.txt') as file:
-                    data = file.readline().strip().split(',')
-                    nombreDestinatario = data[0]
-                    mailDestinatario = data[1]
-                    numBoleta = data[2]
-                    idMapsa = data[3]
-                    nombreBeneficiario = data[4]
-                    nombreCliente = data[5]
-                    nombreDeudor = data[6]
-                    montoTotal = data[7]
-                    tableData = ('-','-',numBoleta,idMapsa,nombreBeneficiario,nombreCliente,nombreDeudor,montoTotal)
-                    self.reportTable.insert(nombreDestinatario, END, values=tableData, open=True)
-                self.reportTable.item(nombreDestinatario, values=(nombreDestinatario, mailDestinatario,'','','','','',''))
+                if dirName != 'Documento.pdf':
+                    numBoleta, idMapsa = [int(x) for x in dirName.strip().split('_')]
+                    with open(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{numBoleta}_{idMapsa}/Data_{numBoleta}.txt') as file:
+                        data = file.readline().strip().split(',')
+                        nombreDestinatario = data[0]
+                        mailDestinatario = data[1]
+                        numBoleta = data[2]
+                        idMapsa = data[3]
+                        nombreBeneficiario = data[4]
+                        nombreCliente = data[5]
+                        nombreDeudor = data[6]
+                        montoTotal = data[7]
+                        tableData = ('-','-',numBoleta,idMapsa,nombreBeneficiario,nombreCliente,nombreDeudor,montoTotal)
+                        self.reportTable.insert(nombreDestinatario, END, values=tableData, open=True)
+                    self.reportTable.item(nombreDestinatario, values=(nombreDestinatario, mailDestinatario,'','','','','',''))
     
     def displayThumbnail(self, key=None):
         data = self.reportTable.item(self.reportTable.selection()[0])['values']
@@ -97,9 +98,31 @@ class ReportManager:
         deleteIfExists(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{numBoleta}_{idMapsa}')
         deleteIfEmpty(f'{DELIVEREDDATAPATH}/{nombreDestinatario}')
         deleteIfEmpty(f'{DELIVEREDDATAPATH}')
+        self.updateUnifiedDocument()
         messagebox.showinfo(title='INFO', message='Reporte borrado')
         self.getReports()
-        self.thumbnailFrame.pack_forget()
+        self.thumbnail.pack_forget()
+        
+    def updateUnifiedDocument(self):
+        if not os.path.exists(DELIVEREDDATAPATH):
+            return
+        for nombreDestinatario in os.listdir(path=f'{DELIVEREDDATAPATH}'):
+            pdfMerger: PdfMerger = PdfMerger()
+            for path in os.listdir(path=f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
+                if path != 'Documento.pdf':
+                    numBoleta, idMapsa = (int(x) for x in path.strip().split('_'))
+                    reportePath: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{path}/Reporte_{numBoleta}.pdf'
+                    boletaPath: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{path}/Boleta_{numBoleta}.pdf'
+                    anexoPath: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{path}/Anexo_{numBoleta}.pdf'
+                    pdfMerger.append(reportePath)
+                    pdfMerger.append(boletaPath)
+                    if os.path.exists(anexoPath):
+                        pdfMerger.append(anexoPath)
+            pdfMerger.write(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf')
+            if not os.path.exists(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}'):
+                os.makedirs(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}')
+            shutil.copy(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf', f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}/Documento.pdf')
+        pdfMerger.close()
         
                 
         

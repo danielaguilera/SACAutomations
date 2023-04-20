@@ -39,8 +39,13 @@ def deleteIfExists(path: str) -> None:
         shutil.rmtree(path=path)
         
 def deleteIfEmpty(path: str) -> None:
-    if not os.listdir(path):
+    count = 0
+    for name in os.listdir(path):
+        if name != 'Documento.pdf':
+            count += 1
+    if not count:
         shutil.rmtree(path=path)
+        print('ELIMINADO')
         
 def extractNumberFromText(text: str) -> str:
     char: str

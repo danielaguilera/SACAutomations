@@ -3,6 +3,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
+from Clases.Destinatario import Destinatario
 from Utils.Metadata import *
 from Utils.GlobalFunctions import *
 from Clases.FileGrouper import DocumentoUnificado
@@ -41,11 +42,11 @@ class MailSender:
         self.session.send_message(message)
         self.endSession()
         
-    def sendUnifiedDocument(self, document: DocumentoUnificado):
-        receiverAddress: str = document.destinatario.correoDestinatario
+    def sendUnifiedDocument(self, destinatario: Destinatario):
+        receiverAddress: str = destinatario.correoDestinatario
         receiverAddress: str = 'draguilera@uc.cl' #Hardcoded
         mailSubject: str = f'Envío reportes semana {getWeekMondayTimeStamp()}'
-        mailContent: str = f'Estimad@ {document.destinatario.nombreDestinatario}: \n\n Junto con saludar, se adjunta el resumen de las facturas correspondientes a la semana de {getWeekMondayTimeStamp("long")}'
-        mailAttachment: str = f'{RESULTPATH}/{document.destinatario.nombreDestinatario}/Documento.pdf'
+        mailContent: str = f'Estimad@ {destinatario.nombreDestinatario}: \n\n Junto con saludar, se adjunta el resumen de las facturas correspondientes a la semana de {getWeekMondayTimeStamp("long")}'
+        mailAttachment: str = f'{DELIVEREDDATAPATH}/{destinatario.nombreDestinatario}/Documento.pdf'
         self.sendMail(receiverAddresss=receiverAddress, mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
-        print(f'Email a {document.destinatario.correoDestinatario} enviado!')        
+        print(f'Email a {destinatario.correoDestinatario} enviado!')        

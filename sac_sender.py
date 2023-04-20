@@ -1,3 +1,5 @@
+from PyPDF2 import PdfMerger
+from Clases.Destinatario import Destinatario
 from Clases.ReporteData import ReporteData
 from Utils.Metadata import *
 from Utils.GlobalFunctions import *
@@ -10,45 +12,38 @@ import shutil
 import sys
 
 if __name__ == '__main__':
-    
-    # # Checking whether there is data to send:
-    # if not os.path.exists(DELIVEREDDATAPATH):
-    #     print('No se han recibido datos, saliendo...')
-    #     sys.exit()
-    
-    # # Generating reports:
-    # fileGrouper: FileGrouper = FileGrouper()
-    # dataReceived: list[str] = [dirName for dirName in os.listdir(DELIVEREDDATAPATH)]
-    # sacConnector: SACConnector = SACConnector()
-    # data: str
-    # for data in dataReceived:
-    #     numBoleta: int = data.strip().split('_')[0]
-    #     idMapsa: int = data.strip().split('_')[1]
-    #     reporteData: ReporteData = sacConnector.getReporteData(numBoleta=numBoleta, idMapsa=idMapsa)
-    #     if reporteData:
-    #         pdfGenerator: PDFGenerator = PDFGenerator()
-    #         pdfGenerator.generateReporte(reporteData=reporteData)
-    #         fileGrouper.addReporte(reporte=reporteData)
-            
-    # # Exporting full documents:
-    # fileGrouper.generateUnifiedPDFs()
-    
-    #Sending emails:
-    with open(MAILDATA) as file:
+    # Checks if there is data:
+    if not os.path.exists(DELIVEREDDATAPATH):
+        print('No hay datos para enviar')
+        sys.exit()
+        
+    # Sending emails:
+    with open(MAILDATA, 'r') as file:
         senderUsername, senderPassword = file.readline().strip().split(',')
     smtpServer: str = SMTPSERVER
     smtpPort: int = SMTPPORT
     mailSender: MailSender = MailSender(senderUsername=senderUsername, senderPassword=senderPassword, smtpServer=smtpServer, smtpPort=smtpPort)
-    for documento in fileGrouper.documentosUnificados:
-        mailSender.sendUnifiedDocument(documento)
-        
+    boletasSent = []
+    
+    for nombreDestinatario in os.listdir(path=f'{DELIVEREDDATAPATH}'):
+        pdfMerger: PdfMerger = PdfMerger()
+        for path in os.listdir(path=f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
+            if path != 'Documento.pdf':
+                numBoleta, idMapsa = (int(x) for x in path.strip().split('_'))
+                with open(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{path}/Data_{numBoleta}.txt','r') as file:
+                    correoDestinatario: str = file.readline().strip().split(',')[1] 
+                boletasSent.append((numBoleta, idMapsa))
+        destinatario: Destinatario = Destinatario(nombreDestinatario=nombreDestinatario, correoDestinatario=correoDestinatario)
+        mailSender.sendUnifiedDocument(destinatario=destinatario)  
+    
     # Setting boleta data as printed:
-    reporte: ReporteData
-    for reporte in fileGrouper.reportes:
-        sacConnector.setBoletaAsPrinted(reporte=reporte)
+    boletaData: tuple
+    sacConnector: SACConnector = SACConnector()
+    for boletaData in boletasSent:
+        numBoleta, idMapsa = boletaData
+        sacConnector.setBoletaAsPrinted(numBoleta=numBoleta, idMapsa=idMapsa)
         
     # Erasing generated folders:
-    deleteIfExists(RESULTPATH)
     deleteIfExists(DELIVEREDDATAPATH)
     
     
