@@ -20,6 +20,7 @@ from Clases.Servicio import Servicio
 from Clases.Beneficiario import Beneficiario
 from Clases.Caso import Caso
 from Clases.ReportManager import ReportManager
+from Clases.SACSenderJob import SACSenderJob
 from datetime import date
 from PIL import ImageTk, Image
 import glob, sys, fitz
@@ -36,8 +37,27 @@ class SACUI:
         
         self.master = master
         self.master.title("SAC App")
-        self.master.size =(30,30)
+        # self.master.size =(30,30)
         self.master.resizable(0,0)
+        
+        # self.master = master
+        # self.master.title("SAC App")
+        
+        # # Get the screen resolution
+        # screen_width = self.master.winfo_screenwidth()
+        # screen_height = self.master.winfo_screenheight()
+        
+        # # Calculate the size of the app
+        # app_width = int(screen_width * 0.45)
+        # app_height = int(screen_height * 0.9)
+        
+        # # Set the geometry of the app
+        # self.master.geometry(f"{app_width}x{app_height}")
+        
+        # self.master.resizable(0,0)
+        
+        self.topFrame = Frame(master=self.master)
+        self.topFrame.pack(expand=True, fill=BOTH)
         
         self.thumbnailFrame = Frame(master=self.master)
         self.thumbnailFrame.pack(side=RIGHT)
@@ -50,7 +70,7 @@ class SACUI:
         self.uploadFrame.grid_columnconfigure(1, weight=1)
         self.uploadFrame.grid_rowconfigure(1, weight=1)
 
-        self.boletaUploadButton = Button(self.uploadFrame, text="Subir boleta SII", font=('Helvetica bold', 15), command=self.selectBoletaPDF, width=30)
+        self.boletaUploadButton = Button(self.uploadFrame, text="Subir boleta/factura", font=('Helvetica bold', 15), command=self.selectBoletaPDF, width=30)
         self.boletaUploadButton.grid(row=0, column=0)
         
         self.boletaResetButton = Button(self.uploadFrame, text="Reestablecer boleta", font=('Helvetica bold', 15), command=self.resetBoleta, width=30)
@@ -61,8 +81,6 @@ class SACUI:
 
         self.anexoResetButton = Button(self.uploadFrame, text="Reestablecer anexos", font=('Helvetica bold', 15), command=self.resetAnexos, width=30)
         self.anexoResetButton.grid(row=1, column=1)
-
-
         
         self.stateFrame = LabelFrame(master=self.master)
         self.stateFrame.pack(expand=True, fill=BOTH)
@@ -162,7 +180,7 @@ class SACUI:
         for heading in self.casosColumns:
             self.casosTable.heading(heading, text=heading)
             self.casosTable.column(heading, width=100)
-        self.casosTable.pack(expand=False, anchor=CENTER)
+        self.casosTable.pack(expand=True, fill=BOTH, anchor=CENTER)
         self.casosTable.bind('<<TreeviewSelect>>', self.selectCaso)
         
         self.serviciosFrame = Frame(master=self.master)
@@ -175,7 +193,7 @@ class SACUI:
         self.serviciosTable.heading('Código', text='Código')
         self.serviciosTable.heading('Nota', text='Nota')
         self.serviciosTable.heading('Monto', text='Monto')
-        self.serviciosTable.pack(expand=False, fill=BOTH, anchor=CENTER)
+        self.serviciosTable.pack(expand=True, fill=BOTH, anchor=CENTER)
         self.addServicioButton = Button(master=self.serviciosFrame, text='Agregar servicio', command=self.openServicioGUI)
         self.addServicioButton.pack(expand=True, fill=BOTH)
         self.deleteServicioButton = Button(master=self.serviciosFrame, text='Eliminar servicio', command=self.removeServicio)
@@ -196,11 +214,14 @@ class SACUI:
         self.sendButton = Button(self.saveFrame, text='Enviar reportes', width=40, height=1, font=('Helvetica bold', 15), command=self.runSender)
         self.sendButton.pack(expand=True, fill=BOTH)
         
-        self.manageReportsFrame = LabelFrame(master=self.master)
-        self.manageReportsFrame.pack(expand=True, fill=BOTH)
+        # self.manageReportsFrame = LabelFrame(master=self.master)
+        # self.manageReportsFrame.pack(expand=True, fill=BOTH)
         
-        self.manageReportsButton = Button(self.manageReportsFrame, text='Ver reportes a enviar', font=('Helvetica bold', 15), command=self.runReportManager)
+        self.manageReportsButton = Button(self.saveFrame, text='Ver reportes a enviar', font=('Helvetica bold', 15), command=self.runReportManager)
         self.manageReportsButton.pack(expand=True, fill=BOTH)
+        
+        self.clearFormButton = Button(self.saveFrame, text='Borrar formulario', font=('Helvetica bold', 15), command=self.clearForm)
+        self.clearFormButton.pack(expand=True, fill=BOTH)
         
     @property
     def numAnexos(self) -> int:
@@ -230,7 +251,7 @@ class SACUI:
         
     def validData(self) -> bool:
         if not self.boletaPath:
-            messagebox.showerror(title='Error', message='Falta agregar la boleta del SII')
+            messagebox.showerror(title='Error', message='Falta agregar la boleta/factura')
             return False
         if not self.numBoletaEntry.get().isdigit():
             messagebox.showerror(title='Error', message='El número de boleta debe ser un número entero')
@@ -474,9 +495,14 @@ class SACUI:
         
     def runSender(self):
         try:
-            os.system('cmd /c run sac_sender.exe') 
+            if not os.path.exists(DELIVEREDDATAPATH):
+                messagebox.showerror(title='Error', message='No hay reportes para enviar')
+                return
+            senderJob: SACSenderJob = SACSenderJob()
+            senderJob.sendReports()
+            messagebox.showinfo(title='Éxito', message='Reportes enviados')
         except Exception:
-            messagebox.showerror(title='ERROR', message='SAC Sender no pudo ejecutarse')
+            messagebox.showerror(title='Error', message='SAC Sender no pudo ejecutarse')
         
     def openServicioGUI(self):
         addServicioGUI: AddServicioGUI = AddServicioGUI(container=self)
@@ -578,9 +604,15 @@ class SACUI:
         self.destinatarioDropdown.set('')
         self.casosTable.delete(*self.casosTable.get_children())
         self.serviciosTable.delete(*self.serviciosTable.get_children())
+        self.destinatarioDropdown.set('')
         self.uploadedAnexosLabel.config(text='No se han subido anexos')
         self.uploadedBoletaLabel.config(text='No se ha subido boleta')
-        self.thumbnail.pack_forget()
+
+        self.master.destroy()
+        self.master.update()
+        root = Tk()
+        sacUI: SACUI = SACUI(master=root)
+        root.mainloop()
             
 '''
 TODO:
