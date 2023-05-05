@@ -20,8 +20,8 @@ if __name__ == '__main__':
     # Sending emails:
     with open(MAILDATA, 'r') as file:
         senderUsername, senderPassword = file.readline().strip().split(',')
-    smtpServer: str = SMTPSERVER
-    smtpPort: int = SMTPPORT
+    smtpServer: str = SMTPSERVERGYD
+    smtpPort: int = SMTPPORTGYD
     mailSender: MailSender = MailSender(senderUsername=senderUsername, senderPassword=senderPassword, smtpServer=smtpServer, smtpPort=smtpPort)
     boletasSent = []
     
@@ -35,6 +35,9 @@ if __name__ == '__main__':
                 boletasSent.append((numBoleta, idMapsa))
         destinatario: Destinatario = Destinatario(nombreDestinatario=nombreDestinatario, correoDestinatario=correoDestinatario)
         mailSender.sendUnifiedDocument(destinatario=destinatario)  
+        if not os.path.exists(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}'):
+            os.makedirs(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}')
+        shutil.copy(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf', f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}/Documento.pdf')
     
     # Setting boleta data as printed:
     boletaData: tuple

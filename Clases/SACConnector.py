@@ -23,10 +23,10 @@ class SACConnector:
         self.cursorData.fast_executemany = True
         
         self.beneficiariosTable: str = 'Beneficiarios'
-        self.clientesTable: str = 'Tabla_Clientes'
+        self.clientesTable: str = 'Clientes'
         self.mapsaTable: str = 'Mapsa'
-        self.boletasTable: str = 'Tabla_nueva_de_boletas'
-        self.gastosTable: str = 'ITEM_Gastos'
+        self.boletasTable: str = 'Tabla_boletas'
+        self.gastosTable: str = 'ITEM-Gastos'
         
         self.year: int = 2022 #Hardcoded
         
@@ -74,9 +74,6 @@ class SACConnector:
         self.cursorBoleta.execute(f"SELECT * FROM {self.boletasTable} WHERE Numero = {numBoleta} AND Print = False AND Idboleta = {idMapsa}")
         for dataReceived in self.cursorBoleta.fetchall(): 
             idBoleta: int = dataReceived[0]
-            fechaBoleta : datetime = dataReceived[2]
-            # if fechaBoleta.year != self.year:
-            #     continue
             deudorData: Deudor = self.getDeudorData(idBoleta=idBoleta)
             idCliente: int = deudorData.idCliente
             break
@@ -174,7 +171,7 @@ class SACConnector:
         codigosData: list[str] = []
         self.cursorData.execute(f'''
                                     SELECT ITEM
-                                    FROM {self.gastosTable}
+                                    FROM "{self.gastosTable}"
                                 ''')
         for data in self.cursorData.fetchall():
             codigosData.append(data[0])
@@ -205,7 +202,7 @@ class SACConnector:
     def getPossibleMapsaCasos(self, rutDeudor: str = '', apellidoDeudor: str = '', idCliente: int = None) -> list[Caso]:
         casosFound : list[Caso] = []
         query: str = f'''
-                        SELECT IdMapsa, Estado, Asignado, Bsecs, "Apellido Deudor", "RUT Deudor", Mapsa.Cliente, Tabla_Clientes.Cliente
+                        SELECT IdMapsa, Estado, Asignado, Bsecs, "Apellido Deudor", "RUT Deudor", Mapsa.Cliente, Clientes.Cliente
                         FROM {self.mapsaTable}
                         INNER JOIN {self.clientesTable}
                         ON {self.clientesTable}.IdCliente = {self.mapsaTable}.Cliente
@@ -235,7 +232,7 @@ class SACConnector:
 
     def insertBoletaDataExample(self):
         query = f'''
-                    INSERT INTO Tabla_nueva_de_boletas (IdBoleta, Numero, Fecha, Monto, Nota, Print, Mes, "RUT Beneficiario")
+                    INSERT INTO Tabla_boletas (IdBoleta, Numero, Fecha, Monto, Nota, Print, Mes, "RUT Beneficiario")
                     VALUES (1111, 1111, '{transformDateToSpanishBrief(date=datetime.now(), point=True)}' , 88888, 'Test Daniel', False, '{getFormattedMonthFromDate(datetime.now())}', '19.618.378-7')                              
                 '''
         print(query)
@@ -262,7 +259,7 @@ class SACConnector:
                 
     def getBoletaData(self):
         self.cursorBoleta.execute(f'''
-                                  SELECT * FROM Tabla_nueva_de_boletas
+                                  SELECT * FROM Tabla_boletas
                                   WHERE IdBoleta = 1111''')
         print(self.cursorBoleta.fetchall())
         

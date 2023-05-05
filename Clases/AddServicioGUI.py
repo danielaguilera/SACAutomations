@@ -18,7 +18,7 @@ class AddServicioGUI:
         for index, header in enumerate(self.headers):
             Label(master=self.formFrame, text=header).grid(row=0, column=index, padx=5, pady=5)
             if index == 0:
-                self.codigoDropdown = ttk.Combobox(master=self.formFrame, state='readonly', values=self.codigos)
+                self.codigoDropdown = ttk.Combobox(master=self.formFrame, state='readonly', values=self.codigos, width=35)
                 self.codigoDropdown.grid(row=1, column=index, padx=5, pady=5)
             elif index == 1:
                 self.notaEntry = Entry(master=self.formFrame)

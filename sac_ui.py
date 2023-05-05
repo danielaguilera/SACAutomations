@@ -11,7 +11,7 @@ from Clases.ReporteData import ReporteData
 from Clases.Destinatario import Destinatario
 from Utils.Metadata import *
 from Utils.GlobalFunctions import *
-from PyPDF2 import PdfReader, PdfMerger
+from PyPDF2 import PdfFileReader, PdfReader, PdfMerger
 from PyPDF2.errors import PdfReadError
 from Clases.SACConnector import SACConnector
 from Clases.Cliente import Cliente
@@ -24,6 +24,7 @@ from Clases.SACSenderJob import SACSenderJob
 from datetime import date
 from PIL import ImageTk, Image
 import glob, sys, fitz
+import re
 
 class SACUI:
     def __init__(self, master: Tk):
@@ -37,24 +38,7 @@ class SACUI:
         
         self.master = master
         self.master.title("SAC App")
-        # self.master.size =(30,30)
         self.master.resizable(0,0)
-        
-        # self.master = master
-        # self.master.title("SAC App")
-        
-        # # Get the screen resolution
-        # screen_width = self.master.winfo_screenwidth()
-        # screen_height = self.master.winfo_screenheight()
-        
-        # # Calculate the size of the app
-        # app_width = int(screen_width * 0.45)
-        # app_height = int(screen_height * 0.9)
-        
-        # # Set the geometry of the app
-        # self.master.geometry(f"{app_width}x{app_height}")
-        
-        # self.master.resizable(0,0)
         
         self.topFrame = Frame(master=self.master)
         self.topFrame.pack(expand=True, fill=BOTH)
@@ -63,24 +47,6 @@ class SACUI:
         self.thumbnailFrame.pack(side=RIGHT)
         self.boletaImage = None
         self.thumbnail = Label(master=self.thumbnailFrame)
-        
-        self.uploadFrame = LabelFrame(master=self.master)
-        self.uploadFrame.pack(expand=True, fill=BOTH)
-        
-        self.uploadFrame.grid_columnconfigure(1, weight=1)
-        self.uploadFrame.grid_rowconfigure(1, weight=1)
-
-        self.boletaUploadButton = Button(self.uploadFrame, text="Subir boleta/factura", font=('Helvetica bold', 15), command=self.selectBoletaPDF, width=30)
-        self.boletaUploadButton.grid(row=0, column=0)
-        
-        self.boletaResetButton = Button(self.uploadFrame, text="Reestablecer boleta", font=('Helvetica bold', 15), command=self.resetBoleta, width=30)
-        self.boletaResetButton.grid(row=1, column=0)
-        
-        self.anexoUploadButton = Button(self.uploadFrame, text="Subir anexo", font=('Helvetica bold', 15), command=self.selectAnexoPDF, width=30)
-        self.anexoUploadButton.grid(row=0, column=1)
-
-        self.anexoResetButton = Button(self.uploadFrame, text="Reestablecer anexos", font=('Helvetica bold', 15), command=self.resetAnexos, width=30)
-        self.anexoResetButton.grid(row=1, column=1)
         
         self.stateFrame = LabelFrame(master=self.master)
         self.stateFrame.pack(expand=True, fill=BOTH)
@@ -91,11 +57,19 @@ class SACUI:
         self.uploadedBoletaFrame.pack(expand=True, fill=BOTH)
         self.uploadedBoletaLabel = Label(master=self.uploadedBoletaFrame, font=('Helvetica bold', 10), text='No se ha subido boleta')
         self.uploadedBoletaLabel.pack(side=LEFT)
+        self.boletaUploadButton = Button(self.uploadedBoletaFrame, text="Subir boleta/factura", command=self.selectBoletaPDF)
+        self.boletaUploadButton.pack(side=LEFT, padx=10)
+        self.boletaResetButton = Button(self.uploadedBoletaFrame, text="Quitar boleta", command=self.clearForm)
+        self.boletaResetButton.pack(side=LEFT, padx=10)
         
         self.uploadedAnexosFrame = Frame(master=self.stateFrame)
         self.uploadedAnexosFrame.pack(expand=True, fill=BOTH)
         self.uploadedAnexosLabel = Label(master=self.uploadedAnexosFrame, font=('Helvetica bold', 10), text='No se han subido anexos')
         self.uploadedAnexosLabel.pack(side=LEFT)
+        self.anexoUploadButton = Button(self.uploadedAnexosFrame, text="Subir anexo", command=self.selectAnexoPDF)
+        self.anexoUploadButton.pack(side=LEFT, padx=10)
+        self.anexosResetButton = Button(self.uploadedAnexosFrame, text="Quitar anexos", command=self.resetAnexos)
+        self.anexosResetButton.pack(side=LEFT, padx=10)
         
         self.numBoletaFrame = Frame(master=self.stateFrame)
         self.numBoletaFrame.pack(expand=True, fill=BOTH)
@@ -106,7 +80,7 @@ class SACUI:
         
         self.fechaBoletaFrame = Frame(master=self.stateFrame)
         self.fechaBoletaFrame.pack(expand=True, fill=BOTH)
-        self.fechaBoletaLabel = Label(master=self.fechaBoletaFrame, text='Fecha Emisión')
+        self.fechaBoletaLabel = Label(master=self.fechaBoletaFrame, text='Fecha Emisión (dd-mm-AAAA)')
         self.fechaBoletaLabel.pack(side=LEFT) 
         self.fechaBoletaEntry: Entry = Entry(master=self.fechaBoletaFrame)
         self.fechaBoletaEntry.pack(side=LEFT, padx=5)
@@ -123,7 +97,7 @@ class SACUI:
         self.nombreBeneficiarioFrame.pack(expand=True, fill=BOTH)
         self.nombreBeneficiarioLabel = Label(master=self.nombreBeneficiarioFrame, text='Nombre o Razón Social')
         self.nombreBeneficiarioLabel.pack(side=LEFT)
-        self.nombreBeneficiarioDropdown = ttk.Combobox(master=self.nombreBeneficiarioFrame, state='readonly', values=[beneficiario.nombreBeneficiario for beneficiario in self.beneficiarios])
+        self.nombreBeneficiarioDropdown = ttk.Combobox(master=self.nombreBeneficiarioFrame, state='readonly', values=[beneficiario.nombreBeneficiario for beneficiario in self.beneficiarios], width=40)
         self.nombreBeneficiarioDropdown.pack(side=LEFT, padx=5)
         self.nombreBeneficiarioDropdown.bind("<<ComboboxSelected>>", self.assignBeneficiario)
         
@@ -176,7 +150,7 @@ class SACUI:
         self.casosFrame.pack(expand=True, fill=BOTH)
         Label(master=self.casosFrame, text='Asociar caso a boleta: ', font=('Helvetica bold', 10, 'bold')).pack(side=TOP)
         self.casosColumns = ['ID Mapsa', 'Estado', 'Fecha Asignación', 'Bsecs', 'RUT Deudor', 'Apellido Deudor', 'Cliente']
-        self.casosTable = ttk.Treeview(master=self.casosFrame, columns=self.casosColumns, show='headings', height=5)
+        self.casosTable = ttk.Treeview(master=self.casosFrame, columns=self.casosColumns, show='headings', height=3)
         for heading in self.casosColumns:
             self.casosTable.heading(heading, text=heading)
             self.casosTable.column(heading, width=100)
@@ -186,8 +160,6 @@ class SACUI:
         self.serviciosFrame = Frame(master=self.master)
         self.serviciosFrame.pack(expand=True, fill=BOTH)
         Label(master=self.serviciosFrame, text='Asociar servicios a boleta: ', font=('Helvetica bold', 10, 'bold')).pack(side=TOP)
-        self.addedServiciosLabel = Label(master=self.master, text='No se han agregado servicios')
-        self.addedServiciosLabel.pack(expand=True, fill=BOTH)
         self.serviciosColumns = ['Código', 'Nota', 'Monto']
         self.serviciosTable = ttk.Treeview(master=self.serviciosFrame, columns=self.serviciosColumns, show='headings', height=3)
         self.serviciosTable.heading('Código', text='Código')
@@ -205,22 +177,19 @@ class SACUI:
         self.saveFrame = LabelFrame(master=self.master)
         self.saveFrame.pack(expand=True, fill=BOTH)
         
-        self.saveButton = Button(self.saveFrame, text='Guardar', width=40, height=1, font=('Helvetica bold', 15), command=self.saveChanges)
+        self.saveButton = Button(self.saveFrame, text='Guardar', width=40, height=1, font=('Helvetica bold', 10), command=self.saveChanges)
         self.saveButton.pack(expand=True, fill=BOTH)
         
         self.sendFrame = LabelFrame(master=self.master)
         self.sendFrame.pack(expand=True, fill=BOTH)
         
-        self.sendButton = Button(self.saveFrame, text='Enviar reportes', width=40, height=1, font=('Helvetica bold', 15), command=self.runSender)
+        self.sendButton = Button(self.saveFrame, text='Enviar reportes', width=40, height=1, font=('Helvetica bold', 10), command=self.runSender)
         self.sendButton.pack(expand=True, fill=BOTH)
         
-        # self.manageReportsFrame = LabelFrame(master=self.master)
-        # self.manageReportsFrame.pack(expand=True, fill=BOTH)
-        
-        self.manageReportsButton = Button(self.saveFrame, text='Ver reportes a enviar', font=('Helvetica bold', 15), command=self.runReportManager)
+        self.manageReportsButton = Button(self.saveFrame, text='Ver reportes a enviar', font=('Helvetica bold', 10), command=self.runReportManager)
         self.manageReportsButton.pack(expand=True, fill=BOTH)
         
-        self.clearFormButton = Button(self.saveFrame, text='Borrar formulario', font=('Helvetica bold', 15), command=self.clearForm)
+        self.clearFormButton = Button(self.saveFrame, text='Borrar formulario', font=('Helvetica bold', 10), command=self.clearForm)
         self.clearFormButton.pack(expand=True, fill=BOTH)
         
     @property
@@ -240,6 +209,9 @@ class SACUI:
         return len(self.serviciosTable.get_children())
     
     def runReportManager(self):
+        if not os.path.exists(DELIVEREDDATAPATH):
+            messagebox.showerror(title='ERROR', message='No se han cargado boletas para enviar.\nNo hay nada que mostrar.')
+            return
         reportManager: ReportManager = ReportManager(container=self)
     
     def getMapsaCasos(self):
@@ -282,7 +254,7 @@ class SACUI:
         dataSelected: list = self.casosTable.item(self.casosTable.focus())['values']
         idMapsa: int = dataSelected[0]
         numBoleta: int = int(self.numBoletaEntry.get())
-        fechaEmision: date = datetime.strptime(self.fechaBoletaEntry.get(), '%Y-%m-%d').date()
+        fechaEmision: date = datetime.strptime(self.fechaBoletaEntry.get(), '%d-%m-%Y').date()
         rutBeneficiario: str = self.rutBeneficiarioEntry.get()
         servicios: list[Servicio] = []
         for iid in self.serviciosTable.get_children():
@@ -328,9 +300,6 @@ class SACUI:
                     if os.path.exists(anexoPath):
                         pdfMerger.append(anexoPath)
             pdfMerger.write(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf')
-            if not os.path.exists(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}'):
-                os.makedirs(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}')
-            shutil.copy(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf', f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}/Documento.pdf')
         pdfMerger.close()
         
     def saveDeudorName(self):
@@ -370,6 +339,7 @@ class SACUI:
             numBoleta: int = int(data.strip().split('_')[0])
             idMapsa: int = int(data.strip().split('_')[1])
             reporteData: ReporteData = self.sacConnector.getReporteData(numBoleta=numBoleta, idMapsa=idMapsa, destinatarioSet=destinatarioSet)
+            reporteData.overwriteDeudorName(newDeudorName=self.nombreDeudorEntry.get())
             if reporteData and idMapsa == idMapsaSet and numBoleta == numBoletaSet:
                 pdfGenerator: PDFGenerator = PDFGenerator()
                 pdfGenerator.generateReporte(reporteData=reporteData)
@@ -445,12 +415,12 @@ class SACUI:
                 self.numBoletaEntry.insert(0, numBoleta)
         except Exception:
             pass
-        
+
     def getRUTBeneficiarioFromFile(self):
         try:
             reader: PdfReader = PdfReader(self.boletaPath)
             text: str = reader.pages[0].extract_text().strip()
-            if DUARTE in text:
+            if (DUARTE in text) or (GYD in text):
                 rutBeneficiario: str = text.split('\n')[14].split(':')[2].replace(' ', '').strip()
             else:
                 rutBeneficiario: str = text.split('\n')[3][5::].strip()
@@ -471,12 +441,13 @@ class SACUI:
         try:
             reader: PdfReader = PdfReader(self.boletaPath)
             text: str = reader.pages[0].extract_text().strip()
-            if DUARTE in text:
+            if (DUARTE in text) or (GYD in text):
                 fechaEmisionString: str = text.split('\n')[19][15::].strip()
             else:
                 fechaEmisionString: str = text.split('\n')[9][7::].strip()
             fechaEmision: date = getDateFromSpanishFormat(stringDate=fechaEmisionString)
-            self.fechaBoletaEntry.insert(0, str(fechaEmision))
+            self.fechaBoletaEntry.delete(0, END)
+            self.fechaBoletaEntry.insert(0, fechaEmision.strftime("%d-%m-%Y"))
         except Exception:
             pass
         
@@ -484,7 +455,7 @@ class SACUI:
         try:
             reader: PdfReader = PdfReader(self.boletaPath)
             text: str = reader.pages[0].extract_text().strip()
-            if DUARTE in text:
+            if (DUARTE in text) or (GYD in text):
                 total: int = int(text.split('\n')[-1][7::].replace('.',''))
             else:
                 total: int = int(text.split('\n')[16][20::].replace('.',''))
@@ -501,7 +472,8 @@ class SACUI:
             senderJob: SACSenderJob = SACSenderJob()
             senderJob.sendReports()
             messagebox.showinfo(title='Éxito', message='Reportes enviados')
-        except Exception:
+        except Exception as e:
+            print(e)
             messagebox.showerror(title='Error', message='SAC Sender no pudo ejecutarse')
         
     def openServicioGUI(self):
@@ -513,15 +485,10 @@ class SACUI:
         selectedItem = self.serviciosTable.selection()[0]
         self.serviciosTable.delete(selectedItem)
         self.serviciosTable.configure(height=self.addedServicios)
-        if self.addedServicios:
-            self.addedServiciosLabel.config(text=f'Servicios agregados: {self.addedServicios} - Total: ${self.servicioSum}')
-        else:
-            self.addedServiciosLabel.config(text='No se han agregado servicios')
     
     def addServicio(self, servicio: Servicio):
         self.serviciosTable.insert('', END, values=(servicio.codigo, servicio.nota, servicio.monto))
         self.serviciosTable.configure(height=self.addedServicios)
-        self.addedServiciosLabel.config(text=f'Servicios agregados: {self.addedServicios} - Total: ${self.servicioSum}')
         
     def clienteSelectionEvent(self, key=None):
         self.setDestinatario()

@@ -108,7 +108,6 @@ class PDFGenerator:
             pdf.cell(40, 10, servicio.codigo)
             pdf.line(x1=18, y1=120 + index*delta, x2=200, y2=120 + index*delta)
 
-
         pdf.set_xy(x=18, y=120 + index*delta)
         pdf.set_font(size=13, family='Arial')
         pdf.set_text_color(0, 0, 20)
@@ -117,10 +116,6 @@ class PDFGenerator:
         pdf.cell(40, 10, setPriceFormat(reporteData.sumaTotal))
         pdf.image(SIGNINGPATH, x=18, y=150 + index*delta, w=140, h=40)        
 
-        # if not os.path.exists(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}'):
-        #     os.makedirs(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}')
-        # pdf.output(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/Reporte_{reporteData.numBoleta}_{reporteData.idMapsa}.pdf')
-        
         if not os.path.exists(f'{DELIVEREDDATAPATH}/{reporteData.destinatario.nombreDestinatario}/{reporteData.numBoleta}_{reporteData.idMapsa}'):
             os.makedirs(f'{DELIVEREDDATAPATH}/{reporteData.destinatario.nombreDestinatario}/{reporteData.numBoleta}_{reporteData.idMapsa}')
         pdf.output(f'{DELIVEREDDATAPATH}/{reporteData.destinatario.nombreDestinatario}/{reporteData.numBoleta}_{reporteData.idMapsa}/Reporte_{reporteData.numBoleta}.pdf')

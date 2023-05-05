@@ -25,6 +25,7 @@ class ReportManager:
         self.reportFrame = Frame(master=self.toplevel)
         self.reportFrame.pack(expand=True, fill=BOTH)
         self.reportColumns = ['Destinatario', 'Email', '# Boleta', 'ID Mapsa', 'Beneficiario', 'Cliente', 'Deudor', 'Monto Total (CLP)']
+        self.columnWidths = [200, 150, 50, 150, 100, 100, 100]
         self.reportTable = ttk.Treeview(master=self.reportFrame, columns=self.reportColumns, show='headings', height=10)
         for columnName in self.reportColumns:
             self.reportTable.heading(columnName, text=columnName)
@@ -42,9 +43,6 @@ class ReportManager:
     def getReports(self):
         self.reportTable.delete(*self.reportTable.get_children())
         nombreDestinatario: str
-        if not os.path.exists(DELIVEREDDATAPATH):
-            messagebox.showerror(title='ERROR', message='No se han cargado boletas para enviar.\nNo hay nada que mostrar.')
-            return
         for nombreDestinatario in os.listdir(DELIVEREDDATAPATH):
             self.reportTable.insert('', END, iid=nombreDestinatario, values=(nombreDestinatario,'','','','','','',''), open=True)
             for dirName in os.listdir(f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
