@@ -582,6 +582,4 @@ class App:
 
         self.master.destroy()
         self.master.update()
-        root = Tk()
-        sacUI: App = App(master=root)
-        root.mainloop()
+        app: App = App()
