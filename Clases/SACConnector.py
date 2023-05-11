@@ -257,11 +257,12 @@ class SACConnector:
                                   ''')
         self.connBoleta.commit()
                 
-    def getBoletaData(self):
+    def getBoletaData(self, numBoleta: int) -> list:
         self.cursorBoleta.execute(f'''
-                                  SELECT * FROM Tabla_boletas
-                                  WHERE IdBoleta = 1111''')
-        print(self.cursorBoleta.fetchall())
+                                    SELECT * FROM {self.boletasTable}
+                                    WHERE Numero = {numBoleta} and Print = False
+                                  ''')
+        return self.cursorBoleta.fetchall()
         
     def clearAllBoletaData(self):
         self.cursorBoleta.execute(f'''

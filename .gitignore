@@ -132,12 +132,18 @@ dmypy.json
 DatosRecibidos/
 Resultados/
 ReportesGenerados/
+Historial_de_envíos/
 
 # DB
 SAC/
 
 # Images
 Images/
+thumbnail.png
 
 # Mail Data
 MailData/
+
+# Log files
+App_errors.txt
+Sender_errors.txt

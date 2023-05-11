@@ -41,6 +41,8 @@ class ReportManager:
         self.getReports()
         
     def getReports(self):
+        if not os.path.exists(DELIVEREDDATAPATH):
+            return
         self.reportTable.delete(*self.reportTable.get_children())
         nombreDestinatario: str
         for nombreDestinatario in os.listdir(DELIVEREDDATAPATH):
@@ -50,6 +52,7 @@ class ReportManager:
                     numBoleta, idMapsa = [int(x) for x in dirName.strip().split('_')]
                     with open(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{numBoleta}_{idMapsa}/Data_{numBoleta}.txt') as file:
                         data = file.readline().strip().split(',')
+                        print(data)
                         nombreDestinatario = data[0]
                         mailDestinatario = data[1]
                         numBoleta = data[2]

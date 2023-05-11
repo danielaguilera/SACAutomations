@@ -16,6 +16,11 @@ class SACSenderJob:
         pass
     
     def sendReports(self):
+        # Checks if there is data:
+        if not os.path.exists(DELIVEREDDATAPATH):
+            print('No hay datos para enviar')
+            sys.exit()        
+
         # Sending emails:
         with open(MAILDATA, 'r') as file:
             senderUsername, senderPassword = file.readline().strip().split(',')
