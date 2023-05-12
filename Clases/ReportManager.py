@@ -3,6 +3,7 @@ from tkinter import ttk
 
 from PyPDF2 import PdfMerger
 from Clases.SACConnector import SACConnector
+from Clases.SACSenderJob import SACSenderJob
 from Utils.GlobalFunctions import *
 from Utils.Metadata import *
 from Clases.Servicio import Servicio
@@ -15,7 +16,7 @@ import glob, sys, fitz
 class ReportManager:
     def __init__(self, container):
         self.container = container
-        self.toplevel = Toplevel()
+        self.toplevel = Toplevel(background='seashell4')
         self.toplevel.title(string='Reportes a enviar')
         self.thumbnailFrame = Frame(master=self.toplevel)
         self.thumbnailFrame.pack(side=RIGHT)
@@ -35,7 +36,11 @@ class ReportManager:
         
         self.actionFrame = Frame(master=self.toplevel)
         self.actionFrame.pack(expand=True, fill=BOTH)
-        self.deleteButton = Button(master=self.actionFrame, text='Eliminar reporte', width=40, height=1, font=('Helvetica bold', 20), command=self.deleteReport)
+
+        self.sendButton = Button(master=self.actionFrame, text='Enviar reportes', width=40, height=1, font=('Helvetica bold', 20), fg = 'black', bg='RoyalBlue1', command=self.sendAllReports)
+        self.sendButton.pack(expand=False, fill=BOTH)        
+
+        self.deleteButton = Button(master=self.actionFrame, text='Eliminar reporte', width=40, height=1, font=('Helvetica bold', 20), fg = 'black', bg='indian red', command=self.deleteReport)
         self.deleteButton.pack(expand=False, fill=BOTH)
         
         self.getReports()
@@ -89,6 +94,8 @@ class ReportManager:
         self.thumbnail.pack()
     
     def deleteReport(self):
+        if not messagebox.askyesno(title='Aviso', message='¿Estás seguro de que quieres borrar el reporte?'):
+            return
         data = self.reportTable.item(self.reportTable.selection()[0])['values']
         if not(data[2] and data[3]):
             return
@@ -101,8 +108,27 @@ class ReportManager:
         deleteIfEmpty(f'{DELIVEREDDATAPATH}')
         self.updateUnifiedDocument()
         messagebox.showinfo(title='INFO', message='Reporte borrado')
-        self.getReports()
-        self.thumbnail.pack_forget()
+        self.resetForm()
+        
+    def resetForm(self):
+        self.toplevel.destroy()
+        self.toplevel.update()
+        reportManager: ReportManager = ReportManager(container=self.container)
+        
+    def sendAllReports(self):
+        if not messagebox.askyesno(title='Aviso', message='Se enviarán todas las boletas de esta semana. \n¿Deseas continuar?'):
+            return
+        try:
+            if not os.path.exists(DELIVEREDDATAPATH):
+                messagebox.showerror(title='Error', message='No hay reportes para enviar')
+                return
+            senderJob: SACSenderJob = SACSenderJob()
+            senderJob.sendReports()
+            messagebox.showinfo(title='Éxito', message='Reportes enviados')
+            self.resetForm()
+        except Exception as e:
+            print(e)
+            messagebox.showerror(title='Error', message='SAC Sender no pudo ejecutarse')
         
     def updateUnifiedDocument(self):
         if not os.path.exists(DELIVEREDDATAPATH):

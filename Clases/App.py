@@ -57,19 +57,19 @@ class App:
         self.uploadedBoletaFrame.pack(expand=True, fill=BOTH)
         self.uploadedBoletaLabel = Label(master=self.uploadedBoletaFrame, font=('Helvetica bold', 10), text='No se ha subido boleta')
         self.uploadedBoletaLabel.pack(side=LEFT)
-        self.boletaUploadButton = Button(self.uploadedBoletaFrame, text="Subir boleta/factura", command=self.selectBoletaPDF)
-        self.boletaUploadButton.pack(side=LEFT, padx=10)
-        self.boletaResetButton = Button(self.uploadedBoletaFrame, text="Quitar boleta", command=self.clearForm)
-        self.boletaResetButton.pack(side=LEFT, padx=10)
+        self.boletaUploadButton = Button(self.uploadedBoletaFrame, text="Subir boleta/factura", fg = 'black', bg='RoyalBlue1', command=self.selectBoletaPDF)
+        self.boletaUploadButton.pack(side=LEFT, padx=5)
+        self.boletaResetButton = Button(self.uploadedBoletaFrame, text="Quitar boleta", fg = 'black', bg='indian red', command=self.clearForm)
+        self.boletaResetButton.pack(side=LEFT, padx=5)
         
         self.uploadedAnexosFrame = Frame(master=self.stateFrame)
         self.uploadedAnexosFrame.pack(expand=True, fill=BOTH)
         self.uploadedAnexosLabel = Label(master=self.uploadedAnexosFrame, font=('Helvetica bold', 10), text='No se han subido anexos')
         self.uploadedAnexosLabel.pack(side=LEFT)
-        self.anexoUploadButton = Button(self.uploadedAnexosFrame, text="Subir anexo", command=self.selectAnexoPDF)
-        self.anexoUploadButton.pack(side=LEFT, padx=10)
-        self.anexosResetButton = Button(self.uploadedAnexosFrame, text="Quitar anexos", command=self.resetAnexos)
-        self.anexosResetButton.pack(side=LEFT, padx=10)
+        self.anexoUploadButton = Button(self.uploadedAnexosFrame, text="Subir anexo", fg = 'black', bg='RoyalBlue1', command=self.selectAnexoPDF)
+        self.anexoUploadButton.pack(side=LEFT, padx=5)
+        self.anexosResetButton = Button(self.uploadedAnexosFrame, text="Quitar anexos", fg = 'black', bg='indian red', command=self.resetAnexos)
+        self.anexosResetButton.pack(side=LEFT, padx=5)
         
         self.numBoletaFrame = Frame(master=self.stateFrame)
         self.numBoletaFrame.pack(expand=True, fill=BOTH)
@@ -167,9 +167,9 @@ class App:
         self.serviciosTable.heading('Monto', text='Monto ($)')
         self.serviciosTable.pack(expand=True, fill=BOTH, anchor=CENTER)
         self.serviciosTable.insert('', END, values=('TOTAL', '-', 0), iid='total')
-        self.addServicioButton = Button(master=self.serviciosFrame, text='Agregar servicio', command=self.openServicioGUI)
+        self.addServicioButton = Button(master=self.serviciosFrame, text='Agregar servicio', fg = 'black', bg='SeaGreen3', command=self.openServicioGUI)
         self.addServicioButton.pack(expand=True, fill=BOTH)
-        self.deleteServicioButton = Button(master=self.serviciosFrame, text='Eliminar servicio', command=self.removeServicio)
+        self.deleteServicioButton = Button(master=self.serviciosFrame, text='Eliminar servicio', fg = 'black', bg='indian red', command=self.removeServicio)
         self.deleteServicioButton.pack(expand=True, fill=BOTH)
         
         self.boletaPath: str = ''
@@ -178,20 +178,24 @@ class App:
         self.saveFrame = LabelFrame(master=self.master)
         self.saveFrame.pack(expand=True, fill=BOTH)
         
-        self.saveButton = Button(self.saveFrame, text='Guardar', width=40, height=1, font=('Helvetica bold', 10), command=self.saveChanges)
+        Label(master=self.saveFrame, text='Guardar datos de boleta', font=('Helvetica bold', 10, 'bold')).pack(side=TOP)
+        
+        self.saveButton = Button(self.saveFrame, text='Generar reporte y Guardar', width=40, height=1, font=('Helvetica bold', 10), fg = 'black', bg='RoyalBlue1', command=self.saveChanges)
         self.saveButton.pack(expand=True, fill=BOTH)
+        
+        self.clearFormButton = Button(self.saveFrame, text='Borrar formulario', font=('Helvetica bold', 10), fg = 'black', bg='indian red', command=self.beginClearForm)
+        self.clearFormButton.pack(expand=True, fill=BOTH)
         
         self.sendFrame = LabelFrame(master=self.master)
         self.sendFrame.pack(expand=True, fill=BOTH)
         
-        self.sendButton = Button(self.saveFrame, text='Enviar reportes', width=40, height=1, font=('Helvetica bold', 10), command=self.runSender)
-        self.sendButton.pack(expand=True, fill=BOTH)
+        Label(master=self.sendFrame, text='Envío de reportes por mail', font=('Helvetica bold', 10, 'bold')).pack(side=TOP)
         
-        self.manageReportsButton = Button(self.saveFrame, text='Ver reportes a enviar', font=('Helvetica bold', 10), command=self.runReportManager)
+        self.manageReportsButton = Button(self.sendFrame, text='Ver reportes a enviar', font=('Helvetica bold', 10),  fg = 'black', bg='lawngreen', command=self.runReportManager)
         self.manageReportsButton.pack(expand=True, fill=BOTH)
         
-        self.clearFormButton = Button(self.saveFrame, text='Borrar formulario', font=('Helvetica bold', 10), command=self.clearForm)
-        self.clearFormButton.pack(expand=True, fill=BOTH)
+        self.sendButton = Button(self.sendFrame, text='Enviar reportes', width=40, height=1, font=('Helvetica bold', 10), fg = 'black', bg='RoyalBlue1', command=self.runSender)
+        self.sendButton.pack(expand=True, fill=BOTH)
         
         self.master.mainloop()
         
@@ -259,6 +263,8 @@ class App:
     def saveChanges(self):
         if not self.validData():
             return        
+        if not messagebox.askyesno(title='Aviso', message='¿Está segur@ de querer guardar los datos?'):
+            return
         dataSelected: list = self.casosTable.item(self.casosTable.focus())['values']
         idMapsa: int = dataSelected[0]
         numBoleta: int = int(self.numBoletaEntry.get())
@@ -475,6 +481,8 @@ class App:
             pass
         
     def runSender(self):
+        if not messagebox.askyesno(title='Aviso', message='Se enviarán todas las boletas de esta semana. \n¿Deseas continuar?'):
+            return
         try:
             if not os.path.exists(DELIVEREDDATAPATH):
                 messagebox.showerror(title='Error', message='No hay reportes para enviar')
@@ -482,6 +490,7 @@ class App:
             senderJob: SACSenderJob = SACSenderJob()
             senderJob.sendReports()
             messagebox.showinfo(title='Éxito', message='Reportes enviados')
+            self.clearForm()
         except Exception as e:
             print(e)
             messagebox.showerror(title='Error', message='SAC Sender no pudo ejecutarse')
@@ -567,6 +576,11 @@ class App:
             self.apellidoDeudorEntry.delete(0, END)
             self.apellidoDeudorEntry.insert(0, apellidoDeudor)
             self.setDestinatario()
+    
+    def beginClearForm(self):
+        if not messagebox.askyesno(title='Aviso', message='Se borrarán todos los datos ingresados. \n ¿Desea continuar?'):
+            return
+        self.clearForm()
     
     def clearForm(self):
         self.boletaPath = ''

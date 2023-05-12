@@ -13,6 +13,10 @@ class Servicio:
         self.nota: str = nota
         self.codigo: str = codigo
         
+    @property
+    def codigoHeader(self):
+        return self.codigo.split(' ')[0]
+        
     def __str__(self):
         return str(self.__dict__)
     

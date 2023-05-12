@@ -245,8 +245,8 @@ class SACConnector:
             formattedDate: str = transformDateToSpanishBrief(date=boleta.fechaEmision, point=True)
             formattedMonth: str = getFormattedMonthFromDate(date=boleta.fechaEmision)
             self.cursorBoleta.execute(f'''
-                                        INSERT INTO {self.boletasTable} (IdBoleta, Numero, Fecha, Monto, Nota, Check, Mes, "RUT Beneficiario", Codigo)
-                                        VALUES ({boleta.idMapsa}, {boleta.numBoleta}, '{formattedDate}', {servicio.monto}, '{servicio.nota if servicio.nota else " "}', False, '{formattedMonth}', '{boleta.rutBeneficiario}', '{servicio.codigo}')
+                                        INSERT INTO {self.boletasTable} (IdBoleta, Numero, Fecha, Monto, Nota, Check, Mes, "RUT Beneficiario", Codigo, "Valor Ref")
+                                        VALUES ({boleta.idMapsa}, {boleta.numBoleta}, '{formattedDate}', {servicio.monto}, '{servicio.nota if servicio.nota else " "}', False, '{formattedMonth}', '{boleta.rutBeneficiario}', '{servicio.codigo}', '{servicio.codigoHeader}')
                                       ''')
             self.connBoleta.commit()
             
