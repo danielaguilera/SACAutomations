@@ -1,7 +1,7 @@
 import os
 
 with open('Params.txt', 'r') as file:
-    ENV, SACDATAFILE_PROD, SACBOLETASFILE_PROD, SACDATAFILE_TEST, SACBOLETASFILE_TEST = [line.strip() for line in file.readlines()]
+    ENV, SEND, SACDATAFILE_PROD, SACBOLETASFILE_PROD, SACDATAFILE_TEST, SACBOLETASFILE_TEST = [line.strip() for line in file.readlines()]
 
 SACDATAPATH_PROD: str = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=" + SACDATAFILE_PROD + ";"
 SACBOLETASPATH_PROD: str = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=" + SACBOLETASFILE_PROD + ";"
