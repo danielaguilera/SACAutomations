@@ -52,9 +52,10 @@ class MailSender:
         
     def sendUnifiedDocument(self, destinatario: Destinatario):
         receiverAddress: str = destinatario.correoDestinatario
-        receiverAddress: str = 'draguilera@uc.cl' #Hardcoded
         mailSubject: str = f'Envío reportes semana {getWeekMondayTimeStamp()}'
         mailContent: str = f'Estimad@ {destinatario.nombreDestinatario}: \n\n Junto con saludar, se adjunta el resumen de las facturas correspondientes a la semana de {getWeekMondayTimeStamp("long")}'
         mailAttachment: str = f'{DELIVEREDDATAPATH}/{destinatario.nombreDestinatario}/Documento.pdf'
         self.sendMail(receiverAddress=receiverAddress, mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
+        self.sendMail(receiverAddress='draguilera@uc.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
+        self.sendMail(receiverAddress='servidor@gydabogados.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
         print(f'Email a {destinatario.correoDestinatario} enviado!')        

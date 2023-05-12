@@ -164,8 +164,9 @@ class App:
         self.serviciosTable = ttk.Treeview(master=self.serviciosFrame, columns=self.serviciosColumns, show='headings', height=3)
         self.serviciosTable.heading('Código', text='Código')
         self.serviciosTable.heading('Nota', text='Nota')
-        self.serviciosTable.heading('Monto', text='Monto')
+        self.serviciosTable.heading('Monto', text='Monto ($)')
         self.serviciosTable.pack(expand=True, fill=BOTH, anchor=CENTER)
+        self.serviciosTable.insert('', END, values=('TOTAL', '-', 0), iid='total')
         self.addServicioButton = Button(master=self.serviciosFrame, text='Agregar servicio', command=self.openServicioGUI)
         self.addServicioButton.pack(expand=True, fill=BOTH)
         self.deleteServicioButton = Button(master=self.serviciosFrame, text='Eliminar servicio', command=self.removeServicio)
@@ -202,6 +203,8 @@ class App:
     def servicioSum(self) -> int:
         total: int = 0
         for iid in self.serviciosTable.get_children():
+            if iid == 'total':
+                continue
             monto: int = self.serviciosTable.item(iid)['values'][2]
             total += int(monto)
         return total
@@ -263,6 +266,8 @@ class App:
         rutBeneficiario: str = self.rutBeneficiarioEntry.get()
         servicios: list[Servicio] = []
         for iid in self.serviciosTable.get_children():
+            if iid == 'total':
+                continue
             codigo, nota, monto = self.serviciosTable.item(iid)['values']
             servicios.append(Servicio(codigo=codigo, nota=nota, monto=monto))
         boleta: Boleta = Boleta(idMapsa=idMapsa, 
@@ -485,14 +490,16 @@ class App:
         addServicioGUI: AddServicioGUI = AddServicioGUI(container=self)
         
     def removeServicio(self):
-        if not self.serviciosTable.selection():
+        if self.serviciosTable.focus() == 'total' or not self.serviciosTable.selection():
             return
         selectedItem = self.serviciosTable.selection()[0]
         self.serviciosTable.delete(selectedItem)
         self.serviciosTable.configure(height=self.addedServicios)
+        self.serviciosTable.item('total', values = ('TOTAL', '-', self.servicioSum))
     
     def addServicio(self, servicio: Servicio):
         self.serviciosTable.insert('', END, values=(servicio.codigo, servicio.nota, servicio.monto))
+        self.serviciosTable.item('total', values = ('TOTAL', '-', self.servicioSum))
         self.serviciosTable.configure(height=self.addedServicios)
         
     def clienteSelectionEvent(self, key=None):
