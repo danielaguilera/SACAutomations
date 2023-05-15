@@ -241,13 +241,16 @@ class SACConnector:
         
     def insertBoletaData(self, boleta: Boleta):
         servicio: Servicio
+        english: bool = LANGUAGE == 'ENG'
         for servicio in boleta.servicios:
-            formattedDate: str = transformDateToSpanishBrief(date=boleta.fechaEmision, point=True)
-            formattedMonth: str = getFormattedMonthFromDate(date=boleta.fechaEmision)
-            self.cursorBoleta.execute(f'''
-                                        INSERT INTO {self.boletasTable} (IdBoleta, Numero, Fecha, Monto, Nota, Check, Mes, "RUT Beneficiario", Codigo, "Valor Ref")
-                                        VALUES ({boleta.idMapsa}, {boleta.numBoleta}, '{formattedDate}', {servicio.monto}, '{servicio.nota if servicio.nota else " "}', False, '{formattedMonth}', '{boleta.rutBeneficiario}', '{servicio.codigo}', '{servicio.codigoHeader}')
-                                      ''')
+            formattedDate: str = transformDateToSpanishBrief(date=boleta.fechaEmision, point=True, english=english)
+            formattedMonth: str = getFormattedMonthFromDate(date=boleta.fechaEmision, english=english)
+            query = f'''
+                        INSERT INTO {self.boletasTable} (IdBoleta, Numero, Fecha, Monto, Nota, Check, Mes, "RUT Beneficiario", Codigo, "Valor Ref")
+                        VALUES ({boleta.idMapsa}, {boleta.numBoleta}, '{formattedDate}', {servicio.monto}, '{servicio.nota if servicio.nota else " "}', False, '{formattedMonth}', '{boleta.rutBeneficiario}', '{servicio.codigo}', '{servicio.codigoHeader}')
+                    '''
+            print(query)
+            self.cursorBoleta.execute(query)
             self.connBoleta.commit()
             
     def deleteBoletaData(self, numBoleta: int, idMapsa: int):
