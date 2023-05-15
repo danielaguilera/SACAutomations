@@ -4,6 +4,8 @@ from tkinter import messagebox
 import logging
 
 if __name__ == '__main__':
+    if not os.path.exists('LogFiles'):
+        os.mkdir('LogFiles')
     logging.basicConfig(filename=SENDER_ERRORS, level=logging.DEBUG, 
                     format='%(asctime)s %(levelname)s %(name)s %(message)s')
     logger=logging.getLogger(__name__)
