@@ -127,3 +127,27 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Reports
+DatosRecibidos/
+Resultados/
+ReportesGenerados/
+Historial_de_envíos/
+boleta_data/
+
+# DB
+SAC/
+
+# Images
+Images/
+thumbnail.png
+result.png
+
+# Mail Data
+mail_data.txt
+
+# Parameters
+Params/
+
+# Log files
+LogFiles/
