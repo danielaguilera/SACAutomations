@@ -1,9 +1,10 @@
 from Clases.App import App
 from tkinter import messagebox
+from Utils.Metadata import *
 import logging
 
 if __name__ == '__main__':
-    logging.basicConfig(filename='App_errors.txt', level=logging.DEBUG, 
+    logging.basicConfig(filename=APP_ERRORS, level=logging.DEBUG, 
                     format='%(asctime)s %(levelname)s %(name)s %(message)s')
     logger=logging.getLogger(__name__)
     try:

@@ -39,6 +39,7 @@ class App:
         self.master = Tk()
         self.master.title("SAC App")
         self.master.resizable(0,0)
+        self.master.protocol("WM_DELETE_WINDOW", self.onClosingWindow)
         
         self.topFrame = Frame(master=self.master)
         self.topFrame.pack(expand=True, fill=BOTH)
@@ -581,6 +582,15 @@ class App:
         if not messagebox.askyesno(title='Aviso', message='Se borrarán todos los datos ingresados. \n ¿Desea continuar?'):
             return
         self.clearForm()
+        
+    def clearCacheFiles(self):
+        deleteFileIfExists('thumbnail.png')
+        deleteFileIfExists('result.png')
+        
+    def onClosingWindow(self):
+        self.clearCacheFiles()
+        self.master.destroy()
+        self.master.update()
     
     def clearForm(self):
         self.boletaPath = ''
@@ -600,6 +610,7 @@ class App:
         self.destinatarioDropdown.set('')
         self.uploadedAnexosLabel.config(text='No se han subido anexos')
         self.uploadedBoletaLabel.config(text='No se ha subido boleta')
+        self.clearCacheFiles()
 
         self.master.destroy()
         self.master.update()

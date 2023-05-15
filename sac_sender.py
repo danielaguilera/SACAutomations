@@ -1,9 +1,10 @@
 from Clases.SACSenderJob import SACSenderJob
+from Utils.Metadata import *
 from tkinter import messagebox
 import logging
 
 if __name__ == '__main__':
-    logging.basicConfig(filename='Sender_errors.txt', level=logging.DEBUG, 
+    logging.basicConfig(filename=SENDER_ERRORS, level=logging.DEBUG, 
                     format='%(asctime)s %(levelname)s %(name)s %(message)s')
     logger=logging.getLogger(__name__)
     try:

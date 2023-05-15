@@ -14,7 +14,7 @@ class AddServicioGUI:
         
         self.formFrame = Frame(master=self.toplevel)
         self.formFrame.pack(expand=True, fill=BOTH)
-        self.headers = ['Código', 'Nota', 'Monto ($)']
+        self.headers = ['Código', 'Nota', 'Monto ($)', '']
         for index, header in enumerate(self.headers):
             Label(master=self.formFrame, text=header).grid(row=0, column=index, padx=5, pady=5)
             if index == 0:
@@ -26,10 +26,26 @@ class AddServicioGUI:
             elif index == 2:
                 self.montoEntry = Entry(master=self.formFrame)
                 self.montoEntry.grid(row=1, column=index, padx=5, pady=5)
+            elif index == 3:
+                self.setTotalButton = Button(master=self.formFrame, text='Poner monto total', fg = 'black', bg='RoyalBlue1', command=self.setTotalAmount)
+                self.setTotalButton.grid(row=1, column=index, padx=5, pady=5)
         self.actionFrame = Frame(master=self.toplevel)
         self.actionFrame.pack(expand=True, fill=BOTH)
-        self.saveButton = Button(master=self.actionFrame, text='Añadir', command=self.saveForm)
+        self.saveButton = Button(master=self.actionFrame, text='Añadir', fg = 'black', bg='SeaGreen3', command=self.saveForm)
         self.saveButton.pack(expand=True, fill=BOTH)
+    
+    @property
+    def totalAmount(self) -> int:
+        data: str = self.container.gastoTotalEntry.get()
+        if data.isdigit():
+            return int(data)
+        else:
+            return 0    
+    
+    def setTotalAmount(self):
+        if self.totalAmount:
+            self.montoEntry.delete(0, END)
+            self.montoEntry.insert(0, self.totalAmount)
         
     def saveForm(self):
         if not self.montoEntry.get().isdigit():

@@ -144,8 +144,10 @@ thumbnail.png
 result.png
 
 # Mail Data
-MailData/
+mail_data.txt
+
+# Parameters
+Params/
 
 # Log files
-App_errors.txt
-Sender_errors.txt
+LogFiles/

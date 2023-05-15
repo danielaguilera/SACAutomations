@@ -38,6 +38,10 @@ def deleteIfExists(path: str) -> None:
     if os.path.exists(path):
         shutil.rmtree(path=path)
         
+def deleteFileIfExists(filename: str) -> None:
+    if os.path.exists(filename):
+        os.remove(filename)
+        
 def deleteIfEmpty(path: str) -> None:
     count = 0
     for name in os.listdir(path):

@@ -1,6 +1,6 @@
 import os
 
-with open('Params.txt', 'r') as file:
+with open('Params/Params.txt', 'r') as file:
     ENV, SEND, SACDATAFILE_PROD, SACBOLETASFILE_PROD, SACDATAFILE_TEST, SACBOLETASFILE_TEST = [line.strip() for line in file.readlines()]
 
 SACDATAPATH_PROD: str = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=" + SACDATAFILE_PROD + ";"
@@ -28,7 +28,7 @@ ANEXO: str = 'Anexo'
 BOLETA: str = 'Boleta'
 REPORTE: str = 'Reporte'
 
-MAILDATA: str = 'MailData/SenderData.txt'
+MAILDATA: str = 'Params/mail_data.txt'
 
 SMTPSERVER: str = 'smtp-mail.outlook.com'
 SMTPPORT: int = 587
@@ -38,3 +38,6 @@ SMTPPORTGYD: int = 465
 
 DUARTE: str = 'DUARTE SPA'
 GYD: str = 'SERVICIOS JURIDICOS GAUSE'
+
+APP_ERRORS: str = 'LogFiles/App_errors.txt'
+SENDER_ERRORS: str = 'LogFiles/Sender_errors.txt'
