@@ -76,5 +76,12 @@ def correctRUTFormat(originalRUT: str) -> str:
     return numbers[0:2] + '.' + numbers[2:5] + '.' + numbers[5:8] + '-' + numbers[8]
 
 def validRUTFormat(originalRUT: str) -> bool:
-    return originalRUT == correctRUTFormat(originalRUT=originalRUT)        
+    return originalRUT == correctRUTFormat(originalRUT=originalRUT)
+
+def validDateFormat(dateString: str) -> bool:
+    try:
+        datetime.strptime(dateString, '%d-%m-%Y')
+        return True
+    except ValueError:
+        return False        
         

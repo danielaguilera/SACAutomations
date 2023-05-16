@@ -252,6 +252,9 @@ class App:
         if not self.destinatarioDropdown.get():
             messagebox.showerror(title='Error', message='Falta escoger un destinatario')
             return False
+        if not validDateFormat(self.fechaBoletaEntry.get()):
+            messagebox.showerror(title='Error', message='Debes poner la fecha en formato dd-mm-AAAA')
+            return False
         if self.boletaAlreadyGenerated():
             messagebox.showerror(title='Error', message=f'Ya existe un reporte para la boleta # {self.numBoletaEntry.get()}')
             return False
