@@ -1,7 +1,7 @@
 import os
 
 with open('Params/Params.txt', 'r') as file:
-    ENV, SEND, LANGUAGE, SACDATAFILE_PROD, SACBOLETASFILE_PROD, SACDATAFILE_TEST, SACBOLETASFILE_TEST = [line.strip() for line in file.readlines()]
+    ENV, SEND, LANGUAGE, SAC_PATH, SACDATAFILE_PROD, SACBOLETASFILE_PROD, SACDATAFILE_TEST, SACBOLETASFILE_TEST = [line.strip() for line in file.readlines()]
 
 SACDATAPATH_PROD: str = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=" + SACDATAFILE_PROD + ";"
 SACBOLETASPATH_PROD: str = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=" + SACBOLETASFILE_PROD + ";"
@@ -18,9 +18,9 @@ WEEKDAYS: dict[str] = {0: 'lunes', 1: 'martes', 2:'miércoles', 3:'jueves', 4:'v
 
 LIBREAPIURL: str = 'https://api.libreapi.cl/rut/activities'
 
-GENERATEDREPORTSPATH: str = os.path.abspath("Historial_de_envíos")
-DELIVEREDDATAPATH: str = os.path.abspath("boleta_data")
-RESULTPATH: str = os.path.abspath("results")
+GENERATEDREPORTSPATH: str = os.path.abspath(f"{SAC_PATH}/Historial_de_envíos")
+DELIVEREDDATAPATH: str = os.path.abspath(f"{SAC_PATH}/boleta_data")
+RESULTPATH: str = os.path.abspath(f"{SAC_PATH}/results")
 
 LOGOPATH: str = os.path.abspath("Images/Logo.PNG")
 SIGNINGPATH: str = os.path.abspath("Images/Signing.PNG")
