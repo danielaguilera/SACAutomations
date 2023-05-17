@@ -88,12 +88,16 @@ class ReportManager:
         for page in doc:  # iterate through the pages
             pix = page.get_pixmap(matrix=mat)  # render page to an image
             pix.save("thumbnail.png")  # store image as a PNG
+        doc.close()
+
             
         self.reporteImage = PhotoImage(file='thumbnail.png')
         self.thumbnail.config(image=self.reporteImage)
         self.thumbnail.pack()
     
     def deleteReport(self):
+        if not self.reportTable.focus():
+            return
         if not messagebox.askyesno(title='Aviso', message='¿Estás seguro de que quieres borrar el reporte?'):
             return
         data = self.reportTable.item(self.reportTable.selection()[0])['values']

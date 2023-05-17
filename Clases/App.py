@@ -223,6 +223,17 @@ class App:
             messagebox.showerror(title='ERROR', message='No se han cargado boletas para enviar.\nNo hay nada que mostrar.')
             return
         reportManager: ReportManager = ReportManager(container=self)
+
+    def rootFilesOpen(self) -> bool:
+        try:
+            os.listdir(SAC_PATH)
+            return False
+        except OSError as e:
+            if e.errno == 13:
+                messagebox.showerror(title='Error', message='Por favor cierra la carpeta SAC \n antes de continuar')  
+                return True 
+            else:
+                raise e
         
     def validData(self) -> bool:
         if not self.boletaPath:
@@ -266,6 +277,8 @@ class App:
                 
     def saveChanges(self):
         if not self.validData():
+            return
+        if self.rootFilesOpen():
             return        
         if not messagebox.askyesno(title='Aviso', message='¿Está segur@ de querer guardar los datos?'):
             return
