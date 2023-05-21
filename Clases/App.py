@@ -161,6 +161,10 @@ class App:
         self.serviciosFrame = Frame(master=self.master)
         self.serviciosFrame.pack(expand=True, fill=BOTH)
         Label(master=self.serviciosFrame, text='Asociar servicios a boleta: ', font=('Helvetica bold', 10, 'bold')).pack(side=TOP)
+        self.addServicioButton = Button(master=self.serviciosFrame, text='Agregar servicio', fg = 'black', bg='SeaGreen3', command=self.openServicioGUI)
+        self.addServicioButton.pack(side=LEFT, padx=5)
+        self.deleteServicioButton = Button(master=self.serviciosFrame, text='Eliminar servicio', fg = 'black', bg='indian red', command=self.removeServicio)
+        self.deleteServicioButton.pack(side=LEFT, padx=5)
         self.serviciosColumns = ['Código', 'Nota', 'Monto']
         self.serviciosTable = ttk.Treeview(master=self.serviciosFrame, columns=self.serviciosColumns, show='headings', height=3)
         self.serviciosTable.heading('Código', text='Código')
@@ -168,10 +172,6 @@ class App:
         self.serviciosTable.heading('Monto', text='Monto ($)')
         self.serviciosTable.pack(expand=True, fill=BOTH, anchor=CENTER)
         self.serviciosTable.insert('', END, values=('TOTAL', '-', 0), iid='total')
-        self.addServicioButton = Button(master=self.serviciosFrame, text='Agregar servicio', fg = 'black', bg='SeaGreen3', command=self.openServicioGUI)
-        self.addServicioButton.pack(expand=True, fill=BOTH)
-        self.deleteServicioButton = Button(master=self.serviciosFrame, text='Eliminar servicio', fg = 'black', bg='indian red', command=self.removeServicio)
-        self.deleteServicioButton.pack(expand=True, fill=BOTH)
         
         self.boletaPath: str = ''
         self.anexosPaths: list[str] = []
