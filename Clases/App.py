@@ -558,7 +558,7 @@ class App:
         caso: Caso
         self.casosTable.delete(*self.casosTable.get_children())
         for caso in self.casos:
-            self.casosTable.insert('', END, values=(caso.idMapsa, caso.nombreEstado, caso.fechaAsignado, caso.bsecs, caso.rutDeudor, caso.apellidoDeudor, caso.nombreCliente))
+            self.casosTable.insert('', END, values=(caso.idMapsa, caso.nombreEstado, caso.fechaAsignado.strftime('%d-%m-%Y'), caso.bsecs, caso.rutDeudor, caso.apellidoDeudor, caso.nombreCliente))
 
     def assignBeneficiario(self, key=None):
         nombreBeneficiario: str = self.nombreBeneficiarioDropdown.get()
