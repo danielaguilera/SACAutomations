@@ -27,7 +27,7 @@ class AddServicioGUI:
                 self.montoEntry = Entry(master=self.formFrame)
                 self.montoEntry.grid(row=1, column=index, padx=5, pady=5)
             elif index == 3:
-                self.setTotalButton = Button(master=self.formFrame, text='Poner monto total', fg = 'black', bg='RoyalBlue1', command=self.setTotalAmount)
+                self.setTotalButton = Button(master=self.formFrame, text='Poner monto restante', fg = 'black', bg='RoyalBlue1', command=self.setTotalAmount)
                 self.setTotalButton.grid(row=1, column=index, padx=5, pady=5)
         self.actionFrame = Frame(master=self.toplevel)
         self.actionFrame.pack(expand=True, fill=BOTH)
@@ -41,11 +41,15 @@ class AddServicioGUI:
             return int(data)
         else:
             return 0    
+        
+    @property
+    def remainingAmount(self) -> int:
+        return self.totalAmount - self.container.servicioSum
     
     def setTotalAmount(self):
         if self.totalAmount:
             self.montoEntry.delete(0, END)
-            self.montoEntry.insert(0, self.totalAmount)
+            self.montoEntry.insert(0, self.remainingAmount)
         
     def saveForm(self):
         if not self.montoEntry.get().isdigit():

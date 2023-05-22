@@ -60,3 +60,5 @@ class MailSender:
         mailAttachment: str = f'{DELIVEREDDATAPATH}/{destinatario.nombreDestinatario}/Documento.pdf'
         self.sendMail(receiverAddress=receiverAddress, mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
         print(f'Email a {destinatario.correoDestinatario} enviado!')        
+        with open('LogFiles/email_log.txt', 'a') as file:
+            file.write(f'{datetime.now()}: {receiverAddress} - {mailSubject}\n')
