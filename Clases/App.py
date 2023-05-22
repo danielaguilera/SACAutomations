@@ -38,7 +38,7 @@ class App:
         
         self.master = Tk()
         self.master.title("SAC App")
-        self.master.resizable(0,0)
+        # self.master.resizable(0,0)
         self.master.protocol("WM_DELETE_WINDOW", self.onClosingWindow)
         
         self.topFrame = Frame(master=self.master)
@@ -146,6 +146,16 @@ class App:
         self.destinatarioLabel.pack(side=LEFT)
         self.destinatarioDropdown = ttk.Combobox(master=self.destinatarioFrame, state='readonly', values=[destinatario.nombreDestinatario for destinatario in self.destinatarios])
         self.destinatarioDropdown.pack(side=LEFT, padx=5)
+
+        self.saveFrame = Frame(master=self.stateFrame)
+        self.saveFrame.pack(expand=True, fill=BOTH)
+        Label(master=self.saveFrame, text='Acciones').pack(side=LEFT)
+        self.saveButton = Button(self.saveFrame, text='Generar reporte y Guardar', font=('Helvetica bold', 10), fg = 'black', bg='RoyalBlue1', command=self.saveChanges)
+        self.saveButton.pack(side=LEFT, padx=10)
+        self.clearFormButton = Button(self.saveFrame, text='Borrar formulario', font=('Helvetica bold', 10), fg = 'black', bg='indian red', command=self.beginClearForm)
+        self.clearFormButton.pack(side=LEFT, padx=10)
+        self.manageReportsButton = Button(self.saveFrame, text='Ver reportes a enviar', font=('Helvetica bold', 10),  fg = 'black', bg='lawngreen', command=self.runReportManager)
+        self.manageReportsButton.pack(side=LEFT, padx=10)
         
         self.casosFrame = Frame(master=self.master)
         self.casosFrame.pack(expand=True, fill=BOTH)
@@ -178,25 +188,6 @@ class App:
         
         self.saveFrame = LabelFrame(master=self.master)
         self.saveFrame.pack(expand=True, fill=BOTH)
-        
-        Label(master=self.saveFrame, text='Guardar datos de boleta', font=('Helvetica bold', 10, 'bold')).pack(side=TOP)
-        
-        self.saveButton = Button(self.saveFrame, text='Generar reporte y Guardar', width=40, height=1, font=('Helvetica bold', 10), fg = 'black', bg='RoyalBlue1', command=self.saveChanges)
-        self.saveButton.pack(expand=True, fill=BOTH)
-        
-        self.clearFormButton = Button(self.saveFrame, text='Borrar formulario', font=('Helvetica bold', 10), fg = 'black', bg='indian red', command=self.beginClearForm)
-        self.clearFormButton.pack(expand=True, fill=BOTH)
-        
-        self.sendFrame = LabelFrame(master=self.master)
-        self.sendFrame.pack(expand=True, fill=BOTH)
-        
-        Label(master=self.sendFrame, text='Envío de reportes por mail', font=('Helvetica bold', 10, 'bold')).pack(side=TOP)
-        
-        self.manageReportsButton = Button(self.sendFrame, text='Ver reportes a enviar', font=('Helvetica bold', 10),  fg = 'black', bg='lawngreen', command=self.runReportManager)
-        self.manageReportsButton.pack(expand=True, fill=BOTH)
-        
-        self.sendButton = Button(self.sendFrame, text='Enviar reportes', width=40, height=1, font=('Helvetica bold', 10), fg = 'black', bg='RoyalBlue1', command=self.runSender)
-        self.sendButton.pack(expand=True, fill=BOTH)
         
         self.master.mainloop()
         
@@ -477,7 +468,10 @@ class App:
             if (DUARTE in text) or (GYD in text):
                 fechaEmisionString: str = text.split('\n')[19][15::].strip()
             else:
-                fechaEmisionString: str = text.split('\n')[9][7::].strip()
+                # fechaEmisionString: str = text.split('\n')[9][7::].strip()
+                pattern: str = r'Fecha: (.+)'
+                patternMatch: re.match | None = re.search(pattern, text)
+                fechaEmisionString: str = patternMatch.group(1) if patternMatch else ''
             fechaEmision: date = getDateFromSpanishFormat(stringDate=fechaEmisionString)
             self.fechaBoletaEntry.delete(0, END)
             self.fechaBoletaEntry.insert(0, fechaEmision.strftime("%d-%m-%Y"))
@@ -489,9 +483,11 @@ class App:
             reader: PdfReader = PdfReader(self.boletaPath)
             text: str = reader.pages[0].extract_text().strip()
             if (DUARTE in text) or (GYD in text):
-                total: int = int(text.split('\n')[-1][7::].replace('.',''))
+                total: int | str = int(text.split('\n')[-1][7::].replace('.',''))
             else:
-                total: int = int(text.split('\n')[16][20::].replace('.',''))
+                pattern: str = r'Total Honorarios \$: (\d+(?:\.\d+)?)'
+                patternMatch: re.match[str] | None = re.search(pattern, text)
+                total: int | str = int(patternMatch.group(1).replace('.','')) if patternMatch else ''   
             self.gastoTotalEntry.delete(0, END)
             self.gastoTotalEntry.insert(0, total)
         except Exception:
@@ -558,7 +554,7 @@ class App:
         caso: Caso
         self.casosTable.delete(*self.casosTable.get_children())
         for caso in self.casos:
-            self.casosTable.insert('', END, values=(caso.idMapsa, caso.nombreEstado, caso.fechaAsignado.strftime('%d-%m-%Y'), caso.bsecs, caso.rutDeudor, caso.apellidoDeudor, caso.nombreCliente))
+            self.casosTable.insert('', END, values=(caso.idMapsa, caso.nombreEstado, caso.fechaAsignado.strftime('%d-%m-%Y') if caso.fechaAsignado else '', caso.bsecs, caso.rutDeudor, caso.apellidoDeudor, caso.nombreCliente))
 
     def assignBeneficiario(self, key=None):
         nombreBeneficiario: str = self.nombreBeneficiarioDropdown.get()
