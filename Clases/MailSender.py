@@ -47,18 +47,16 @@ class MailSender:
             msg.attach(attach)
         server = smtplib.SMTP_SSL(self.smtpServer, self.smtpPort)
         server.login(self.senderUserName, self.senderPassword)
-        if SEND == 'send':
-            server.sendmail(self.senderUserName, receiverAddress, msg.as_string())
-        server.sendmail(self.senderUserName, 'draguilera@uc.cl', msg.as_string())
-        server.sendmail(self.senderUserName, 'servidor@gydabogados.cl', msg.as_string())
+        server.sendmail(self.senderUserName, receiverAddress, msg.as_string())
         server.quit()
         
     def sendUnifiedDocument(self, destinatario: Destinatario):
-        receiverAddress: str = destinatario.correoDestinatario
-        mailSubject: str = f'Envío reportes semana {getWeekMondayTimeStamp()}'
+        receiverAddress: str = 'draguilera@uc.cl'
+        mailSubject: str = f'{"DEMO - ESTE EMAIL ES UNA PRUEBA Y NO CUENTA - " if SEND != "send" else ""}Envío reportes semana {getWeekMondayTimeStamp()}'
         mailContent: str = f'Estimad@ {destinatario.nombreDestinatario}: \n\n Junto con saludar, se adjunta el resumen de las facturas correspondientes a la semana de {getWeekMondayTimeStamp("long")}'
         mailAttachment: str = f'{DELIVEREDDATAPATH}/{destinatario.nombreDestinatario}/Documento.pdf'
-        self.sendMail(receiverAddress=receiverAddress, mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
+        self.sendMail(receiverAddress='draguilera@uc.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
+        self.sendMail(receiverAddress='servidor@gydabogados.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
+        if SEND == 'send':
+            self.sendMail(receiverAddress=receiverAddress, mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
         print(f'Email a {destinatario.correoDestinatario} enviado!')        
-        with open('LogFiles/email_log.txt', 'a') as file:
-            file.write(f'{datetime.now()}: {receiverAddress} - {mailSubject}\n')
