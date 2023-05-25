@@ -51,12 +51,15 @@ class MailSender:
         server.quit()
         
     def sendUnifiedDocument(self, destinatario: Destinatario):
-        receiverAddress: str = 'draguilera@uc.cl'
+        receiverAddress: str = destinatario.correoDestinatario
         mailSubject: str = f'{"DEMO - ESTE EMAIL ES UNA PRUEBA Y NO CUENTA - " if SEND != "send" else ""}Envío reportes semana {getWeekMondayTimeStamp()}'
         mailContent: str = f'Estimad@ {destinatario.nombreDestinatario}: \n\n Junto con saludar, se adjunta el resumen de las facturas correspondientes a la semana de {getWeekMondayTimeStamp("long")}'
         mailAttachment: str = f'{DELIVEREDDATAPATH}/{destinatario.nombreDestinatario}/Documento.pdf'
+        self.sendMail(receiverAddress='daniel.aguilera.habbo@gmail.com', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
         self.sendMail(receiverAddress='draguilera@uc.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
         self.sendMail(receiverAddress='servidor@gydabogados.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
         if SEND == 'send':
             self.sendMail(receiverAddress=receiverAddress, mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
+        with open('LogFiles/email_log.txt', 'a') as file:
+            file.write(f'{str(datetime.now())} - {"DEMO" if SEND != "send" else "OFICIAL"} - {receiverAddress}')
         print(f'Email a {destinatario.correoDestinatario} enviado!')        
