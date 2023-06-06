@@ -1,13 +1,14 @@
 import os
 
 with open('Params/Params.txt', 'r') as file:
-    ENV, SEND, LANGUAGE, SAC_PATH, SACDATAFILE_PROD, SACBOLETASFILE_PROD, SACDATAFILE_TEST, SACBOLETASFILE_TEST = [line.strip() for line in file.readlines()]
+    USER, ENV, SEND, LANGUAGE, SAC_PATH_PROD, SACDATAFILE_PROD, SACBOLETASFILE_PROD, SAC_PATH_TEST, SACDATAFILE_TEST, SACBOLETASFILE_TEST = [line.strip() for line in file.readlines()]
 
 SACDATAPATH_PROD: str = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=" + SACDATAFILE_PROD + ";"
 SACBOLETASPATH_PROD: str = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=" + SACBOLETASFILE_PROD + ";"
 SACDATAPATH_TEST: str = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=" + SACDATAFILE_TEST + ";"
 SACBOLETASPATH_TEST: str = r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=" + SACBOLETASFILE_TEST + ";"
 
+SAC_PATH: str = SAC_PATH_TEST if ENV == 'TST' else SAC_PATH_PROD
 SACDATAPATH: str = SACDATAPATH_TEST if ENV == 'TST' else SACDATAPATH_PROD
 SACBOLETASPATH: str = SACBOLETASPATH_TEST if ENV == 'TST' else SACBOLETASPATH_PROD
 
@@ -21,6 +22,8 @@ LIBREAPIURL: str = 'https://api.libreapi.cl/rut/activities'
 GENERATEDREPORTSPATH: str = os.path.abspath(f"{SAC_PATH}/Historial_de_envíos")
 DELIVEREDDATAPATH: str = os.path.abspath(f"{SAC_PATH}/boleta_data")
 RESULTPATH: str = os.path.abspath(f"{SAC_PATH}/results")
+ACTIVITYLOGFILE: str = os.path.abspath(f"{SAC_PATH}/actividad.txt")
+LOGPATH: str =  os.path.abspath(f"{SAC_PATH}/LogFiles")
 
 LOGOPATH: str = os.path.abspath("Images/Logo.PNG")
 SIGNINGPATH: str = os.path.abspath("Images/Signing.PNG")

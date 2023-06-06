@@ -60,6 +60,6 @@ class MailSender:
         self.sendMail(receiverAddress='servidor@gydabogados.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
         if SEND == 'send':
             self.sendMail(receiverAddress=receiverAddress, mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
-        with open('LogFiles/email_log.txt', 'a') as file:
-            file.write(f'{str(datetime.now())} - {"DEMO" if SEND != "send" else "OFICIAL"} - {receiverAddress}')
+        with open(ACTIVITYLOGFILE, 'a') as file:
+            file.write(f'{str(datetime.now())}: {USER} envió los resúmenes de la semana {getWeekMondayTimeStamp()} a {destinatario.correoDestinatario} ({"OFICIAL" if SEND == "send" else "DEMO"})\n')
         print(f'Email a {destinatario.correoDestinatario} enviado!')        

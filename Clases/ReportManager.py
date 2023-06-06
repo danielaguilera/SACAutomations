@@ -113,6 +113,8 @@ class ReportManager:
         self.updateUnifiedDocument()
         messagebox.showinfo(title='INFO', message='Reporte borrado')
         self.resetForm()
+        with open(ACTIVITYLOGFILE, 'a') as file:
+            file.write(f'{str(datetime.now())}: {USER} eliminó los archivos de boleta a enviar (NUMERO BOLETA: {numBoleta} - ID MAPSA: {idMapsa}) del destinatario {nombreDestinatario}\n')
         
     def resetForm(self):
         self.toplevel.destroy()
