@@ -37,10 +37,13 @@ class ReportManager:
         self.actionFrame = Frame(master=self.toplevel)
         self.actionFrame.pack(expand=True, fill=BOTH)
 
-        self.sendButton = Button(master=self.actionFrame, text='Enviar reportes', width=40, height=1, font=('Helvetica bold', 20), fg = 'black', bg='RoyalBlue1', command=self.sendAllReports)
-        self.sendButton.pack(expand=False, fill=BOTH)        
+        self.sendButton = Button(master=self.actionFrame, text='Enviar todo', width=40, height=1, font=('Helvetica bold', 15), fg = 'black', bg='RoyalBlue1', command=self.sendAllReports)
+        self.sendButton.pack(expand=False, fill=BOTH)   
 
-        self.deleteButton = Button(master=self.actionFrame, text='Eliminar reporte', width=40, height=1, font=('Helvetica bold', 20), fg = 'black', bg='indian red', command=self.deleteReport)
+        self.sendDestinatarioButton = Button(master=self.actionFrame, text='Enviar todo del destinatario', width=40, height=1, font=('Helvetica bold', 15), fg = 'black', bg='lawngreen', command=self.sendDestinatarioReports)
+        self.sendDestinatarioButton.pack(expand=False, fill=BOTH)      
+
+        self.deleteButton = Button(master=self.actionFrame, text='Eliminar reporte', width=40, height=1, font=('Helvetica bold', 15), fg = 'black', bg='indian red', command=self.deleteReport)
         self.deleteButton.pack(expand=False, fill=BOTH)
         
         self.getReports()
@@ -57,7 +60,6 @@ class ReportManager:
                     numBoleta, idMapsa = [int(x) for x in dirName.strip().split('_')]
                     with open(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{numBoleta}_{idMapsa}/Data_{numBoleta}.txt') as file:
                         data = file.readline().strip().split(',')
-                        print(data)
                         nombreDestinatario = data[0]
                         mailDestinatario = data[1]
                         numBoleta = data[2]
@@ -89,7 +91,6 @@ class ReportManager:
             pix = page.get_pixmap(matrix=mat)  # render page to an image
             pix.save("thumbnail.png")  # store image as a PNG
         doc.close()
-
             
         self.reporteImage = PhotoImage(file='thumbnail.png')
         self.thumbnail.config(image=self.reporteImage)
@@ -98,10 +99,10 @@ class ReportManager:
     def deleteReport(self):
         if not self.reportTable.focus():
             return
-        if not messagebox.askyesno(title='Aviso', message='¿Estás seguro de que quieres borrar el reporte?'):
-            return
         data = self.reportTable.item(self.reportTable.selection()[0])['values']
         if not(data[2] and data[3]):
+            return
+        if not messagebox.askyesno(title='Aviso', message='¿Estás segur@ de que quieres borrar los datos para esta boleta?'):
             return
         numBoleta: int = int(data[2])
         idMapsa: int = int(data[3])
@@ -120,7 +121,25 @@ class ReportManager:
         self.toplevel.destroy()
         self.toplevel.update()
         reportManager: ReportManager = ReportManager(container=self.container)
-        
+
+    def sendDestinatarioReports(self):
+        if not self.reportTable.focus():
+            return
+        data = self.reportTable.item(self.reportTable.selection()[0])['values']
+        if data[2]:
+            return
+        nombreDestinatario: str = data[0]
+        if not messagebox.askyesno(title='Aviso', message=f'Se enviarán todas las boletas de esta semana para {nombreDestinatario}. \n¿Deseas continuar?'):
+            return
+        try:
+            senderJob: SACSenderJob = SACSenderJob()
+            senderJob.sendSingleDestinatarioReports(nombreDestinatario=nombreDestinatario)
+            messagebox.showinfo(title='Éxito', message='Reportes enviados')
+            self.resetForm()
+        except Exception as e:
+            print(e)
+            messagebox.showerror(title='Error', message='SAC Sender no pudo ejecutarse')
+
     def sendAllReports(self):
         if not messagebox.askyesno(title='Aviso', message='Se enviarán todas las boletas de esta semana. \n¿Deseas continuar?'):
             return
