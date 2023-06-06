@@ -4,8 +4,8 @@ from Utils.Metadata import *
 import logging
 
 if __name__ == '__main__':
-    if not os.path.exists('LogFiles'):
-        os.mkdir('LogFiles')
+    if not os.path.exists(LOGPATH):
+        os.mkdir(LOGPATH)
     logging.basicConfig(filename=APP_ERRORS, level=logging.DEBUG, 
                     format='%(asctime)s %(levelname)s %(name)s %(message)s')
     logger=logging.getLogger(__name__)

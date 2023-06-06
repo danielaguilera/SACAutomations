@@ -25,6 +25,8 @@ from datetime import date
 from PIL import ImageTk, Image
 import glob, sys, fitz
 import re
+import time
+
 
 class App:
     def __init__(self):
@@ -38,11 +40,16 @@ class App:
         
         self.master = Tk()
         self.master.title("SAC App")
-        # self.master.resizable(0,0)
         self.master.protocol("WM_DELETE_WINDOW", self.onClosingWindow)
         
         self.topFrame = Frame(master=self.master)
         self.topFrame.pack(expand=True, fill=BOTH)
+        Label(self.topFrame, text=f'¡Bienvenid@ {USER}!', fg='black', font=('Helvetica bold', 10)).pack()
+        Label(self.topFrame, text=f'Estás apuntando a la base de datos de {"TEST, trabajando con datos falsos" if ENV != "PRD" else "PRODUCCIÓN, trabajando con datos reales"}', fg='black', font=('Helvetica bold', 10)).pack()
+        if SEND == 'send':
+            Label(self.topFrame, text=f'Los emails se enviarán a los destinatarios reales', fg='black', font=('Helvetica bold', 10)).pack()
+        else:
+            Label(self.topFrame, text=f'Los emails solo se enviarán al desarrollador y al correo del servidor', fg='black', font=('Helvetica bold', 10)).pack()
         
         self.thumbnailFrame = Frame(master=self.master)
         self.thumbnailFrame.pack(side=RIGHT)
@@ -269,8 +276,8 @@ class App:
     def saveChanges(self):
         if not self.validData():
             return
-        if self.rootFilesOpen():
-            return        
+        # if self.rootFilesOpen():
+        #     return        
         if not messagebox.askyesno(title='Aviso', message='¿Está segur@ de querer guardar los datos?'):
             return
         dataSelected: list = self.casosTable.item(self.casosTable.focus())['values']
@@ -303,11 +310,21 @@ class App:
             merger.write(f'{DELIVEREDDATAPATH}/{self.destinatarioDropdown.get()}/{numBoleta}_{idMapsa}/Anexo_{numBoleta}.pdf')
         merger.close()
         shutil.copy(self.boletaPath, f'{DELIVEREDDATAPATH}/{self.destinatarioDropdown.get()}/{numBoleta}_{idMapsa}/Boleta_{numBoleta}.pdf')
+        start = time.process_time()      
         self.generateReport()
+        print('GENERATE REPORT' + str(time.process_time() - start))
+        start = time.process_time() 
         self.saveDeudorName()
+        print('SAVE DEUDOR NAME' + str(time.process_time() - start))
+        start = time.process_time() 
         self.saveParams()
+        print('SAVE PARAMS' + str(time.process_time() - start))
+        start = time.process_time()
         self.generateUnifiedDocument()
+        print('GENERATE UNIFIED DOCUMENT' + str(time.process_time() - start))
         messagebox.showinfo(title='Mensaje', message=f'Archivos guardados para boleta n°{numBoleta}')
+        with open(ACTIVITYLOGFILE, 'a') as file:
+            file.write(f'{str(datetime.now())}: {USER} añadió boleta a enviar (NUMERO BOLETA: {numBoleta} - ID MAPSA: {idMapsa}) para {self.destinatarioDropdown.get()}\n')
         self.clearForm()
         
     def generateUnifiedDocument(self):
@@ -415,9 +432,8 @@ class App:
 
         filename = self.boletaPath
         doc = fitz.open(filename)  # open document
-        for page in doc:  # iterate through the pages
-            pix = page.get_pixmap(matrix=mat)  # render page to an image
-            pix.save("thumbnail.png")  # store image as a PNG
+        pix = doc[0].get_pixmap(matrix=mat)  # render page to an image
+        pix.save("thumbnail.png")  # store image as a PNG
             
         self.boletaImage = PhotoImage(file='thumbnail.png')
         self.thumbnailFrame.pack(side=RIGHT)
