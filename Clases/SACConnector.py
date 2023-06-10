@@ -28,8 +28,6 @@ class SACConnector:
         self.boletasTable: str = 'Boletas'
         self.gastosTable: str = 'ITEM-Gastos'
         
-        self.year: int = 2022 #Hardcoded
-        
     def getDeudorData(self, idBoleta: int) -> Deudor | None:
         self.cursorData.execute(f'SELECT "Apellido Deudor", "Rut Deudor", Cliente FROM {self.mapsaTable} WHERE IdMapsa = {idBoleta}')
         apellidoDeudor, rutDeudor, idCliente = list(self.cursorData.fetchall())[0]
@@ -86,8 +84,6 @@ class SACConnector:
         for dataReceived in self.cursorBoleta.fetchall(): 
             rutBeneficiario: str = dataReceived[7]
             fechaBoleta : datetime = dataReceived[2]
-            # if fechaBoleta.year != self.year:
-            #     continue
             break
         query = '''
                     SELECT "Nombre o Razón Social" 

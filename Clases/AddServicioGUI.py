@@ -20,6 +20,7 @@ class AddServicioGUI:
             if index == 0:
                 self.codigoDropdown = ttk.Combobox(master=self.formFrame, state='readonly', values=self.codigos, width=35)
                 self.codigoDropdown.grid(row=1, column=index, padx=5, pady=5)
+                self.codigoDropdown.bind("<<ComboboxSelected>>", self.writeCodeNote)
             elif index == 1:
                 self.notaEntry = Entry(master=self.formFrame)
                 self.notaEntry.grid(row=1, column=index, padx=5, pady=5)
@@ -45,6 +46,10 @@ class AddServicioGUI:
     @property
     def remainingAmount(self) -> int:
         return self.totalAmount - self.container.servicioSum
+    
+    def writeCodeNote(self, key=None):
+        self.notaEntry.delete(0, END)
+        self.notaEntry.insert(0, 'cod ' + self.codigoDropdown.get().strip().split(' ')[0])
     
     def setTotalAmount(self):
         if self.totalAmount:
