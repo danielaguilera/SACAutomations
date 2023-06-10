@@ -320,7 +320,7 @@ class App:
         self.saveParams()
         print('SAVE PARAMS' + str(time.process_time() - start))
         start = time.process_time()
-        self.generateUnifiedDocument()
+        self.updateUnifiedDocument()
         print('GENERATE UNIFIED DOCUMENT' + str(time.process_time() - start))
         messagebox.showinfo(title='Mensaje', message=f'Archivos guardados para boleta n°{numBoleta}')
         with open(ACTIVITYLOGFILE, 'a') as file:
@@ -342,6 +342,25 @@ class App:
                         pdfMerger.append(anexoPath)
             pdfMerger.write(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf')
         pdfMerger.close()
+
+    def updateUnifiedDocument(self):
+        nombreDestinatario: str = self.destinatarioDropdown.get()
+        numBoleta: int = int(self.numBoletaEntry.get())
+        idMapsa: int = int(self.casosTable.item(self.casosTable.focus())['values'][0])
+        pdfMerger: PdfMerger = PdfMerger()
+        reportePath: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{numBoleta}_{idMapsa}/Reporte_{numBoleta}.pdf'
+        boletaPath: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{numBoleta}_{idMapsa}/Boleta_{numBoleta}.pdf'
+        anexoPath: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{numBoleta}_{idMapsa}/Anexo_{numBoleta}.pdf'
+        if os.path.exists(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf'):
+            os.rename(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf', f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento_ant.pdf')
+            pdfMerger.append(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento_ant.pdf')
+        pdfMerger.append(reportePath)
+        pdfMerger.append(boletaPath)
+        if os.path.exists(anexoPath):
+            pdfMerger.append(anexoPath)
+        pdfMerger.write(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf')
+        pdfMerger.close()
+        os.remove(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento_ant.pdf')
         
     def saveDeudorName(self):
         idMapsaSet: int = self.casosTable.item(self.casosTable.focus())['values'][0]

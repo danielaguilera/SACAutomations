@@ -151,3 +151,6 @@ Params/
 
 # Log files
 LogFiles/
+
+# Test scripts
+test.py
