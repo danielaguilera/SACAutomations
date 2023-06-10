@@ -111,7 +111,7 @@ class ReportManager:
         deleteIfExists(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{numBoleta}_{idMapsa}')
         deleteIfEmpty(f'{DELIVEREDDATAPATH}/{nombreDestinatario}')
         deleteIfEmpty(f'{DELIVEREDDATAPATH}')
-        self.updateUnifiedDocument()
+        self.updateUnifiedDocument(nombreDestinatario=nombreDestinatario)
         messagebox.showinfo(title='INFO', message='Reporte borrado')
         self.resetForm()
         with open(ACTIVITYLOGFILE, 'a') as file:
@@ -155,7 +155,27 @@ class ReportManager:
             print(e)
             messagebox.showerror(title='Error', message='SAC Sender no pudo ejecutarse')
         
-    def updateUnifiedDocument(self):
+    def updateUnifiedDocument(self, nombreDestinatario: str):
+        if not os.path.exists(DELIVEREDDATAPATH):
+            return
+        pdfMerger: PdfMerger = PdfMerger()
+        for path in os.listdir(path=f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
+            if path != 'Documento.pdf':
+                numBoleta, idMapsa = (int(x) for x in path.strip().split('_'))
+                reportePath: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{path}/Reporte_{numBoleta}.pdf'
+                boletaPath: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{path}/Boleta_{numBoleta}.pdf'
+                anexoPath: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{path}/Anexo_{numBoleta}.pdf'
+                pdfMerger.append(reportePath)
+                pdfMerger.append(boletaPath)
+                if os.path.exists(anexoPath):
+                    pdfMerger.append(anexoPath)
+        pdfMerger.write(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf')
+        if not os.path.exists(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}'):
+            os.makedirs(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}')
+        shutil.copy(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf', f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}/Documento.pdf')
+        pdfMerger.close()
+
+    def generateUnifiedDocument(self):
         if not os.path.exists(DELIVEREDDATAPATH):
             return
         for nombreDestinatario in os.listdir(path=f'{DELIVEREDDATAPATH}'):

@@ -274,6 +274,7 @@ class App:
         return bool(self.sacConnector.getBoletaData(numBoleta=numBoleta))
                 
     def saveChanges(self):
+        start = time.process_time() 
         if not self.validData():
             return
         # if self.rootFilesOpen():
@@ -309,20 +310,13 @@ class App:
         if self.anexosPaths:
             merger.write(f'{DELIVEREDDATAPATH}/{self.destinatarioDropdown.get()}/{numBoleta}_{idMapsa}/Anexo_{numBoleta}.pdf')
         merger.close()
-        shutil.copy(self.boletaPath, f'{DELIVEREDDATAPATH}/{self.destinatarioDropdown.get()}/{numBoleta}_{idMapsa}/Boleta_{numBoleta}.pdf')
-        start = time.process_time()      
+        shutil.copy(self.boletaPath, f'{DELIVEREDDATAPATH}/{self.destinatarioDropdown.get()}/{numBoleta}_{idMapsa}/Boleta_{numBoleta}.pdf')    
         self.generateReport()
-        print('GENERATE REPORT' + str(time.process_time() - start))
-        start = time.process_time() 
         self.saveDeudorName()
-        print('SAVE DEUDOR NAME' + str(time.process_time() - start))
-        start = time.process_time() 
         self.saveParams()
-        print('SAVE PARAMS' + str(time.process_time() - start))
-        start = time.process_time()
         self.updateUnifiedDocument()
-        print('GENERATE UNIFIED DOCUMENT' + str(time.process_time() - start))
-        messagebox.showinfo(title='Mensaje', message=f'Archivos guardados para boleta n°{numBoleta}')
+        print('Tiempo en subir boleta: ' + str(time.process_time() - start))
+        messagebox.showinfo(title='Mensaje', message=f'Boleta n°{numBoleta} ingresada exitosamente')
         with open(ACTIVITYLOGFILE, 'a') as file:
             file.write(f'{str(datetime.now())}: {USER} añadió boleta a enviar (NUMERO BOLETA: {numBoleta} - ID MAPSA: {idMapsa}) para {self.destinatarioDropdown.get()}\n')
         self.clearForm()
