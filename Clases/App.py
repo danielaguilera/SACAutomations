@@ -11,7 +11,7 @@ from Clases.ReporteData import ReporteData
 from Clases.Destinatario import Destinatario
 from Utils.Metadata import *
 from Utils.GlobalFunctions import *
-from PyPDF2 import PdfFileReader, PdfReader, PdfMerger
+from PyPDF2 import PdfFileReader, PdfFileWriter, PdfReader, PdfMerger, PdfWriter
 from PyPDF2.errors import PdfReadError
 from Clases.SACConnector import SACConnector
 from Clases.Cliente import Cliente
@@ -308,10 +308,14 @@ class App:
         if self.anexosPaths:
             merger.write(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{numBoleta}_{idMapsa}/Anexo_{numBoleta}.pdf')
         merger.close()
-        shutil.copy(self.boletaPath, f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{numBoleta}_{idMapsa}/Boleta_{numBoleta}.pdf')    
+        reader = PdfReader(self.boletaPath)
+        writer = PdfWriter()
+        page = reader.pages[0]
+        writer.add_page(page)
+        with open(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{numBoleta}_{idMapsa}/Boleta_{numBoleta}.pdf', 'wb') as file:
+            writer.write(file)
         self.generateReport()
         self.saveDeudorName()
-        self.saveCC()
         self.saveParams()
         self.updateUnifiedDocument()
         print('Tiempo en subir boleta: ' + str(time.process_time() - start))
