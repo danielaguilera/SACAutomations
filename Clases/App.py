@@ -149,10 +149,8 @@ class App:
         
         self.destinatarioFrame = Frame(master=self.stateFrame)
         self.destinatarioFrame.pack(expand=True, fill=BOTH)
-        self.destinatarioLabel = Label(master=self.destinatarioFrame, text='Se envía a:')
+        self.destinatarioLabel = Label(master=self.destinatarioFrame, text='Se envía a: ')
         self.destinatarioLabel.pack(side=LEFT)
-        self.destinatarioDropdown = ttk.Combobox(master=self.destinatarioFrame, state='readonly', values=[destinatario.nombreDestinatario for destinatario in self.destinatarios])
-        self.destinatarioDropdown.pack(side=LEFT, padx=5)
 
         self.saveFrame = Frame(master=self.stateFrame)
         self.saveFrame.pack(expand=True, fill=BOTH)
@@ -192,6 +190,8 @@ class App:
         
         self.boletaPath: str = ''
         self.anexosPaths: list[str] = []
+        self.destinatario: Destinatario = None
+        self.cc: list[str] = []
         
         self.saveFrame = LabelFrame(master=self.master)
         self.saveFrame.pack(expand=True, fill=BOTH)
@@ -258,7 +258,7 @@ class App:
         if int(self.gastoTotalEntry.get()) != self.servicioSum:
             messagebox.showerror(title='Error', message='El total de la boleta debe ser igual a la suma de los montos de los servicios')
             return False
-        if not self.destinatarioDropdown.get():
+        if not self.destinatario:
             messagebox.showerror(title='Error', message='Falta escoger un destinatario')
             return False
         if not validDateFormat(self.fechaBoletaEntry.get()):
@@ -276,9 +276,7 @@ class App:
     def saveChanges(self):
         start = time.process_time() 
         if not self.validData():
-            return
-        # if self.rootFilesOpen():
-        #     return        
+            return  
         if not messagebox.askyesno(title='Aviso', message='¿Está segur@ de querer guardar los datos?'):
             return
         dataSelected: list = self.casosTable.item(self.casosTable.focus())['values']
@@ -302,23 +300,24 @@ class App:
         idMapsa: int = boleta.idMapsa
         if not os.path.exists(DELIVEREDDATAPATH):
             os.makedirs(DELIVEREDDATAPATH)
-        if not os.path.exists(f'{DELIVEREDDATAPATH}/{self.destinatarioDropdown.get()}/{numBoleta}_{idMapsa}'):
-            os.makedirs(f'{DELIVEREDDATAPATH}/{self.destinatarioDropdown.get()}/{numBoleta}_{idMapsa}')
+        if not os.path.exists(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{numBoleta}_{idMapsa}'):
+            os.makedirs(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{numBoleta}_{idMapsa}')
         merger: PdfMerger = PdfMerger()
         for root in self.anexosPaths:
             merger.append(root)
         if self.anexosPaths:
-            merger.write(f'{DELIVEREDDATAPATH}/{self.destinatarioDropdown.get()}/{numBoleta}_{idMapsa}/Anexo_{numBoleta}.pdf')
+            merger.write(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{numBoleta}_{idMapsa}/Anexo_{numBoleta}.pdf')
         merger.close()
-        shutil.copy(self.boletaPath, f'{DELIVEREDDATAPATH}/{self.destinatarioDropdown.get()}/{numBoleta}_{idMapsa}/Boleta_{numBoleta}.pdf')    
+        shutil.copy(self.boletaPath, f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{numBoleta}_{idMapsa}/Boleta_{numBoleta}.pdf')    
         self.generateReport()
         self.saveDeudorName()
+        self.saveCC()
         self.saveParams()
         self.updateUnifiedDocument()
         print('Tiempo en subir boleta: ' + str(time.process_time() - start))
         messagebox.showinfo(title='Mensaje', message=f'Boleta n°{numBoleta} ingresada exitosamente')
         with open(ACTIVITYLOGFILE, 'a') as file:
-            file.write(f'{str(datetime.now())}: {USER} añadió boleta a enviar (NUMERO BOLETA: {numBoleta} - ID MAPSA: {idMapsa}) para {self.destinatarioDropdown.get()}\n')
+            file.write(f'{str(datetime.now())}: {USER} añadió boleta a enviar (NUMERO BOLETA: {numBoleta} - ID MAPSA: {idMapsa}) para {self.destinatario.nombreDestinatario}\n')
         self.clearForm()
         
     def generateUnifiedDocument(self):
@@ -338,7 +337,7 @@ class App:
         pdfMerger.close()
 
     def updateUnifiedDocument(self):
-        nombreDestinatario: str = self.destinatarioDropdown.get()
+        nombreDestinatario: str = self.destinatario.nombreDestinatario
         numBoleta: int = int(self.numBoletaEntry.get())
         idMapsa: int = int(self.casosTable.item(self.casosTable.focus())['values'][0])
         pdfMerger: PdfMerger = PdfMerger()
@@ -354,41 +353,40 @@ class App:
             pdfMerger.append(anexoPath)
         pdfMerger.write(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf')
         pdfMerger.close()
-        os.remove(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento_ant.pdf')
+        if os.path.exists(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento_ant.pdf'):
+            os.remove(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento_ant.pdf')
         
     def saveDeudorName(self):
         idMapsaSet: int = self.casosTable.item(self.casosTable.focus())['values'][0]
         numBoletaSet: int = int(self.numBoletaEntry.get())
-        with open(f'{DELIVEREDDATAPATH}/{self.destinatarioDropdown.get()}/{numBoletaSet}_{idMapsaSet}/DeudorName.txt', 'w') as file:
+        with open(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{numBoletaSet}_{idMapsaSet}/DeudorName.txt', 'w') as file:
             file.write(self.nombreDeudorEntry.get())
-            
+
+    def saveCC(self):
+        if not self.cc:
+            return
+        idMapsaSet: int = self.casosTable.item(self.casosTable.focus())['values'][0]
+        numBoletaSet: int = int(self.numBoletaEntry.get())
+        with open(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{numBoletaSet}_{idMapsaSet}/CC.txt', 'w') as file:
+            file.write(','.join(self.cc))
+    
     def saveParams(self):
         idMapsaSet: int = self.casosTable.item(self.casosTable.focus())['values'][0]
         numBoletaSet: int = int(self.numBoletaEntry.get())
-        destinatarioSet: Destinatario = None
-        destinatario: Destinatario
-        for destinatario in self.destinatarios:
-            if destinatario.nombreDestinatario == self.destinatarioDropdown.get():
-                destinatarioSet = destinatario
-                break
+        destinatarioSet: Destinatario = self.destinatario
         beneficiarioSet: str = self.nombreBeneficiarioDropdown.get()
         clienteSet: str = self.clienteDropdown.get()
         deudorSet: str = self.apellidoDeudorEntry.get()
         montoTotalSet: str = self.gastoTotalEntry.get()     
         with open(f'{DELIVEREDDATAPATH}/{destinatarioSet.nombreDestinatario}/{numBoletaSet}_{idMapsaSet}/Data_{numBoletaSet}.txt', 'w') as file:
             file.write(f'{destinatarioSet.nombreDestinatario},{destinatarioSet.correoDestinatario},{numBoletaSet},{idMapsaSet},{beneficiarioSet},{clienteSet},{deudorSet},{montoTotalSet}')
-        
+
     def generateReport(self):  
-        dataReceived: list[str] = [dirName for dirName in os.listdir(f'{DELIVEREDDATAPATH}/{self.destinatarioDropdown.get()}')]
+        dataReceived: list[str] = [dirName for dirName in os.listdir(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}')]
         data: str
         idMapsaSet: int = self.casosTable.item(self.casosTable.focus())['values'][0]
         numBoletaSet: int = int(self.numBoletaEntry.get())
-        destinatarioSet: Destinatario = None
-        destinatario: Destinatario
-        for destinatario in self.destinatarios:
-            if destinatario.nombreDestinatario == self.destinatarioDropdown.get():
-                destinatarioSet = destinatario
-                break        
+        destinatarioSet: Destinatario = self.destinatario    
         for data in dataReceived:
             numBoleta: int = int(data.strip().split('_')[0])
             idMapsa: int = int(data.strip().split('_')[1])
@@ -563,8 +561,9 @@ class App:
             if self.clienteDropdown.get() == cliente.nombreCliente:
                 idCliente: int = cliente.idCliente
         selectedDestinatario: Destinatario = self.sacConnector.getDestinatarioByCliente(idCliente=idCliente)
-        index: int = [destinatario.nombreDestinatario for destinatario in self.destinatarios].index(selectedDestinatario.nombreDestinatario)
-        self.destinatarioDropdown.current(index)
+        self.cc: list[str] = self.sacConnector.getCCByCliente(idCliente=idCliente)
+        self.destinatario = selectedDestinatario
+        self.destinatarioLabel.config(text=f"Se envía a: {self.destinatario.nombreDestinatario} ({self.destinatario.correoDestinatario}) con copia a {', '.join(self.cc)}")
     
     def populateCasos(self, key=None):
         if len(self.casosTable.selection()) > 0:
@@ -645,10 +644,8 @@ class App:
         self.nombreDeudorEntry.delete(0, END)
         self.clienteDropdown.set('')
         self.gastoTotalEntry.delete(0, END)
-        self.destinatarioDropdown.set('')
         self.casosTable.delete(*self.casosTable.get_children())
         self.serviciosTable.delete(*self.serviciosTable.get_children())
-        self.destinatarioDropdown.set('')
         self.uploadedAnexosLabel.config(text='No se han subido anexos')
         self.uploadedBoletaLabel.config(text='No se ha subido boleta')
         self.clearCacheFiles()

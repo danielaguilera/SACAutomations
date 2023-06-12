@@ -8,6 +8,7 @@ from Clases.Destinatario import Destinatario
 from Utils.Metadata import *
 from Utils.GlobalFunctions import *
 from Clases.FileGrouper import DocumentoUnificado
+from Clases.SACConnector import SACConnector
 
 class MailSender:
     def __init__(self, senderUsername: str, senderPassword: str, smtpServer: str, smtpPort: str):
@@ -16,6 +17,7 @@ class MailSender:
         self.smtpServer: str = smtpServer
         self.smtpPort: str = smtpPort
         self.session: smtplib.SMTP = None
+        self.sacConnector: SACConnector = SACConnector()
     
     def sendMail(self, receiverAddress: str, mailSubject: str, mailContent: str, mailAttachment: str):
         # self.session = smtplib.SMTP(self.smtpServer, self.smtpPort)
@@ -57,11 +59,14 @@ class MailSender:
         mailAttachment: str = f'{DELIVEREDDATAPATH}/{destinatario.nombreDestinatario}/Documento.pdf'
         if SEND == 'send':
             self.sendMail(receiverAddress=receiverAddress, mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
-        self.sendMail(receiverAddress='daniel.aguilera.habbo@gmail.com', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
-        self.sendMail(receiverAddress='draguilera@uc.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
-        self.sendMail(receiverAddress='servidor@gydabogados.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
-        self.sendMail(receiverAddress='matias.gause@gmail.com', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
-        self.sendMail(receiverAddress='vahumada@gydabogados.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
+            ccs: list[str] = self.sacConnector.getCCByDestinatario(nombreDestinatario=destinatario.nombreDestinatario)
+            for cc in ccs:
+                self.sendMail(receiverAddress=cc, mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
+        # self.sendMail(receiverAddress='daniel.aguilera.habbo@gmail.com', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
+        # self.sendMail(receiverAddress='draguilera@uc.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
+        # self.sendMail(receiverAddress='servidor@gydabogados.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
+        # self.sendMail(receiverAddress='matias.gause@gmail.com', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
+        # self.sendMail(receiverAddress='vahumada@gydabogados.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
         with open(ACTIVITYLOGFILE, 'a') as file:
             file.write(f'{str(datetime.now())}: {USER} envió los resúmenes de la semana {getWeekMondayTimeStamp()} a {destinatario.correoDestinatario} ({"OFICIAL" if SEND == "send" else "DEMO"})\n')
         print(f'Email a {destinatario.correoDestinatario} enviado!')        

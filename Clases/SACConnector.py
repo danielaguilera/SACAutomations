@@ -276,5 +276,22 @@ class SACConnector:
                                     WHERE Idboleta = {idMapsa} AND Numero = {numBoleta}   
                                   ''')
         self.connBoleta.commit()
+
+    def getCCByCliente(self, idCliente: int) -> list[str]:
+        self.cursorData.execute(f'''
+                                    SELECT Copia FROM {self.clientesTable}
+                                    WHERE IdCliente = {idCliente}
+                                ''')
+        result: str = self.cursorData.fetchall()[0][0]
+        print(result)
+        return result.split(';') if result else []
+    
+    def getCCByDestinatario(self, nombreDestinatario: str) -> list[str]:
+        self.cursorData.execute(f"""
+                                    SELECT DISTINCT Copia FROM {self.clientesTable}
+                                    WHERE Contacto LIKE '%{nombreDestinatario}%'
+                                """)
+        result: str = self.cursorData.fetchall()[0][0]
+        return result.split(';') if result else []
             
         
