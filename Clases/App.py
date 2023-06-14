@@ -190,6 +190,20 @@ class App:
         self.master.mainloop()
         
     @property
+    def numBoleta(self) -> int:
+        userInput : str = self.numBoletaEntry.get()
+        if userInput.isdigit():
+            return int(userInput)
+        else:
+            return 0
+        
+    @property
+    def idMapsa(self) -> int:
+        if not self.casosTable.focus():
+            return 0
+        return int(self.casosTable.item(self.casosTable.focus())['values'][0])
+
+    @property
     def numAnexos(self) -> int:
         return len(self.anexosPaths)
     
@@ -314,6 +328,9 @@ class App:
         with open(ACTIVITYLOGFILE, 'a') as file:
             file.write(f'{str(datetime.now())}: {USER} añadió boleta a enviar (NUMERO BOLETA: {numBoleta} - ID MAPSA: {idMapsa}) para {self.destinatario.nombreDestinatario}\n')
         self.clearForm()
+
+    def clearBoletaFromBackend(self):
+        pass
         
     def generateUnifiedDocument(self):
         for nombreDestinatario in os.listdir(path=f'{DELIVEREDDATAPATH}'):
