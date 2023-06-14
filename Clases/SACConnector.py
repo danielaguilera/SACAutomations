@@ -30,20 +30,8 @@ class SACConnector:
         self.destinatariosTable: str = 'Destinatarios'
         
     def getDeudorData(self, idBoleta: int) -> Deudor | None:
-        self.cursorData.execute(f'SELECT "Apellido Deudor", "Rut Deudor", Cliente FROM {self.mapsaTable} WHERE IdMapsa = {idBoleta}')
-        apellidoDeudor, rutDeudor, idCliente = list(self.cursorData.fetchall())[0]
-        nombreResponse: requests.Response = requests.get(url=LIBREAPIURL, params={'rut': rutDeudor})
-        if nombreResponse.status_code == 200:
-            nombreDeudor: str = nombreResponse.json()['data']['name']
-            nombreDeudorToList: list[str] = list(map(lambda x: x.capitalize(), nombreDeudor.strip().split(' ')))
-            if len(nombreDeudorToList) == 3:
-                nombreDeudor = nombreDeudorToList[0]
-            elif len(nombreDeudorToList) > 3:
-                nombreDeudor = ' '.join(nombreDeudorToList[0:2])
-            else:
-                nombreDeudor = ''
-        else:
-            nombreDeudor = ''
+        self.cursorData.execute(f'SELECT "Apellido Deudor", "Nombre Deudor", "Rut Deudor", Cliente FROM {self.mapsaTable} WHERE IdMapsa = {idBoleta}')
+        apellidoDeudor, nombreDeudor, rutDeudor, idCliente = list(self.cursorData.fetchall())[0]
         return Deudor(apellidoDeudor=apellidoDeudor, nombreDeudor=nombreDeudor, rutDeudor=rutDeudor, idCliente=idCliente)
     
     def getDeudorName(self, rutDeudor: str):
