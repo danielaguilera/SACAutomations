@@ -27,6 +27,7 @@ class SACConnector:
         self.mapsaTable: str = 'Mapsa'
         self.boletasTable: str = 'Boletas'
         self.gastosTable: str = 'ITEM-Gastos'
+        self.destinatariosTable: str = 'Destinatarios'
         
     def getDeudorData(self, idBoleta: int) -> Deudor | None:
         self.cursorData.execute(f'SELECT "Apellido Deudor", "Rut Deudor", Cliente FROM {self.mapsaTable} WHERE IdMapsa = {idBoleta}')
@@ -96,12 +97,17 @@ class SACConnector:
     
     def getDestinatarioByCliente(self, idCliente: int) -> Destinatario:
         self.cursorData.execute(f'''
-                                    SELECT Contacto, Mail
-                                    FROM {self.clientesTable}
-                                    WHERE IdCliente = {idCliente}
+                                    SELECT IdDestinatario, Nombre, Email, CC
+                                    FROM {self.destinatariosTable}, {self.clientesTable}
+                                    WHERE {self.destinatariosTable}.IdDestinatario = {self.clientesTable}.IdContacto AND IdCliente = {idCliente}
                                 ''')
-        nombreDestinatario, correoDestinatario = self.cursorData.fetchall()[0]
-        return Destinatario(nombreDestinatario=nombreDestinatario, correoDestinatario=correoDestinatario)
+        ccString: str
+        id, nombreDestinatario, correoDestinatario, ccString = self.cursorData.fetchall()[0]
+        if ccString:
+            cc = ccString.split(';')
+        else:
+            cc = []
+        return Destinatario(id=id, nombreDestinatario=nombreDestinatario, correoDestinatario=correoDestinatario, cc=ccString.split(';') if ccString else [])
     
     def findBeneficiario(self, rutBeneficiario: str) -> Beneficiario | None:
         self.cursorData.execute(f"""SELECT "Nombre o Razón Social" FROM {self.beneficiariosTable} WHERE "RUT Beneficiario" LIKE '%{rutBeneficiario}%'""")
@@ -154,10 +160,11 @@ class SACConnector:
  
     def getAllClientes(self) -> list[Cliente]:
         clientesData: list[Cliente] = []
-        self.cursorData.execute(f'''
+        self.cursorData.execute(f"""
                                     SELECT IdCliente, Cliente
                                     FROM {self.clientesTable}
-                                ''')
+                                    WHERE RUT <> ''
+                                """)
         for data in self.cursorData.fetchall():
             idCliente, nombreCliente = data
             clientesData.append(Cliente(idCliente=idCliente, nombreCliente=nombreCliente))
@@ -187,12 +194,17 @@ class SACConnector:
     def getAllDestinatarios(self) -> list[Destinatario]:
         destinatariosData: list[Destinatario] = []
         self.cursorData.execute(f'''
-                                    SELECT DISTINCT Contacto, Mail
-                                    FROM {self.clientesTable}
+                                    SELECT IdDestinatario, Nombre, Email, CC
+                                    FROM {self.destinatariosTable}
                                 ''')
         for data in self.cursorData.fetchall():
-            nombreDestinatario, correoDestinatario = data
-            destinatariosData.append(Destinatario(nombreDestinatario=nombreDestinatario, correoDestinatario=correoDestinatario))
+            ccString: str
+            id, nombreDestinatario, correoDestinatario, ccString = data
+            if ccString:
+                cc = ccString.split(';')
+            else:
+                cc = []
+            destinatariosData.append(Destinatario(id=id, nombreDestinatario=nombreDestinatario, correoDestinatario=correoDestinatario, cc=cc))
         return destinatariosData 
     
     def getPossibleMapsaCasos(self, rutDeudor: str = '', apellidoDeudor: str = '', idCliente: int = None) -> list[Caso]:

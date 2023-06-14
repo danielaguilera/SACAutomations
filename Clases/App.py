@@ -42,15 +42,6 @@ class App:
         self.master.title("SAC App")
         self.master.protocol("WM_DELETE_WINDOW", self.onClosingWindow)
         
-        self.topFrame = Frame(master=self.master)
-        self.topFrame.pack(expand=True, fill=BOTH)
-        Label(self.topFrame, text=f'¡Bienvenid@ {USER}!', fg='black', font=('Helvetica bold', 10)).pack()
-        Label(self.topFrame, text=f'Estás apuntando a la base de datos de {"TEST, trabajando con datos falsos" if ENV != "PRD" else "PRODUCCIÓN, trabajando con datos reales"}', fg='black', font=('Helvetica bold', 10)).pack()
-        if SEND == 'send':
-            Label(self.topFrame, text=f'Los emails se enviarán a los destinatarios reales', fg='black', font=('Helvetica bold', 10)).pack()
-        else:
-            Label(self.topFrame, text=f'Los emails solo se enviarán al desarrollador y al correo del servidor', fg='black', font=('Helvetica bold', 10)).pack()
-        
         self.thumbnailFrame = Frame(master=self.master)
         self.thumbnailFrame.pack(side=RIGHT)
         self.boletaImage = None
@@ -560,14 +551,20 @@ class App:
         self.populateCasos()    
     
     def setDestinatario(self, key=None):
-        cliente: Cliente
-        for cliente in self.clientes:
-            if self.clienteDropdown.get() == cliente.nombreCliente:
-                idCliente: int = cliente.idCliente
-        selectedDestinatario: Destinatario = self.sacConnector.getDestinatarioByCliente(idCliente=idCliente)
-        self.cc: list[str] = self.sacConnector.getCCByCliente(idCliente=idCliente)
-        self.destinatario = selectedDestinatario
-        self.destinatarioLabel.config(text=f"Se envía a: {self.destinatario.nombreDestinatario} ({self.destinatario.correoDestinatario}) con copia a {', '.join(self.cc)}")
+        try:
+            cliente: Cliente
+            for cliente in self.clientes:
+                if self.clienteDropdown.get() == cliente.nombreCliente:
+                    idCliente: int = cliente.idCliente
+            selectedDestinatario: Destinatario = self.sacConnector.getDestinatarioByCliente(idCliente=idCliente)
+            self.cc: list[str] = selectedDestinatario.cc
+            self.destinatario = selectedDestinatario
+            text: str = f"Se envía a: {self.destinatario.nombreDestinatario} ({self.destinatario.correoDestinatario})"
+            if self.cc:
+                text += f"con copia a {', '.join(self.cc)}"
+            self.destinatarioLabel.config(text=text)
+        except Exception:
+            pass
     
     def populateCasos(self, key=None):
         if len(self.casosTable.selection()) > 0:
