@@ -16,6 +16,9 @@ class SACSenderJob:
         pass
 
     def generateUnifiedDocument(self):
+        if not os.path.exists(DELIVEREDDATAPATH):
+            print('No hay datos para enviar')
+            sys.exit() 
         for nombreDestinatario in os.listdir(path=f'{DELIVEREDDATAPATH}'):
             pdfMerger: PdfMerger = PdfMerger()
             for path in os.listdir(path=f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
@@ -32,6 +35,9 @@ class SACSenderJob:
         pdfMerger.close()
 
     def generateSingleUnifiedDocument(self, nombreDestinatario: str):
+        if not os.path.exists(DELIVEREDDATAPATH):
+            print('No hay datos para enviar')
+            sys.exit() 
         pdfMerger: PdfMerger = PdfMerger()
         for path in os.listdir(path=f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
             if path != 'Documento.pdf':
