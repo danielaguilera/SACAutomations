@@ -15,6 +15,37 @@ class SACSenderJob:
     def __init__(self):
         pass
 
+    def generateUnifiedDocument(self):
+        for nombreDestinatario in os.listdir(path=f'{DELIVEREDDATAPATH}'):
+            pdfMerger: PdfMerger = PdfMerger()
+            for path in os.listdir(path=f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
+                if path != 'Documento.pdf':
+                    numBoleta, idMapsa = (int(x) for x in path.strip().split('_'))
+                    reportePath: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{path}/Reporte_{numBoleta}.pdf'
+                    boletaPath: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{path}/Boleta_{numBoleta}.pdf'
+                    anexoPath: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{path}/Anexo_{numBoleta}.pdf'
+                    pdfMerger.append(reportePath)
+                    pdfMerger.append(boletaPath)
+                    if os.path.exists(anexoPath):
+                        pdfMerger.append(anexoPath)
+            pdfMerger.write(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf')
+        pdfMerger.close()
+
+    def generateSingleUnifiedDocument(self, nombreDestinatario: str):
+        pdfMerger: PdfMerger = PdfMerger()
+        for path in os.listdir(path=f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
+            if path != 'Documento.pdf':
+                numBoleta, idMapsa = (int(x) for x in path.strip().split('_'))
+                reportePath: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{path}/Reporte_{numBoleta}.pdf'
+                boletaPath: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{path}/Boleta_{numBoleta}.pdf'
+                anexoPath: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{path}/Anexo_{numBoleta}.pdf'
+                pdfMerger.append(reportePath)
+                pdfMerger.append(boletaPath)
+                if os.path.exists(anexoPath):
+                    pdfMerger.append(anexoPath)
+        pdfMerger.write(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf')
+        pdfMerger.close()
+
     def sendSingleDestinatarioReports(self, nombreDestinatario: str):
         # Checks if there is data:
         if not os.path.exists(f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):

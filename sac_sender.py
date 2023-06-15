@@ -5,6 +5,7 @@ import logging
 
 if __name__ == '__main__':
     sacSenderjob: SACSenderJob = SACSenderJob()
+    sacSenderjob.generateUnifiedDocument()
     sacSenderjob.sendReports()
 
     

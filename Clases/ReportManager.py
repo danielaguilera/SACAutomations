@@ -111,7 +111,6 @@ class ReportManager:
         deleteIfExists(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{numBoleta}_{idMapsa}')
         deleteIfEmpty(f'{DELIVEREDDATAPATH}/{nombreDestinatario}')
         deleteIfEmpty(f'{DELIVEREDDATAPATH}')
-        self.updateUnifiedDocument(nombreDestinatario=nombreDestinatario)
         messagebox.showinfo(title='INFO', message='Reporte borrado')
         self.resetForm()
         with open(ACTIVITYLOGFILE, 'a') as file:
@@ -129,10 +128,11 @@ class ReportManager:
         if data[2]:
             return
         nombreDestinatario: str = data[0]
-        if not messagebox.askyesno(title='Aviso', message=f'Se enviarán todas las boletas de esta semana para {nombreDestinatario}. \n¿Deseas continuar?'):
+        if not messagebox.askyesno(title='Aviso', message=f'Se enviarán todas las boletas de esta semana para {nombreDestinatario}.\nEsto puede tardar unos minutos.\n¿Deseas continuar?'):
             return
         try:
             senderJob: SACSenderJob = SACSenderJob()
+            senderJob.generateSingleUnifiedDocument(nombreDestinatario=nombreDestinatario)
             senderJob.sendSingleDestinatarioReports(nombreDestinatario=nombreDestinatario)
             messagebox.showinfo(title='Éxito', message='Reportes enviados')
             self.resetForm()
@@ -141,13 +141,14 @@ class ReportManager:
             messagebox.showerror(title='Error', message='SAC Sender no pudo ejecutarse')
 
     def sendAllReports(self):
-        if not messagebox.askyesno(title='Aviso', message='Se enviarán todas las boletas de esta semana. \n¿Deseas continuar?'):
+        if not messagebox.askyesno(title='Aviso', message='Se enviarán todas las boletas de esta semana.\nEsto puede tardar unos minutos.\n¿Deseas continuar?'):
             return
         try:
             if not os.path.exists(DELIVEREDDATAPATH):
                 messagebox.showerror(title='Error', message='No hay reportes para enviar')
                 return
             senderJob: SACSenderJob = SACSenderJob()
+            senderJob.generateUnifiedDocument()
             senderJob.sendReports()
             messagebox.showinfo(title='Éxito', message='Reportes enviados')
             self.resetForm()

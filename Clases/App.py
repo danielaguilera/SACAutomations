@@ -188,7 +188,7 @@ class App:
         self.saveFrame.pack(expand=True, fill=BOTH)
         
         self.master.mainloop()
-        
+
     @property
     def numBoleta(self) -> int:
         userInput : str = self.numBoletaEntry.get()
@@ -279,58 +279,85 @@ class App:
         return bool(self.sacConnector.getBoletaData(numBoleta=numBoleta))
                 
     def saveChanges(self):
-        start = time.process_time() 
-        if not self.validData():
-            return  
-        if not messagebox.askyesno(title='Aviso', message='¿Está segur@ de querer guardar los datos?'):
-            return
-        dataSelected: list = self.casosTable.item(self.casosTable.focus())['values']
-        idMapsa: int = dataSelected[0]
-        numBoleta: int = int(self.numBoletaEntry.get())
-        fechaEmision: date = datetime.strptime(self.fechaBoletaEntry.get(), '%d-%m-%Y').date()
-        rutBeneficiario: str = self.rutBeneficiarioEntry.get()
-        servicios: list[Servicio] = []
-        for iid in self.serviciosTable.get_children():
-            if iid == 'total':
-                continue
-            codigo, nota, monto = self.serviciosTable.item(iid)['values']
-            servicios.append(Servicio(codigo=codigo, nota=nota, monto=monto))
-        boleta: Boleta = Boleta(idMapsa=idMapsa, 
-                                numBoleta=numBoleta, 
-                                fechaEmision=fechaEmision, 
-                                rutBeneficiario=rutBeneficiario, 
-                                servicios=servicios)
-        self.sacConnector.insertBoletaData(boleta=boleta)        
-        numBoleta: int = int(self.numBoletaEntry.get())
-        idMapsa: int = boleta.idMapsa
-        if not os.path.exists(DELIVEREDDATAPATH):
-            os.makedirs(DELIVEREDDATAPATH)
-        if not os.path.exists(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{numBoleta}_{idMapsa}'):
-            os.makedirs(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{numBoleta}_{idMapsa}')
-        merger: PdfMerger = PdfMerger()
-        for root in self.anexosPaths:
-            merger.append(root)
-        if self.anexosPaths:
-            merger.write(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{numBoleta}_{idMapsa}/Anexo_{numBoleta}.pdf')
-        merger.close()
-        reader = PdfReader(self.boletaPath)
-        writer = PdfWriter()
-        page = reader.pages[0]
-        writer.add_page(page)
-        with open(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{numBoleta}_{idMapsa}/Boleta_{numBoleta}.pdf', 'wb') as file:
-            writer.write(file)
-        self.generateReport()
-        self.saveDeudorName()
-        self.saveParams()
-        self.updateUnifiedDocument()
-        print('Tiempo en subir boleta: ' + str(time.process_time() - start))
-        messagebox.showinfo(title='Mensaje', message=f'Boleta n°{numBoleta} ingresada exitosamente')
-        with open(ACTIVITYLOGFILE, 'a') as file:
-            file.write(f'{str(datetime.now())}: {USER} añadió boleta a enviar (NUMERO BOLETA: {numBoleta} - ID MAPSA: {idMapsa}) para {self.destinatario.nombreDestinatario}\n')
-        self.clearForm()
+        try:
+            start = time.process_time() 
+            if not self.validData():
+                return  
+            if not messagebox.askyesno(title='Aviso', message='¿Está segur@ de querer guardar los datos?'):
+                return
+            dataSelected: list = self.casosTable.item(self.casosTable.focus())['values']
+            idMapsa: int = dataSelected[0]
+            numBoleta: int = int(self.numBoletaEntry.get())
+            fechaEmision: date = datetime.strptime(self.fechaBoletaEntry.get(), '%d-%m-%Y').date()
+            rutBeneficiario: str = self.rutBeneficiarioEntry.get()
+            servicios: list[Servicio] = []
+            for iid in self.serviciosTable.get_children():
+                if iid == 'total':
+                    continue
+                codigo, nota, monto = self.serviciosTable.item(iid)['values']
+                servicios.append(Servicio(codigo=codigo, nota=nota, monto=monto))
+            boleta: Boleta = Boleta(idMapsa=idMapsa, 
+                                    numBoleta=numBoleta, 
+                                    fechaEmision=fechaEmision, 
+                                    rutBeneficiario=rutBeneficiario, 
+                                    servicios=servicios)
+            self.sacConnector.insertBoletaData(boleta=boleta)        
+            numBoleta: int = int(self.numBoletaEntry.get())
+            idMapsa: int = boleta.idMapsa
+            if not os.path.exists(DELIVEREDDATAPATH):
+                os.makedirs(DELIVEREDDATAPATH)
+            if not os.path.exists(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{numBoleta}_{idMapsa}'):
+                os.makedirs(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{numBoleta}_{idMapsa}')
+            merger: PdfMerger = PdfMerger()
+            for root in self.anexosPaths:
+                merger.append(root)
+            if self.anexosPaths:
+                merger.write(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{numBoleta}_{idMapsa}/Anexo_{numBoleta}.pdf')
+            merger.close()
+            reader = PdfReader(self.boletaPath)
+            writer = PdfWriter()
+            page = reader.pages[0]
+            writer.add_page(page)
+            with open(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{numBoleta}_{idMapsa}/Boleta_{numBoleta}.pdf', 'wb') as file:
+                writer.write(file)
+            self.generateReport()
+            self.saveDeudorName()
+            self.saveParams()
+            print('Tiempo en subir boleta: ' + str(time.process_time() - start))
+            if self.checkBoletaInDB() and self.checkBoletainFile():
+                messagebox.showinfo(title='Mensaje', message=f'Boleta n°{numBoleta} ingresada exitosamente')
+                with open(ACTIVITYLOGFILE, 'a') as file:
+                    file.write(f'{str(datetime.now())}: {USER} añadió boleta a enviar (NUMERO BOLETA: {numBoleta} - ID MAPSA: {idMapsa}) para {self.destinatario.nombreDestinatario}\n')
+                    self.clearForm()
+            else:
+                messagebox.showinfo(title='Error', message=f'Boleta n°{numBoleta} no se pudo subir correctamente. Por favor intentar nuevamente')
+                self.clearBoletaFiles()
+                self.clearBoletaFromDB()
+        except Exception as e:
+            messagebox.showinfo(title='Error', message=str(e))
+            self.clearBoletaFiles()
+            self.clearBoletaFromDB()
 
-    def clearBoletaFromBackend(self):
-        pass
+    def checkBoletainFile(self) -> bool:
+        boletaExists: bool = os.path.exists(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{self.numBoleta}_{self.idMapsa}/Boleta_{self.numBoleta}.pdf')
+        reporteExists: bool = os.path.exists(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{self.numBoleta}_{self.idMapsa}/Reporte_{self.numBoleta}.pdf')
+        dataExists: bool = os.path.exists(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{self.numBoleta}_{self.idMapsa}/Data_{self.numBoleta}.txt')
+        deudorNameExists: bool = os.path.exists(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{self.numBoleta}_{self.idMapsa}/DeudorName.txt')
+        return boletaExists and reporteExists and dataExists and deudorNameExists
+
+    def checkBoletaInDB(self) -> bool:
+        return len(self.serviciosTable.get_children("")) - 1 == len(self.sacConnector.getBoletaServicios(numBoleta=self.numBoleta, idMapsa=self.idMapsa))
+
+    def clearBoletaFromDB(self):
+        self.sacConnector.deleteBoletaData(numBoleta=self.numBoleta, idMapsa=self.idMapsa)
+
+    def clearBoletaFiles(self):
+        if os.path.exists(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{self.numBoleta}_{self.idMapsa}'):
+            shutil.rmtree(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{self.numBoleta}_{self.idMapsa}')
+        if not os.listdir(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}'):
+            shutil.rmtree(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}')
+        if not os.listdir(f'{DELIVEREDDATAPATH}'):
+            shutil.rmtree(f'{DELIVEREDDATAPATH}')
         
     def generateUnifiedDocument(self):
         for nombreDestinatario in os.listdir(path=f'{DELIVEREDDATAPATH}'):
@@ -445,6 +472,10 @@ class App:
             self.getFechaFromFile()
             self.getGastoTotalFromFile()
             self.displayThumbnail()
+            if self.boletaAlreadyGenerated():
+                messagebox.showerror(title='Error', message=f'Ya existe un reporte para la boleta # {self.numBoletaEntry.get()}')
+                self.clearForm()
+            return False
         else:
             messagebox.showerror(title='Error', message='Archivo no válido')
             
@@ -533,13 +564,14 @@ class App:
             pass
         
     def runSender(self):
-        if not messagebox.askyesno(title='Aviso', message='Se enviarán todas las boletas de esta semana. \n¿Deseas continuar?'):
+        if not messagebox.askyesno(title='Aviso', message='Se enviarán todas las boletas de esta semana. \nEsto puede tardar varios minutos. \n¿Deseas continuar?'):
             return
         try:
             if not os.path.exists(DELIVEREDDATAPATH):
                 messagebox.showerror(title='Error', message='No hay reportes para enviar')
                 return
             senderJob: SACSenderJob = SACSenderJob()
+            senderJob.generateUnifiedDocument()
             senderJob.sendReports()
             messagebox.showinfo(title='Éxito', message='Reportes enviados')
             self.clearForm()
@@ -578,7 +610,7 @@ class App:
             self.destinatario = selectedDestinatario
             text: str = f"Se envía a: {self.destinatario.nombreDestinatario} ({self.destinatario.correoDestinatario})"
             if self.cc:
-                text += f"con copia a {', '.join(self.cc)}"
+                text += f" con copia a {', '.join(self.cc)}"
             self.destinatarioLabel.config(text=text)
         except Exception:
             pass

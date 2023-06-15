@@ -69,10 +69,12 @@ class SACConnector:
         return Destinatario(nombreDestinatario=nombreDestinatario, correoDestinatario=correoDestinatario)
     
     def getBeneficiarioData(self, numBoleta: int, idMapsa: int) -> Beneficiario | None:
-        self.cursorBoleta.execute(f"SELECT * FROM {self.boletasTable} WHERE Numero = {numBoleta} AND Check = False AND Idboleta = {idMapsa}")
+        query: str = f"SELECT * FROM {self.boletasTable} WHERE Numero = {numBoleta} AND Check = False AND Idboleta = {idMapsa}"
+        print(query)
+        self.cursorBoleta.execute(query)
+        rutBeneficiario: str = ''
         for dataReceived in self.cursorBoleta.fetchall(): 
             rutBeneficiario: str = dataReceived[7]
-            fechaBoleta : datetime = dataReceived[2]
             break
         query = '''
                     SELECT "Nombre o Razón Social" 
@@ -252,7 +254,7 @@ class SACConnector:
     def deleteBoletaData(self, numBoleta: int, idMapsa: int):
         self.cursorBoleta.execute(f'''
                                     DELETE FROM {self.boletasTable}
-                                    WHERE IdBoleta = {idMapsa} AND Numero = {numBoleta}
+                                    WHERE IdBoleta = {idMapsa} AND Numero = {numBoleta} AND Check = False
                                   ''')
         self.connBoleta.commit()
                 
@@ -283,7 +285,6 @@ class SACConnector:
                                     WHERE IdCliente = {idCliente}
                                 ''')
         result: str = self.cursorData.fetchall()[0][0]
-        print(result)
         return result.split(';') if result else []
     
     def getCCByDestinatario(self, nombreDestinatario: str) -> list[str]:
@@ -293,5 +294,14 @@ class SACConnector:
                                 """)
         result: str = self.cursorData.fetchall()[0][0]
         return result.split(';') if result else []
+    
+    def getBoletaServicios(self, numBoleta: int, idMapsa: int) -> list:
+        self.cursorBoleta.execute(f"""
+                                    SELECT Codigo, Monto
+                                    FROM {self.boletasTable}
+                                    WHERE Numero = {numBoleta} AND IdBoleta = {idMapsa} AND Check = False
+                                  """)
+        result: list = self.cursorBoleta.fetchall()
+        return result
             
         
