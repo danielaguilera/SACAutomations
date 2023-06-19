@@ -115,6 +115,7 @@ class App:
         self.nombreDeudorLabel.pack(side=LEFT) 
         self.nombreDeudorEntry = Entry(master=self.nombreDeudorFrame)
         self.nombreDeudorEntry.pack(side=LEFT, padx=5)
+        self.nombreDeudorEntry.bind("<KeyRelease>", self.populateCasos) 
 
         self.apellidoDeudorFrame = Frame(master=self.stateFrame)
         self.apellidoDeudorFrame.pack(expand=True, fill=BOTH)
@@ -157,11 +158,15 @@ class App:
         self.casosFrame = Frame(master=self.master)
         self.casosFrame.pack(expand=True, fill=BOTH)
         Label(master=self.casosFrame, text='Asociar caso a boleta: ', font=('Helvetica bold', 10, 'bold')).pack(side=TOP)
-        self.casosColumns = ['ID Mapsa', 'Estado', 'Fecha Asignación', 'Bsecs', 'RUT Deudor', 'Apellido Deudor', 'Cliente']
+        self.casosColumns = ['ID Mapsa', 'Estado', 'Fecha Asignación', 'Bsecs', 'RUT Deudor', 'Apellido Deudor', 'Nombre Deudor', 'Cliente']
         self.casosTable = ttk.Treeview(master=self.casosFrame, columns=self.casosColumns, show='headings', height=3)
+        displayColumns: list[str] = []
         for heading in self.casosColumns:
             self.casosTable.heading(heading, text=heading)
-            self.casosTable.column(heading, width=100)
+            self.casosTable.column(heading)
+            if heading not in ['Estado', 'Bsecs']:
+                displayColumns.append(heading)
+        self.casosTable["displaycolumns"] = displayColumns
         self.casosTable.pack(expand=True, fill=BOTH, anchor=CENTER)
         self.casosTable.bind('<<TreeviewSelect>>', self.selectCaso)
         
@@ -322,7 +327,6 @@ class App:
             with open(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{numBoleta}_{idMapsa}/Boleta_{numBoleta}.pdf', 'wb') as file:
                 writer.write(file)
             self.generateReport()
-            self.saveDeudorName()
             self.saveParams()
             print('Tiempo en subir boleta: ' + str(time.process_time() - start))
             if self.checkBoletaInDB() and self.checkBoletainFile():
@@ -343,8 +347,7 @@ class App:
         boletaExists: bool = os.path.exists(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{self.numBoleta}_{self.idMapsa}/Boleta_{self.numBoleta}.pdf')
         reporteExists: bool = os.path.exists(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{self.numBoleta}_{self.idMapsa}/Reporte_{self.numBoleta}.pdf')
         dataExists: bool = os.path.exists(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{self.numBoleta}_{self.idMapsa}/Data_{self.numBoleta}.txt')
-        deudorNameExists: bool = os.path.exists(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{self.numBoleta}_{self.idMapsa}/DeudorName.txt')
-        return boletaExists and reporteExists and dataExists and deudorNameExists
+        return boletaExists and reporteExists and dataExists
 
     def checkBoletaInDB(self) -> bool:
         return len(self.serviciosTable.get_children("")) - 1 == len(self.sacConnector.getBoletaServicios(numBoleta=self.numBoleta, idMapsa=self.idMapsa))
@@ -431,7 +434,6 @@ class App:
             numBoleta: int = int(data.strip().split('_')[0])
             idMapsa: int = int(data.strip().split('_')[1])
             reporteData: ReporteData = self.sacConnector.getReporteData(numBoleta=numBoleta, idMapsa=idMapsa, destinatarioSet=destinatarioSet)
-            reporteData.overwriteDeudorName(newDeudorName=self.nombreDeudorEntry.get())
             if reporteData and idMapsa == idMapsaSet and numBoleta == numBoletaSet:
                 pdfGenerator: PDFGenerator = PDFGenerator()
                 pdfGenerator.generateReporte(reporteData=reporteData)
@@ -563,7 +565,6 @@ class App:
             else:
                 pattern: str = r'Total Honorarios \$: (\d+(?:\.\d+)?)'
             patternMatch: re.match[str] | None = re.search(pattern, text)
-            print(patternMatch.group(1))
             total: int | str = int(patternMatch.group(1).replace('.','')) if patternMatch else ''   
             self.gastoTotalEntry.delete(0, END)
             self.gastoTotalEntry.insert(0, total)
@@ -635,11 +636,12 @@ class App:
                     idCliente = cliente.idCliente
                     break
         apellidoDeudor: str = self.apellidoDeudorEntry.get()
-        self.casos = self.sacConnector.getPossibleMapsaCasos(rutDeudor=rutDeudor, idCliente=idCliente, apellidoDeudor=apellidoDeudor)
+        nombreDeudor: str = self.nombreDeudorEntry.get()
+        self.casos = self.sacConnector.getPossibleMapsaCasos(rutDeudor=rutDeudor, idCliente=idCliente, apellidoDeudor=apellidoDeudor, nombreDeudor=nombreDeudor)
         caso: Caso
         self.casosTable.delete(*self.casosTable.get_children())
         for caso in self.casos:
-            self.casosTable.insert('', END, values=(caso.idMapsa, caso.nombreEstado, caso.fechaAsignado.strftime('%d-%m-%Y') if caso.fechaAsignado else '', caso.bsecs, caso.rutDeudor, caso.apellidoDeudor, caso.nombreCliente))
+            self.casosTable.insert('', END, values=(caso.idMapsa, caso.nombreEstado, caso.fechaAsignado.strftime('%d-%m-%Y') if caso.fechaAsignado else '', caso.bsecs, caso.rutDeudor, caso.apellidoDeudor, caso.nombreDeudor, caso.nombreCliente))
 
     def assignBeneficiario(self, key=None):
         nombreBeneficiario: str = self.nombreBeneficiarioDropdown.get()
@@ -663,8 +665,8 @@ class App:
         if dataSelected:
             rutDeudor: str = dataSelected[4]
             apellidoDeudor: str = dataSelected[5]
-            nombreDeudor: str = self.sacConnector.getDeudorName(rutDeudor=rutDeudor)
-            nombreCliente: str = dataSelected[6]
+            nombreDeudor: str = dataSelected[6]
+            nombreCliente: str = dataSelected[7]
             indexCliente: int = ([cliente.nombreCliente for cliente in self.clientes] + ['Ninguno']).index(nombreCliente)
             self.clienteDropdown.current(newindex=indexCliente)
             self.rutDeudorEntry.delete(0, END)
