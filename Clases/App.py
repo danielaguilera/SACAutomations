@@ -23,6 +23,7 @@ from Clases.ReportManager import ReportManager
 from Clases.SACSenderJob import SACSenderJob
 from datetime import date
 from PIL import ImageTk, Image
+from unidecode import unidecode
 import glob, sys, fitz
 import re
 import time
@@ -513,11 +514,13 @@ class App:
     def getRUTBeneficiarioFromFile(self):
         try:
             reader: PdfReader = PdfReader(self.boletaPath)
-            text: str = reader.pages[0].extract_text().strip()
+            text: str = unidecode(reader.pages[0].extract_text().strip())
             if (DUARTE in text) or (GYD in text):
-                rutBeneficiario: str = text.split('\n')[14].split(':')[2].replace(' ', '').strip()
+                # rutBeneficiario: str = text.split('\n')[14].split(':')[2].replace(' ', '').strip()
+                rutBeneficiario: str = re.findall(r"R\.U\.T\.:(.*)$", text, re.MULTILINE)[1].strip()
             else:
-                rutBeneficiario: str = text.split('\n')[3][5::].strip()
+                # rutBeneficiario: str = text.split('\n')[3][5::].strip()
+                rutBeneficiario: str = re.findall(r"RUT:(.*)$", text, re.MULTILINE)[0].strip()
             rutBeneficiario = correctRUTFormat(rutBeneficiario)
             self.rutBeneficiarioEntry.delete(0, END)
             self.rutBeneficiarioEntry.insert(0, rutBeneficiario)
@@ -534,14 +537,15 @@ class App:
     def getFechaFromFile(self):
         try:
             reader: PdfReader = PdfReader(self.boletaPath)
-            text: str = reader.pages[0].extract_text().strip()
+            text: str = unidecode(reader.pages[0].extract_text().strip())
             if (DUARTE in text) or (GYD in text):
-                fechaEmisionString: str = text.split('\n')[19][15::].strip()
+                # fechaEmisionString: str = text.split('\n')[19][15::].strip()
+                pattern: str = r'Fecha Emision: (.+)'
             else:
                 # fechaEmisionString: str = text.split('\n')[9][7::].strip()
                 pattern: str = r'Fecha: (.+)'
-                patternMatch: re.match | None = re.search(pattern, text)
-                fechaEmisionString: str = patternMatch.group(1) if patternMatch else ''
+            patternMatch: re.match | None = re.search(pattern, text)
+            fechaEmisionString: str = patternMatch.group(1) if patternMatch else ''
             fechaEmision: date = getDateFromSpanishFormat(stringDate=fechaEmisionString)
             self.fechaBoletaEntry.delete(0, END)
             self.fechaBoletaEntry.insert(0, fechaEmision.strftime("%d-%m-%Y"))
@@ -551,13 +555,16 @@ class App:
     def getGastoTotalFromFile(self):
         try:
             reader: PdfReader = PdfReader(self.boletaPath)
-            text: str = reader.pages[0].extract_text().strip()
+            text: str = unidecode(reader.pages[0].extract_text().strip())
             if (DUARTE in text) or (GYD in text):
-                total: int | str = int(text.split('\n')[-1][7::].replace('.',''))
+                # total: int | str = int(text.split('\n')[-1][7::].replace('.',''))
+                # pattern: str = r"TOTAL \$([\d,]+)"
+                pattern: str = r'TOTAL \$(\d+(?:\.\d+)?)'
             else:
                 pattern: str = r'Total Honorarios \$: (\d+(?:\.\d+)?)'
-                patternMatch: re.match[str] | None = re.search(pattern, text)
-                total: int | str = int(patternMatch.group(1).replace('.','')) if patternMatch else ''   
+            patternMatch: re.match[str] | None = re.search(pattern, text)
+            print(patternMatch.group(1))
+            total: int | str = int(patternMatch.group(1).replace('.','')) if patternMatch else ''   
             self.gastoTotalEntry.delete(0, END)
             self.gastoTotalEntry.insert(0, total)
         except Exception:

@@ -175,6 +175,7 @@ class SACConnector:
         self.cursorData.execute(f'''
                                     SELECT "RUT Beneficiario", "Nombre o Razón Social"
                                     FROM {self.beneficiariosTable}
+                                    ORDER BY `Nombre o Razón Social` ASC;
                                 ''')
         for data in self.cursorData.fetchall():
             rutBeneficiario, nombreBeneficiario = data
