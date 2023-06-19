@@ -80,7 +80,7 @@ class App:
         
         self.fechaBoletaFrame = Frame(master=self.stateFrame)
         self.fechaBoletaFrame.pack(expand=True, fill=BOTH)
-        self.fechaBoletaLabel = Label(master=self.fechaBoletaFrame, text='Fecha Emisión (dd-mm-AAAA)')
+        self.fechaBoletaLabel = Label(master=self.fechaBoletaFrame, text='Fecha emisión (dd-mm-AAAA)')
         self.fechaBoletaLabel.pack(side=LEFT) 
         self.fechaBoletaEntry: Entry = Entry(master=self.fechaBoletaFrame)
         self.fechaBoletaEntry.pack(side=LEFT, padx=5)
@@ -95,7 +95,7 @@ class App:
         
         self.nombreBeneficiarioFrame = Frame(master=self.stateFrame)
         self.nombreBeneficiarioFrame.pack(expand=True, fill=BOTH)
-        self.nombreBeneficiarioLabel = Label(master=self.nombreBeneficiarioFrame, text='Nombre o Razón Social')
+        self.nombreBeneficiarioLabel = Label(master=self.nombreBeneficiarioFrame, text='Nombre o razón social')
         self.nombreBeneficiarioLabel.pack(side=LEFT)
         self.nombreBeneficiarioDropdown = ttk.Combobox(master=self.nombreBeneficiarioFrame, state='readonly', values=[beneficiario.nombreBeneficiario for beneficiario in self.beneficiarios], width=40)
         self.nombreBeneficiarioDropdown.pack(side=LEFT, padx=5)
@@ -111,7 +111,7 @@ class App:
         
         self.nombreDeudorFrame = Frame(master=self.stateFrame)
         self.nombreDeudorFrame.pack(expand=True, fill=BOTH)
-        self.nombreDeudorLabel = Label(master=self.nombreDeudorFrame, text='Nombre Deudor')
+        self.nombreDeudorLabel = Label(master=self.nombreDeudorFrame, text='Nombre deudor')
         self.nombreDeudorLabel.pack(side=LEFT) 
         self.nombreDeudorEntry = Entry(master=self.nombreDeudorFrame)
         self.nombreDeudorEntry.pack(side=LEFT, padx=5)
@@ -119,7 +119,7 @@ class App:
 
         self.apellidoDeudorFrame = Frame(master=self.stateFrame)
         self.apellidoDeudorFrame.pack(expand=True, fill=BOTH)
-        self.apellidoDeudorLabel = Label(master=self.apellidoDeudorFrame, text='Apellido Deudor')
+        self.apellidoDeudorLabel = Label(master=self.apellidoDeudorFrame, text='Apellido deudor')
         self.apellidoDeudorLabel.pack(side=LEFT) 
         self.apellidoDeudorEntry = Entry(master=self.apellidoDeudorFrame)
         self.apellidoDeudorEntry.pack(side=LEFT, padx=5)
