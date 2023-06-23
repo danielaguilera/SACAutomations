@@ -13,7 +13,7 @@ class Caso:
         self.nombreCliente = nombreCliente
         
     def __repr__(self):
-        return f'{self.idMapsa} - {self.rutDeudor} - {self.apellidoDeudor}'
+        return f'{self.idMapsa} - {self.rutDeudor} - {self.apellidoDeudor} - Estado actual: {self.nombreEstado}'
     
     def __str__(self):
-        return f'{self.idMapsa} - {self.rutDeudor} - {self.apellidoDeudor}'
+        return f'{self.idMapsa} - {self.rutDeudor} - {self.apellidoDeudor} - Estado actual: {self.nombreEstado}'

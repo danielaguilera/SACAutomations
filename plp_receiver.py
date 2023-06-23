@@ -1,73 +1,110 @@
 import imaplib
 import email
+import email.header
 import sys
-import datetime
-from datetime import date
+import re
+from datetime import date, datetime, timedelta
+from unidecode import unidecode
 from Utils.Metadata import *
+from Utils.GlobalFunctions import *
+from Clases.SACConnector import SACConnector
+from Clases.Caso import Caso
 
-imap_server: str = SMTPSERVER
-with open(MAILDATA, 'r') as file:
-    email_address, password = file.readline().strip().split(',')
-email_address = 'draguilera.desarrollos@outlook.com'
-password = 'Npphq599123%'
-
-imap = imaplib.IMAP4_SSL(imap_server)
-imap.login(email_address, password)
-
-imap.select("Inbox")
-
-today = date.today().strftime('%d-%b-%Y')
-_, msgnums = imap.search(None, f'SINCE "{today}"')
-
-for msgnum in msgnums[0].split()[0:1]:
-    _, data = imap.fetch(msgnum, '(RFC822)')
-    message = email.message_from_bytes(data[0][1])
-    print(f"Message Number: {msgnum}")
-    print(f"From: {message.get('From')}")
-    print(f"To: {message.get('To')}")
-    print(f"BCC: {message.get('BCC')}")
-    print(f"Date: {message.get('Date')}")
-    print(f"Subject: {message.get('Subject')}")
-
-    print(f"Content:")
-    for part in message.walk():
-        if part.get_content_type() == "text/plain":
-            print(part.as_string())
+def extract_rut(text):
+    # Find the first rut in the text
+    pattern = r"\d{1,3}(?:[.,]?\d{3})*(?:-?\d?k|K)"
+    match = re.search(pattern, text)
     
-    if msgnum == 5:
-        break
-
-imap.close()
-
-
-
-# mail = imaplib.IMAP4_SSL(SMTPSERVERGYD)
-
-# with open(MAILDATA, 'r') as file:
-#     user_name, password = file.readline().strip().split(',')
-# mail.login(user_name, password)
-# mail.select('INBOX')
-# # print(datetime.datetime.today().strftime('%d-%b-%Y'))
-# # result, data = mail.search(None, f'''(SINCE "{datetime.datetime.today().strftime('%d-%b-%Y')}")''')
-# result, data = mail.search(None, f'''(SINCE 23-May-2023)''')
-# email_ids = data[0].split()
-
-# for email_id in email_ids:
-#     result, email_data = mail.fetch(email_id, '(RFC822)')
-#     raw_email = email_data[0][1]
-#     email_message = email.message_from_bytes(raw_email)
-#     subject: str = email_message['Subject']
-#     sender: str = email_message['From']
-#     date = email_message['Date']
-#     body = email_message.get_payload()
-#     # if 'FINALIZADO' in subject.upper() or 'RETIRO' in subject.upper() or 'TERMINO' in subject.upper() or 'TÉRMINO' in subject.upper() or 'PLP' in subject.upper():
-#     #     print(subject)
-#     if 'PLP INCUMPLIDO' in subject.upper():
-#         print(subject)
-#         print(body)
+    if match:
+        # Extract the found rut and remove the separator characters
+        rut = match.group().replace(".", "").replace(",", "").replace("-", "").lower()
+        return rut
     
-#     # print('From:', sender)
-#     # print('Date:', date)
-#     # print('Body:', body)
+    return None  # If no rut is found
+    
+def decode_header(text: str) -> str:
+    decoded_parts = email.header.decode_header(text)
+    decoded_subject = ''
+    for part, encoding in decoded_parts:
+        if isinstance(part, bytes):
+            decoded_subject += part.decode(encoding or 'utf-8')
+        else:
+            decoded_subject += part
+    return decoded_subject
 
-# mail.logout()
+if __name__ == '__main__':
+    sacConnector: SACConnector = SACConnector()
+
+    imap_server: str = SMTPSERVERGYD
+    with open(MAILDATA, 'r') as file:
+        email_address, password = file.readline().strip().split(',')
+    # email_address = 'draguilera.desarrollos@outlook.com'
+    # password = 'Npphq599123%'
+
+    imap = imaplib.IMAP4_SSL(imap_server)
+    imap.login(email_address, password)
+
+    imap.select("Inbox")
+
+    today: datetime = datetime.today()
+    five_days_ago: datetime = today - timedelta(days=3)
+    date_format = "%d-%b-%Y"
+    since_date: str = five_days_ago.strftime(date_format)
+    until_date: str = today.strftime(date_format)
+
+    _, msgnums = imap.search(None, f'SINCE "{since_date}"')
+    # _, msgnums = imap.search(None, f'ALL')
+
+    for msgnum in msgnums[0].split():
+        _, data = imap.fetch(msgnum, '(RFC822)')
+        message = email.message_from_bytes(data[0][1])
+        # print(f"Message Number: {msgnum}")
+        # print(f"From: {message.get('From')}")
+        # print(f"To: {message.get('To')}")
+        # print(f"BCC: {message.get('BCC')}")
+        # print(f"Date: {message.get('Date')}")
+        # print(f"Subject: {message.get('Subject')}")
+
+        # print(f"Content:")
+        # for part in message.walk():
+        #     if part.get_content_type() == "text/plain":
+        #         print(part.as_string())
+
+        subject: str = decode_header(message.get("Subject")).upper().replace('.', '')
+        if any(keyWord in subject for keyWord in SOLICITUD_PLP_KEYWORDS) and PLP in subject:
+            print(subject)
+            try:
+                rutDeudor: str = correctRUTFormat(subject)
+                print(f'{subject} => Solicitud de PLP: {rutDeudor}\n')
+                casos: list[Caso] = sacConnector.getPossibleMapsaCasos(rutDeudor=rutDeudor)
+                if len(casos) == 1:
+                    caso: Caso = casos[0]
+                    print(f'Caso encontrado: {caso}')
+                    if caso.nombreEstado == SUSPENDIDO:
+                        with open(PLPREQUESTSPATH, 'a') as file:
+                            file.write(f'{datetime.now()}: {caso} ya se encontraba suspendido.')
+                        print('El caso ya estaba suspendido')
+                    else:
+                        sacConnector.setMapsaCasoState(idMapsa=caso.idMapsa, newState=SUSPENDIDO)
+                        with open(PLPREQUESTSPATH, 'a') as file:
+                            file.write(f'{datetime.now()}: {caso} suspendido exitosamente.')
+                        print('Caso suspendido con éxito')
+                else:
+                    print('No se encontró un caso')
+            except Exception:
+                print('RUT no encontrado en asunto')
+            print('\n\n\n\n')
+
+
+        elif any(keyWord in subject for keyWord in PLP_INCUMPLIDO_KEYWORDS):
+            print(f'{subject} => PLP Incumplido')
+            print(f"Content:")
+            for n, part in enumerate(message.walk()):
+                if part.get_content_type() == "text/plain":
+                    print(n)
+                    print(part.as_string())
+            break
+            
+
+    imap.close()
+

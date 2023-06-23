@@ -18,6 +18,7 @@ DELIVEREDDATAPATH: str = os.path.abspath(f"{SAC_PATH}/boleta_data")
 RESULTPATH: str = os.path.abspath(f"{SAC_PATH}/results")
 ACTIVITYLOGFILE: str = os.path.abspath(f"{SAC_PATH}/actividad.txt")
 LOGPATH: str =  os.path.abspath(f"{SAC_PATH}/LogFiles")
+PLPREQUESTSPATH: str = os.path.abspath(f"{SAC_PATH}/solicitudes_plp.txt")
 
 LOGOPATH: str = os.path.abspath("Images/Logo.PNG")
 SIGNINGPATH: str = os.path.abspath("Images/Signing.PNG")
@@ -36,3 +37,14 @@ SMTPPORTGYD: int = 465
 
 DUARTE: str = 'DUARTE SPA'
 GYD: str = 'SERVICIOS JURIDICOS GAUSE'
+
+SOLICITUD_PLP_KEYWORDS: list[str] = ['SOLICITUD', 'SOLICITO', 'SOLICITAMOS', 'SOLICITADO', 'SOLICITARE', 'SOLICITAREMOS', 'SOLICITE']
+PLP_INCUMPLIDO_KEYWORDS: list[str] = ['INCUMPLIDO', 'INCUMPLIO', 'INCUMPLE']
+PLP: str = 'PLP'
+
+RUTDEUDOR: int = 0
+APELLIDODEUDOR: int = 1
+NOMBREDEUDOR: int = 2
+
+ACTIVO: str = 'ACTIVO'
+SUSPENDIDO: str = 'SUSPENDIDO'

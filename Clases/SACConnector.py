@@ -180,7 +180,7 @@ class SACConnector:
             destinatariosData.append(Destinatario(id=id, nombreDestinatario=nombreDestinatario, correoDestinatario=correoDestinatario, cc=cc))
         return destinatariosData 
     
-    def getPossibleMapsaCasos(self, rutDeudor: str = '', apellidoDeudor: str = '', nombreDeudor: str = '', idCliente: int = None) -> list[Caso]:
+    def getPossibleMapsaCasos(self, rutDeudor: str = '', apellidoDeudor: str = '', nombreDeudor: str = '', idCliente: int = None, active: bool = True) -> list[Caso]:
         casosFound : list[Caso] = []
         query: str = f'''
                         SELECT IdMapsa, Estado, Asignado, Bsecs, "Apellido Deudor", "Nombre Deudor", "RUT Deudor", Mapsa.Cliente, Clientes.Cliente
@@ -198,7 +198,10 @@ class SACConnector:
         if apellidoDeudor:
             query += f"""AND "Apellido Deudor" LIKE '{apellidoDeudor}%'"""    
         if nombreDeudor:
-            query += f"""AND "Nombre Deudor" LIKE '{nombreDeudor}%'"""    
+            query += f"""AND "Nombre Deudor" LIKE '{nombreDeudor}%'""" 
+
+        if not active:
+            query = query.replace("Estado LIKE '%Activo%'\n", "1")
         
         self.cursorData.execute(query)
         for data in self.cursorData.fetchall():
@@ -289,5 +292,29 @@ class SACConnector:
                                   """)
         result: list = self.cursorBoleta.fetchall()
         return result
-            
+    
+    # def getMapsaCaso(self, value: str, queryType: int):
+    #     queryType: str = ""
+    #     if queryType == RUTDEUDOR:
+    #         condition: str = f""""RUT Deudor" LIKE '{value}%'"""
+    #     elif queryType == APELLIDODEUDOR:
+    #         condition: str = f""""Apellido Deudor" LIKE '{value}%'"""
+    #     elif queryType == NOMBREDEUDOR:
+    #         condition: str = f""""Nombre Deudor" LIKE '{value}%'"""
+    #     query: str = f'''
+    #                     SELECT IdMapsa FROM {self.mapsaTable}
+    #                     WHERE {condition}
+    #                 '''
+    #     self.cursorData.execute(query)
+    #     results = self.cursorBoleta.fetchall()
+    #     return results
+    
+    def setMapsaCasoState(self, idMapsa: int, newState: str):
+        self.cursorData.execute(f'''
+                                    UPDATE {self.mapsaTable}
+                                    SET Estado = '{newState}'
+                                    WHERE IdMapsa = {idMapsa}
+                                ''')
+        self.connData.commit()
+
         

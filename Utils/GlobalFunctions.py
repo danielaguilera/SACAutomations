@@ -1,5 +1,6 @@
 from Utils.Metadata import *
 from datetime import datetime, timedelta, date
+import re
 import locale
 import os
 import shutil
