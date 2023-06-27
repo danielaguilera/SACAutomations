@@ -9,18 +9,6 @@ from Utils.Metadata import *
 from Utils.GlobalFunctions import *
 from Clases.SACConnector import SACConnector
 from Clases.Caso import Caso
-
-def extract_rut(text):
-    # Find the first rut in the text
-    pattern = r"\d{1,3}(?:[.,]?\d{3})*(?:-?\d?k|K)"
-    match = re.search(pattern, text)
-    
-    if match:
-        # Extract the found rut and remove the separator characters
-        rut = match.group().replace(".", "").replace(",", "").replace("-", "").lower()
-        return rut
-    
-    return None  # If no rut is found
     
 def decode_header(text: str) -> str:
     decoded_parts = email.header.decode_header(text)
@@ -31,6 +19,25 @@ def decode_header(text: str) -> str:
         else:
             decoded_subject += part
     return decoded_subject
+
+def cortar_string(string):
+    # Buscar la primera aparición de 'OPERACION' en mayúsculas
+    inicio = re.search(r'PLP_SECUENCIA', string)
+    if not inicio:
+        return None
+
+    # Buscar la última aparición de 'PLPN' donde N es un número del 1 al 9
+    fin = re.findall(r'PLP[1-9]', string)
+    if not fin:
+        return None
+
+    # Obtener el índice de la última aparición de 'PLPN'
+    ultimo_fin = string.rfind(fin[-1])
+
+    # Cortar el string
+    string_cortado = string[inicio.start() + 14:ultimo_fin + 4]
+
+    return string_cortado
 
 if __name__ == '__main__':
     sacConnector: SACConnector = SACConnector()
@@ -47,7 +54,7 @@ if __name__ == '__main__':
     imap.select("Inbox")
 
     today: datetime = datetime.today()
-    five_days_ago: datetime = today - timedelta(days=3)
+    five_days_ago: datetime = today - timedelta(days=10)
     date_format = "%d-%b-%Y"
     since_date: str = five_days_ago.strftime(date_format)
     until_date: str = today.strftime(date_format)
@@ -71,24 +78,26 @@ if __name__ == '__main__':
         #         print(part.as_string())
 
         subject: str = decode_header(message.get("Subject")).upper().replace('.', '')
-        if any(keyWord in subject for keyWord in SOLICITUD_PLP_KEYWORDS) and PLP in subject:
-            print(subject)
+        if False and any(keyWord in subject for keyWord in SOLICITUD_PLP_KEYWORDS) and PLP in subject:
+            pass
             try:
                 rutDeudor: str = correctRUTFormat(subject)
                 print(f'{subject} => Solicitud de PLP: {rutDeudor}\n')
-                casos: list[Caso] = sacConnector.getPossibleMapsaCasos(rutDeudor=rutDeudor)
+                casos: list[Caso] = sacConnector.getPossibleMapsaCasos(rutDeudor=rutDeudor, active=False)
                 if len(casos) == 1:
                     caso: Caso = casos[0]
                     print(f'Caso encontrado: {caso}')
-                    if caso.nombreEstado == SUSPENDIDO:
+                    if caso.nombreEstado.upper() == SUSPENDIDO:
                         with open(PLPREQUESTSPATH, 'a') as file:
                             file.write(f'{datetime.now()}: {caso} ya se encontraba suspendido.')
                         print('El caso ya estaba suspendido')
                     else:
-                        sacConnector.setMapsaCasoState(idMapsa=caso.idMapsa, newState=SUSPENDIDO)
+                        sacConnector.setMapsaCasoState(idMapsa=caso.idMapsa, newState=SUSPENDIDO.lower().capitalize())
                         with open(PLPREQUESTSPATH, 'a') as file:
                             file.write(f'{datetime.now()}: {caso} suspendido exitosamente.')
                         print('Caso suspendido con éxito')
+                elif len(casos) > 1:
+                    print('Hay más de un caso asociado a este rut')
                 else:
                     print('No se encontró un caso')
             except Exception:
@@ -98,12 +107,41 @@ if __name__ == '__main__':
 
         elif any(keyWord in subject for keyWord in PLP_INCUMPLIDO_KEYWORDS):
             print(f'{subject} => PLP Incumplido')
-            print(f"Content:")
+            messageString: str = ''
             for n, part in enumerate(message.walk()):
                 if part.get_content_type() == "text/plain":
-                    print(n)
-                    print(part.as_string())
-            break
+                    messageString += part.as_string()
+            # messageString = messageString[messageString.find('OPERACION')::]
+            messageString = cortar_string(messageString)
+            tokens: list[str] = list(filter(lambda elem: elem, messageString.split('\n')))
+            names: list[str] = []
+            for index, element in enumerate(tokens):
+                if element.isdigit() and len(element) > 6:
+                    names.append(tokens[index + 1])
+            for name in names:
+                tokenizedName: list[str] = list(filter(lambda word: word and not word.isdigit(), name.split(' ')))
+                apellidoDeudor: str = ''
+                nombreDeudor: str = ''
+                if len(tokenizedName) == 2:
+                    apellidoDeudor = tokenizedName[1]
+                    nombreDeudor = tokenizedName[0]
+                elif len(tokenizedName) >= 3:
+                    apellidoDeudor = f'{tokenizedName[-2]} {tokenizedName[-1]}'
+                    nombreDeudor = ' '.join(tokenizedName[0:len(tokenizedName)-2])
+                print(f'Apellido: {apellidoDeudor} - Nombre: {nombreDeudor}')
+                casos: list[Caso] = sacConnector.getPossibleMapsaCasos(apellidoDeudor=apellidoDeudor, nombreDeudor=nombreDeudor, active=False)
+                if len(casos) == 1:
+                    caso = casos[0]
+                    if caso.nombreEstado.upper() == ACTIVO:
+                        print(f'Caso {caso.idMapsa} ya estaba activo')
+                    else:
+                        sacConnector.setMapsaCasoState(idMapsa=caso.idMapsa, newState=ACTIVO.lower().capitalize())
+                        print(f'Caso {caso.idMapsa} activado exitosamente')
+                else:
+                    print('Sin casos')
+
+
+            
             
 
     imap.close()

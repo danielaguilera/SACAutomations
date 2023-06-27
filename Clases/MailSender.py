@@ -69,4 +69,7 @@ class MailSender:
         self.sendMail(receiverAddress='vahumada@gydabogados.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
         with open(ACTIVITYLOGFILE, 'a') as file:
             file.write(f'{str(datetime.now())}: {USER} envió los resúmenes de la semana {getWeekMondayTimeStamp()} a {destinatario.correoDestinatario} ({"OFICIAL" if SEND == "send" else "DEMO"})\n')
-        print(f'Email a {destinatario.correoDestinatario} enviado!')        
+        print(f'Email a {destinatario.correoDestinatario} enviado!')
+
+    def sendPLPSummary(self, mails: list[str]):
+        pass        
