@@ -20,24 +20,6 @@ class MailSender:
         self.sacConnector: SACConnector = SACConnector()
     
     def sendMail(self, receiverAddress: str, mailSubject: str, mailContent: str, mailAttachment: str):
-        # self.session = smtplib.SMTP(self.smtpServer, self.smtpPort)
-        # self.session.starttls()
-        # self.session.login(self.senderUserName, self.senderPassword)
-        # message = MIMEMultipart()
-        # message.add_header('from', self.senderUserName)
-        # message.add_header('to', receiverAddresss)
-        # message.add_header('subject', mailSubject)
-        # message.attach(MIMEText(mailContent, 'plain'))
-        # binaryPDF = open(mailAttachment, 'rb')
-        # pdfName: str = f'Reportes_semana_{getWeekMondayTimeStamp()}.pdf'
-        # payload = MIMEBase('application', 'octate-stream', Name=pdfName)
-        # payload.set_payload((binaryPDF).read())
-        # encoders.encode_base64(payload)
-        # payload.add_header('Content-Decomposition', 'attachment', filename=pdfName)
-        # message.attach(payload)
-        # self.session.send_message(message)
-        # self.session.quit()
-        
         msg = MIMEMultipart()
         msg['From'] = self.senderUserName
         msg['To'] = receiverAddress
@@ -51,6 +33,22 @@ class MailSender:
         server.login(self.senderUserName, self.senderPassword)
         server.sendmail(self.senderUserName, receiverAddress, msg.as_string())
         server.quit()
+
+    def sendPLPMail(self, receiverAddress: str, mailSubject: str, mailContent: str, mailAttachment: str):
+        msg = MIMEMultipart()
+        msg['From'] = self.senderUserName
+        msg['To'] = receiverAddress
+        msg['Subject'] = mailSubject
+        msg.attach(MIMEText(mailContent, 'plain'))
+        with open(mailAttachment, "rb") as f:
+            attach = MIMEApplication(f.read(),_subtype="xlsx")
+            attach.add_header('Content-Disposition','attachment',filename='Resumen.xlsx')
+            msg.attach(attach)
+        server = smtplib.SMTP_SSL(self.smtpServer, self.smtpPort)
+        server.login(self.senderUserName, self.senderPassword)
+        server.sendmail(self.senderUserName, receiverAddress, msg.as_string())
+        server.quit()
+
         
     def sendUnifiedDocument(self, destinatario: Destinatario):
         receiverAddress: str = destinatario.correoDestinatario
@@ -71,5 +69,12 @@ class MailSender:
             file.write(f'{str(datetime.now())}: {USER} envió los resúmenes de la semana {getWeekMondayTimeStamp()} a {destinatario.correoDestinatario} ({"OFICIAL" if SEND == "send" else "DEMO"})\n')
         print(f'Email a {destinatario.correoDestinatario} enviado!')
 
-    def sendPLPSummary(self, mails: list[str]):
-        pass        
+    def sendPLPSummary(self):
+        mailSubject: str = f'Resumen Solicitudes PLP y PLP incumplido'
+        mailContent: str = f'Se adjuntan las solictudes al dá de hoy {transformDateToSpanish(date=datetime.now())}'
+        mailAttachment: str = f'{PLPREQUESTSPATH}'
+        self.sendPLPMail(receiverAddress='daniel.aguilera.habbo@gmail.com', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
+        self.sendPLPMail(receiverAddress='draguilera@uc.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
+        # self.sendPLPMail(receiverAddress='servidor@gydabogados.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
+        # self.sendPLPMail(receiverAddress='matias.gause@gmail.com', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
+        # self.sendPLPMail(receiverAddress='vahumada@gydabogados.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)      

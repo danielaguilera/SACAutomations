@@ -11,6 +11,7 @@ class Caso:
         self.rutDeudor = rutDeudor
         self.idCliente = idCliente
         self.nombreCliente = nombreCliente
+        self.nombreEstadoAnterior = nombreEstado
         
     def __repr__(self):
         return f'{self.idMapsa} - {self.rutDeudor} - {self.apellidoDeudor} - Estado actual: {self.nombreEstado}'
