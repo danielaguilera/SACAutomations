@@ -164,6 +164,7 @@ class PLPManager:
             messageSender: str = self.decodeHeader(message.get('From'))
             messageDate: str = message.get('Date')
             messageSubject: str = self.decodeHeader(message.get('Subject'))
+            print(messageSubject)
 
             if self.isPLPRequest(messageSubject):
                 gydEmail: GYDEmail = GYDEmail(sender=messageSender,
