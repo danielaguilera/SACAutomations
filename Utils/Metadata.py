@@ -19,6 +19,7 @@ RESULTPATH: str = os.path.abspath(f"{SAC_PATH}/results")
 ACTIVITYLOGFILE: str = os.path.abspath(f"{SAC_PATH}/actividad.txt")
 LOGPATH: str =  os.path.abspath(f"{SAC_PATH}/LogFiles")
 PLPREQUESTSPATH: str = os.path.abspath(f"{SAC_PATH}/Solicitudes.xlsx")
+PLPDATEOVERWRITEPATH: str = os.path.abspath(f"{SAC_PATH}/plp_date_overwrite.txt")
 
 LOGOPATH: str = os.path.abspath("Images/Logo.PNG")
 SIGNINGPATH: str = os.path.abspath("Images/Signing.PNG")

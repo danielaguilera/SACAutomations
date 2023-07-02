@@ -5,6 +5,10 @@ import locale
 import os
 import shutil
 
+def getCurrentSpanishTimestamp():
+    now: datetime = datetime.now()
+    return f'{transformDateToSpanish(date=now)} a las {now.strftime("%H:%M:%S")}'
+
 def transformDateToSpanish(date : datetime) -> str:
     return f'{WEEKDAYS[date.weekday()]}, {date.day} de {MONTHNAMES[date.month]} de {date.year}'
 
@@ -54,7 +58,6 @@ def deleteIfEmpty(path: str) -> None:
             count += 1
     if not count:
         shutil.rmtree(path=path)
-        print('ELIMINADO')
         
 def extractNumberFromText(text: str) -> str:
     char: str
@@ -85,4 +88,3 @@ def validDateFormat(dateString: str) -> bool:
         return True
     except ValueError:
         return False        
-        

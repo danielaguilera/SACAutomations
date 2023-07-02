@@ -16,7 +16,8 @@ import pytz
 import openpyxl
 
 class GYDEmail:
-    def __init__(self, sender: str, subject: str, date: str):
+    def __init__(self, msgId: int, sender: str, subject: str, date: str):
+        self.msgId: int = msgId
         self.sender: str = sender
         self.subject: str = subject
         self.date: str = date
@@ -68,20 +69,31 @@ class PLPManager:
         self.localTimezone = pytz.timezone('America/Santiago')
 
     def main(self):
+        self.fetchMailData()
+
+    def fetchMailData(self):
         sacRequests: SACRequests = self.getEmails()
         self.processRequests(sacRequests=sacRequests)
-        self.sendSummary()
-        deleteFileIfExists(PLPREQUESTSPATH)
 
     def sendSummary(self):
         self.mailSender.sendPLPSummary()
+        deleteFileIfExists(PLPREQUESTSPATH)
 
+    def getMissingMailIds(self, originalIds: list) -> list:
+        if not os.path.exists(PLPREQUESTSPATH):
+            return originalIds
+        workbook = openpyxl.load_workbook(PLPREQUESTSPATH)
+        worksheet = workbook.active
+        idValues = [cell.value for cell in worksheet['A'][1:]]
+        missingIds = [idNum for idNum in originalIds if int(idNum) not in idValues]
+        return missingIds
+    
     def touchSolicitudesFile(self):
-        if os.path.exists('Solicitudes.xlsa'):
+        if os.path.exists(PLPREQUESTSPATH):
             return
         workbook = openpyxl.Workbook()
         worksheet = workbook.active
-        headers = ['Timestamp', 'Emisor', 'Asunto', 'TipoSolicitud', 'DeudorNombreCompleto', 'RUTDeudor', 'IdMapsa', 'EstadoAnterior', 'EstadoActual']
+        headers = ['ID', 'Timestamp', 'Emisor', 'Asunto', 'TipoSolicitud', 'DeudorNombreCompleto', 'RUTDeudor', 'IdMapsa', 'EstadoAnterior', 'EstadoActual']
         for colNum, header in enumerate(headers, 1):
             cell = worksheet.cell(row=1, column=colNum)
             cell.value = header
@@ -116,16 +128,16 @@ class PLPManager:
             return True
         except Exception:
             return False
-    
+        
     def getDeudoresFromPLPBreachedContent(self, content: str) -> list[Deudor]:
         deudores: list[Deudor] = []
 
         start = re.search(r'PLP_SECUENCIA', content)
         if not start:
-            return None
+            return []
         end = re.findall(r'PLP[1-9]', content)
         if not end:
-            return None
+            return []
         lastEnd = content.rfind(end[-1])
         croppedContent: str = content[start.start() + 14:lastEnd + 4]
 
@@ -152,24 +164,31 @@ class PLPManager:
         imap = imaplib.IMAP4_SSL(self.smtpServer)
         imap.login(self.username, self.password)
         imap.select("Inbox")
-        sinceDate: str = datetime.now().strftime("%d-%b-%Y")
-        _, msgnums = imap.search(None, f'(SINCE {sinceDate})')
+        now = datetime.now()
+        tommorrow = now + timedelta(days=1)
+        sinceDate: str = now.strftime('%d-%b-%Y')
+        beforeDate: str = tommorrow.strftime('%d-%b-%Y')
+        sinceDate = '29-Jun-2023'
+        beforeDate = '30-Jun-2023'
+        _, msgnums = imap.search(None, f'(SINCE {sinceDate} BEFORE {beforeDate})')
 
         plpRequests: list[PLPRequest] = []
         plpBreachedRequests: list[PLPBreached] = []
+        msgIds = self.getMissingMailIds(msgnums[0].split())
 
-        for msgnum in msgnums[0].split():
+        for msgnum in msgIds:
             _, data = imap.fetch(msgnum, '(RFC822)')
             message: Message = email.message_from_bytes(data[0][1])
             messageSender: str = self.decodeHeader(message.get('From'))
             messageDate: str = message.get('Date')
             messageSubject: str = self.decodeHeader(message.get('Subject'))
-            print(messageSubject)
 
             if self.isPLPRequest(messageSubject):
+                print(int(msgnum))
                 gydEmail: GYDEmail = GYDEmail(sender=messageSender,
                                               subject=messageSubject,
-                                              date=messageDate)
+                                              date=messageDate,
+                                              msgId=int(msgnum))
                 rutDeudor: str = correctRUTFormat(messageSubject)
                 casos: list[Caso] = self.sacConnector.getPossibleMapsaCasos(rutDeudor=rutDeudor, active=False)
                 caso: Caso = None
@@ -181,9 +200,11 @@ class PLPManager:
                 plpRequests.append(plpRequest)
 
             elif self.isPLPBreached(messageSubject.upper()):
+                print(int(msgnum))
                 gydEmail: GYDEmail = GYDEmail(sender=messageSender,
                                               subject=messageSubject,
-                                              date=messageDate)
+                                              date=messageDate,
+                                              msgId=int(msgnum))
                 messageString: str = ''
                 for part in message.walk():
                     if part.get_content_type() == "text/plain":
@@ -204,7 +225,8 @@ class PLPManager:
         data = []
         for plpRequest in processedPLPRequests:
             if plpRequest.caso:
-                data.append([plpRequest.payload.date, 
+                data.append([plpRequest.payload.msgId,
+                             plpRequest.payload.date, 
                              plpRequest.payload.sender, 
                              plpRequest.payload.subject, 
                              'Solicitud PLP', 
@@ -214,7 +236,8 @@ class PLPManager:
                              plpRequest.caso.nombreEstadoAnterior, 
                              plpRequest.caso.nombreEstado])
             else:
-                data.append([plpRequest.payload.date, 
+                data.append([plpRequest.payload.msgId,
+                             plpRequest.payload.date, 
                              plpRequest.payload.sender, 
                              plpRequest.payload.subject, 
                              'Solicitud PLP', 
@@ -225,22 +248,14 @@ class PLPManager:
                              'No encontrado'])
             
         for plpBreachedRequest in processedPLPBreachedRequests:
-            data.append([plpBreachedRequest.payload.date, 
-                         plpBreachedRequest.payload.sender,
-                         plpBreachedRequest.payload.subject,
-                         'PLP Incumplido',
-                         '',
-                         '',
-                         '',
-                         '',
-                         ''])
             deudor: Deudor
             for deudor in plpBreachedRequest.deudores:
                 if deudor.casoAsociado:
-                    data.append(['',
-                                 '',
-                                 '',
-                                 '',
+                    data.append([plpBreachedRequest.payload.msgId,
+                                 plpBreachedRequest.payload.date,
+                                 plpBreachedRequest.payload.sender,
+                                 plpBreachedRequest.payload.subject,
+                                 'PLP Incumplido',
                                  deudor.rawName,
                                  deudor.casoAsociado.rutDeudor,
                                  deudor.casoAsociado.idMapsa,
@@ -248,10 +263,11 @@ class PLPManager:
                                  deudor.casoAsociado.nombreEstado
                                  ])
                 else:
-                    data.append(['',
-                                 '',
-                                 '',
-                                 '',
+                    data.append([plpBreachedRequest.payload.msgId,
+                                 plpBreachedRequest.payload.date,
+                                 plpBreachedRequest.payload.sender,
+                                 plpBreachedRequest.payload.subject,
+                                 'PLP Incumplido',
                                  deudor.rawName,
                                  'No encontrado',
                                  'No encontrado',

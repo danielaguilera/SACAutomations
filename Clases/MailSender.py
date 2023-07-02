@@ -70,8 +70,8 @@ class MailSender:
         print(f'Email a {destinatario.correoDestinatario} enviado!')
 
     def sendPLPSummary(self):
-        mailSubject: str = f'Resumen Solicitudes PLP y PLP incumplido'
-        mailContent: str = f'Se adjuntan las solictudes al dá de hoy {transformDateToSpanish(date=datetime.now())}'
+        mailSubject: str = f'{"DEMO - ESTE EMAIL ES UNA PRUEBA Y NO CUENTA - " if SEND != "send" else ""}Resumen de solicitudes - {getCurrentSpanishTimestamp()}'
+        mailContent: str = f'Se adjunta un resumen de las solicitudes PLP y PLP incumplido hasta la fecha {getCurrentSpanishTimestamp()}'
         mailAttachment: str = f'{PLPREQUESTSPATH}'
         self.sendPLPMail(receiverAddress='daniel.aguilera.habbo@gmail.com', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
         self.sendPLPMail(receiverAddress='draguilera@uc.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
