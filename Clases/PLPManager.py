@@ -68,15 +68,18 @@ class PLPManager:
         self.password: str = senderPassword
         self.localTimezone = pytz.timezone('America/Santiago')
 
-    def main(self):
-        self.fetchMailData()
-
     def fetchMailData(self):
         sacRequests: SACRequests = self.getEmails()
         self.processRequests(sacRequests=sacRequests)
 
     def sendSummary(self):
         self.mailSender.sendPLPSummary()
+        deleteFileIfExists(PLPREQUESTSPATH)
+
+    def fetchDailyMails(self, date: datetime):
+        sacRequests: SACRequests = self.getEmails(sinceDatetime=date)
+        self.processRequests(sacRequests=sacRequests)
+        self.mailSender.sendPLPSummary(date=date)
         deleteFileIfExists(PLPREQUESTSPATH)
 
     def getMissingMailIds(self, originalIds: list) -> list:
@@ -160,16 +163,13 @@ class PLPManager:
             deudores.append(deudor)
         return deudores
 
-    def getEmails(self) -> SACRequests:
+    def getEmails(self, sinceDatetime: datetime = datetime.now()) -> SACRequests:
         imap = imaplib.IMAP4_SSL(self.smtpServer)
         imap.login(self.username, self.password)
         imap.select("Inbox")
-        now = datetime.now()
-        tommorrow = now + timedelta(days=1)
-        sinceDate: str = now.strftime('%d-%b-%Y')
-        beforeDate: str = tommorrow.strftime('%d-%b-%Y')
-        sinceDate = '29-Jun-2023'
-        beforeDate = '30-Jun-2023'
+        beforeDatetime: datetime = sinceDatetime + timedelta(days=1)
+        sinceDate: str = sinceDatetime.strftime('%d-%b-%Y')
+        beforeDate: str = beforeDatetime.strftime('%d-%b-%Y')
         _, msgnums = imap.search(None, f'(SINCE {sinceDate} BEFORE {beforeDate})')
 
         plpRequests: list[PLPRequest] = []

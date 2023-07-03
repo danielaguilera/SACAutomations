@@ -69,9 +69,9 @@ class MailSender:
             file.write(f'{str(datetime.now())}: {USER} envió los resúmenes de la semana {getWeekMondayTimeStamp()} a {destinatario.correoDestinatario} ({"OFICIAL" if SEND == "send" else "DEMO"})\n')
         print(f'Email a {destinatario.correoDestinatario} enviado!')
 
-    def sendPLPSummary(self):
-        mailSubject: str = f'{"DEMO - ESTE EMAIL ES UNA PRUEBA Y NO CUENTA - " if SEND != "send" else ""}Resumen de solicitudes - {getCurrentSpanishTimestamp()}'
-        mailContent: str = f'Se adjunta un resumen de las solicitudes PLP y PLP incumplido hasta la fecha {getCurrentSpanishTimestamp()}'
+    def sendPLPSummary(self, date: datetime = datetime.now()):
+        mailSubject: str = f'{"DEMO - ESTE EMAIL ES UNA PRUEBA Y NO CUENTA - " if SEND != "send" else ""}Resumen de solicitudes - {date.strftime("%d-%b-%Y")}'
+        mailContent: str = f'Se adjunta un resumen de las solicitudes PLP y PLP incumplido del día {date.strftime("%d-%b-%Y")}'
         mailAttachment: str = f'{PLPREQUESTSPATH}'
         self.sendPLPMail(receiverAddress='daniel.aguilera.habbo@gmail.com', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
         self.sendPLPMail(receiverAddress='draguilera@uc.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
