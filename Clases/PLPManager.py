@@ -1,3 +1,4 @@
+from Clases.Gestion import Gestion
 from Clases.SACConnector import SACConnector
 from Clases.MailSender import MailSender
 import imaplib
@@ -96,7 +97,7 @@ class PLPManager:
             return
         workbook = openpyxl.Workbook()
         worksheet = workbook.active
-        headers = ['ID', 'Timestamp', 'Emisor', 'Asunto', 'TipoSolicitud', 'DeudorNombreCompleto', 'RUTDeudor', 'IdMapsa', 'EstadoAnterior', 'EstadoActual']
+        headers = ['ID', 'Timestamp', 'Emisor', 'Asunto', 'Tipo', 'Deudor', 'RUT Deudor', 'ID Mapsa', 'Estado Anterior', 'Estado Actual']
         for colNum, header in enumerate(headers, 1):
             cell = worksheet.cell(row=1, column=colNum)
             cell.value = header
@@ -184,7 +185,7 @@ class PLPManager:
             messageSubject: str = self.decodeHeader(message.get('Subject'))
 
             if self.isPLPRequest(messageSubject):
-                print(int(msgnum))
+                print(f'{int(msgnum)} - {messageSender} - {messageSubject}')
                 gydEmail: GYDEmail = GYDEmail(sender=messageSender,
                                               subject=messageSubject,
                                               date=messageDate,
@@ -200,7 +201,7 @@ class PLPManager:
                 plpRequests.append(plpRequest)
 
             elif self.isPLPBreached(messageSubject.upper()):
-                print(int(msgnum))
+                print(f'{int(msgnum)} - {messageSender} - {messageSubject}')
                 gydEmail: GYDEmail = GYDEmail(sender=messageSender,
                                               subject=messageSubject,
                                               date=messageDate,
@@ -291,6 +292,8 @@ class PLPManager:
                 plpRequest.caso = caso
                 if plpRequest.caso.nombreEstado.upper() != SUSPENDIDO:
                     self.sacConnector.setMapsaCasoState(idMapsa=caso.idMapsa, newState=SUSPENDIDO.lower().capitalize())
+                    gestion: Gestion = Gestion(idJuicio=caso.idMapsa, timestamp=datetime.now(), tipo=PLP)
+                    self.sacConnector.addGestion(gestion=gestion)
                     plpRequest.caso.nombreEstado = SUSPENDIDO.lower().capitalize()
             processedPLPRequests.append(plpRequest)
         return processedPLPRequests
@@ -308,6 +311,8 @@ class PLPManager:
                     deudor.casoAsociado = caso
                     if caso.nombreEstado.upper() != ACTIVO:
                         self.sacConnector.setMapsaCasoState(idMapsa=caso.idMapsa, newState=ACTIVO.lower().capitalize())
+                        gestion: Gestion = Gestion(idJuicio=caso.idMapsa, timestamp=datetime.now(), tipo=PLPBREACHED)
+                        self.sacConnector.addGestion(gestion=gestion)
                         deudor.casoAsociado.nombreEstado = ACTIVO.lower().capitalize()
                 mappedDeudores.append(deudor)
             plpBreachedRequest.deudores = mappedDeudores

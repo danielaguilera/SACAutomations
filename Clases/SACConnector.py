@@ -1,3 +1,4 @@
+from Clases.Gestion import Gestion
 from Utils.Metadata import *
 import pyodbc
 import requests
@@ -17,10 +18,13 @@ class SACConnector:
         pyodbc.pooling = False
         self.connBoleta: pyodbc.Connection = pyodbc.connect(SACBOLETASPATH)
         self.connData: pyodbc.Connection = pyodbc.connect(SACDATAPATH)
+        self.connGestiones: pyodbc.Connection = pyodbc.connect(SACGESTIONESPATH)
         self.cursorBoleta: pyodbc.Cursor = self.connBoleta.cursor()
         self.cursorBoleta.fast_executemany = True
         self.cursorData: pyodbc.Cursor = self.connData.cursor()
         self.cursorData.fast_executemany = True
+        self.cursorGestiones: pyodbc.Cursor = self.connGestiones.cursor()
+        self.cursorGestiones.fast_executemany = True
         
         self.beneficiariosTable: str = 'Beneficiarios'
         self.clientesTable: str = 'Clientes'
@@ -28,6 +32,7 @@ class SACConnector:
         self.boletasTable: str = 'Boletas'
         self.gastosTable: str = 'ITEM-Gastos'
         self.destinatariosTable: str = 'Destinatarios'
+        self.gestionesTable: str = 'Gestiones'
         
     def getDeudorData(self, idBoleta: int) -> Deudor | None:
         self.cursorData.execute(f'SELECT "Apellido Deudor", "Nombre Deudor", "Rut Deudor", Cliente FROM {self.mapsaTable} WHERE IdMapsa = {idBoleta}')
@@ -267,20 +272,17 @@ class SACConnector:
                                     WHERE Idboleta = {idMapsa} AND Numero = {numBoleta}   
                                   ''')
         self.connBoleta.commit()
-
-    def getCCByCliente(self, idCliente: int) -> list[str]:
-        self.cursorData.execute(f'''
-                                    SELECT Copia FROM {self.clientesTable}
-                                    WHERE IdCliente = {idCliente}
-                                ''')
-        result: str = self.cursorData.fetchall()[0][0]
-        return result.split(';') if result else []
     
     def getCCByDestinatario(self, nombreDestinatario: str) -> list[str]:
-        self.cursorData.execute(f"""
-                                    SELECT DISTINCT Copia FROM {self.clientesTable}
-                                    WHERE Contacto LIKE '%{nombreDestinatario}%'
-                                """)
+        query = f"""
+                    SELECT CC FROM {self.destinatariosTable}
+                    WHERE Nombre LIKE '%{nombreDestinatario}%'
+                """
+        print(query)
+        self.cursorData.execute(query)
+        rawData = self.cursorData.fetchall()
+        if not rawData:
+            return []
         result: str = self.cursorData.fetchall()[0][0]
         return result.split(';') if result else []
     
@@ -293,22 +295,6 @@ class SACConnector:
         result: list = self.cursorBoleta.fetchall()
         return result
     
-    # def getMapsaCaso(self, value: str, queryType: int):
-    #     queryType: str = ""
-    #     if queryType == RUTDEUDOR:
-    #         condition: str = f""""RUT Deudor" LIKE '{value}%'"""
-    #     elif queryType == APELLIDODEUDOR:
-    #         condition: str = f""""Apellido Deudor" LIKE '{value}%'"""
-    #     elif queryType == NOMBREDEUDOR:
-    #         condition: str = f""""Nombre Deudor" LIKE '{value}%'"""
-    #     query: str = f'''
-    #                     SELECT IdMapsa FROM {self.mapsaTable}
-    #                     WHERE {condition}
-    #                 '''
-    #     self.cursorData.execute(query)
-    #     results = self.cursorBoleta.fetchall()
-    #     return results
-    
     def setMapsaCasoState(self, idMapsa: int, newState: str):
         timestamp: str = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
         self.cursorData.execute(f'''
@@ -316,6 +302,19 @@ class SACConnector:
                                     SET Estado = '{newState}', FechaModificacion = '{timestamp}'
                                     WHERE IdMapsa = {idMapsa}
                                 ''')
+        self.connData.commit()
+
+    def addGestion(self, gestion: Gestion):
+        query: str = f'''
+                        INSERT INTO {self.gestionesTable} (IdJuicio, Fecha, Gestion, Nota, Control, Usuario)
+                        VALUES ({gestion.idJuicio}, '{gestion.fecha}', '{gestion.gestion}', '{gestion.nota}', '{gestion.control}', '{gestion.user}')
+                     '''
+        print(query)
+        self.cursorGestiones.execute(query)
+        self.connGestiones.commit()
+
+    def setAllCasos(self, newState: str):
+        self.cursorData.execute(f"UPDATE {self.mapsaTable} SET Estado = '{newState}'")
         self.connData.commit()
 
         
