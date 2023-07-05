@@ -306,8 +306,8 @@ class SACConnector:
 
     def addGestion(self, gestion: Gestion):
         query: str = f'''
-                        INSERT INTO {self.gestionesTable} (IdJuicio, Fecha, Gestion, Nota, Control, Usuario)
-                        VALUES ({gestion.idJuicio}, '{gestion.fecha}', '{gestion.gestion}', '{gestion.nota}', '{gestion.control}', '{gestion.user}')
+                        INSERT INTO {self.gestionesTable} (IdJuicio, Fecha, Gestion, Nota, Usuario)
+                        VALUES ({gestion.idJuicio}, '{gestion.fecha}', '{gestion.gestion}', '{gestion.nota}', '{gestion.user}')
                      '''
         print(query)
         self.cursorGestiones.execute(query)
@@ -316,5 +316,11 @@ class SACConnector:
     def setAllCasos(self, newState: str):
         self.cursorData.execute(f"UPDATE {self.mapsaTable} SET Estado = '{newState}'")
         self.connData.commit()
+
+    def deleteAllGestiones(self):
+        self.cursorGestiones.execute(f"""DELETE FROM {self.gestionesTable}""")
+        self.connGestiones.commit()
+        self.cursorBoleta.close()
+        self.connBoleta.close()
 
         

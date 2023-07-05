@@ -6,7 +6,7 @@ class Gestion:
         self.idJuicio: int = idJuicio
         self.fecha: str = timestamp.strftime('%d-%b-%Y')
         self.gestion: str = PLPREQUESTCODE if tipo == PLP else PLPBREACHEDCODE
-        self.nota: str = PLP if PLP else ''
+        self.nota: str = PLP if tipo == PLP else ''
         self.control: str = timestamp.strftime('%m/%d/%Y %I:%M:%S %p')
         self.user: str = user
         

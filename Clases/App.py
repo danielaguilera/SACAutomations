@@ -491,6 +491,7 @@ class App:
         doc = fitz.open(filename)  # open document
         pix = doc[0].get_pixmap(matrix=mat)  # render page to an image
         pix.save("thumbnail.png")  # store image as a PNG
+        doc.close()
             
         self.boletaImage = PhotoImage(file='thumbnail.png')
         self.thumbnailFrame.pack(side=RIGHT)

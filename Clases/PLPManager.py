@@ -290,11 +290,10 @@ class PLPManager:
             if len(casos) == 1:
                 caso: Caso = casos[0]
                 plpRequest.caso = caso
-                if plpRequest.caso.nombreEstado.upper() != SUSPENDIDO:
-                    self.sacConnector.setMapsaCasoState(idMapsa=caso.idMapsa, newState=SUSPENDIDO.lower().capitalize())
-                    gestion: Gestion = Gestion(idJuicio=caso.idMapsa, timestamp=datetime.now(), tipo=PLP)
-                    self.sacConnector.addGestion(gestion=gestion)
-                    plpRequest.caso.nombreEstado = SUSPENDIDO.lower().capitalize()
+                self.sacConnector.setMapsaCasoState(idMapsa=caso.idMapsa, newState=SUSPENDIDO.lower().capitalize())
+                gestion: Gestion = Gestion(idJuicio=caso.idMapsa, timestamp=datetime.now(), tipo=PLP)
+                self.sacConnector.addGestion(gestion=gestion)
+                plpRequest.caso.nombreEstado = SUSPENDIDO.lower().capitalize()
             processedPLPRequests.append(plpRequest)
         return processedPLPRequests
     
@@ -309,15 +308,15 @@ class PLPManager:
                 if len(casos) == 1:
                     caso: Caso = casos[0]
                     deudor.casoAsociado = caso
-                    if caso.nombreEstado.upper() != ACTIVO:
-                        self.sacConnector.setMapsaCasoState(idMapsa=caso.idMapsa, newState=ACTIVO.lower().capitalize())
-                        gestion: Gestion = Gestion(idJuicio=caso.idMapsa, timestamp=datetime.now(), tipo=PLPBREACHED)
-                        self.sacConnector.addGestion(gestion=gestion)
-                        deudor.casoAsociado.nombreEstado = ACTIVO.lower().capitalize()
+                    self.sacConnector.setMapsaCasoState(idMapsa=caso.idMapsa, newState=ACTIVO.lower().capitalize())
+                    gestion: Gestion = Gestion(idJuicio=caso.idMapsa, timestamp=datetime.now(), tipo=PLPBREACHED)
+                    self.sacConnector.addGestion(gestion=gestion)
+                    deudor.casoAsociado.nombreEstado = ACTIVO.lower().capitalize()
                 mappedDeudores.append(deudor)
             plpBreachedRequest.deudores = mappedDeudores
             processedPLPBreachedRequests.append(plpBreachedRequest)
         return processedPLPBreachedRequests
+    
                         
 
 
