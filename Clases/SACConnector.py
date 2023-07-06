@@ -283,7 +283,7 @@ class SACConnector:
         rawData = self.cursorData.fetchall()
         if not rawData:
             return []
-        result: str = self.cursorData.fetchall()[0][0]
+        result: str = rawData[0][0]
         return result.split(';') if result else []
     
     def getBoletaServicios(self, numBoleta: int, idMapsa: int) -> list:

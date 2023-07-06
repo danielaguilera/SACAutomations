@@ -164,7 +164,7 @@ class PLPManager:
             deudores.append(deudor)
         return deudores
 
-    def getEmails(self, sinceDatetime: datetime = datetime.now()) -> SACRequests:
+    def getEmails(self, sinceDatetime: datetime = datetime.now(), save: bool = True) -> SACRequests:
         imap = imaplib.IMAP4_SSL(self.smtpServer)
         imap.login(self.username, self.password)
         imap.select("Inbox")
@@ -175,7 +175,11 @@ class PLPManager:
 
         plpRequests: list[PLPRequest] = []
         plpBreachedRequests: list[PLPBreached] = []
-        msgIds = self.getMissingMailIds(msgnums[0].split())
+
+        if save:
+            msgIds = self.getMissingMailIds(msgnums[0].split())
+        else:
+            msgIds = msgnums[0].split()
 
         for msgnum in msgIds:
             _, data = imap.fetch(msgnum, '(RFC822)')
@@ -183,6 +187,10 @@ class PLPManager:
             messageSender: str = self.decodeHeader(message.get('From'))
             messageDate: str = message.get('Date')
             messageSubject: str = self.decodeHeader(message.get('Subject'))
+
+            if not save:
+                print(f'{int(msgnum)} - {messageSender} - {messageSubject}')
+                continue
 
             if self.isPLPRequest(messageSubject):
                 print(f'{int(msgnum)} - {messageSender} - {messageSubject}')
@@ -316,25 +324,3 @@ class PLPManager:
             plpBreachedRequest.deudores = mappedDeudores
             processedPLPBreachedRequests.append(plpBreachedRequest)
         return processedPLPBreachedRequests
-    
-                        
-
-
-                    
-
-
-
-
-
-
-                
-            
-            
-
-        
-
-    
-
-
-
-    

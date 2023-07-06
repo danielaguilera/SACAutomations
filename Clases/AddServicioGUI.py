@@ -63,8 +63,12 @@ class AddServicioGUI:
         if not self.codigoDropdown.get():
             messagebox.showerror(title='Error', message='Debe seleccionar un código')
             return
+        
         nota: str = self.notaEntry.get()
         monto: int = int(self.montoEntry.get())
+        if monto > self.remainingAmount:
+            messagebox.showerror(title='Error', message='Se excede el monto restante')
+            return
         codigo: int = self.codigoDropdown.get()
         servicio = Servicio(nota=nota, monto=monto, codigo=codigo)
         self.container.addServicio(servicio=servicio)

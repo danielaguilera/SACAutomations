@@ -281,6 +281,8 @@ class App:
         return True     
     
     def boletaAlreadyGenerated(self):
+        if not self.numBoletaEntry.get().isdigit():
+            return False
         numBoleta: int = int(self.numBoletaEntry.get())
         return bool(self.sacConnector.getBoletaData(numBoleta=numBoleta))
                 
@@ -470,10 +472,12 @@ class App:
             self.boletaPath = filePath
             messagebox.showinfo(title='Mensaje', message='Boleta subida correctamente')
             self.uploadedBoletaLabel.config(text=f'Boleta subida')
-            self.getNumeroBoletaFromFile()
-            self.getRUTBeneficiarioFromFile()
-            self.getFechaFromFile()
-            self.getGastoTotalFromFile()
+            reader: PdfReader = PdfReader(self.boletaPath)
+            text: str = reader.pages[0].extract_text()
+            self.getNumeroBoletaFromFile(text=text)
+            self.getRUTBeneficiarioFromFile(text=text)
+            self.getFechaFromFile(text=text)
+            self.getGastoTotalFromFile(text=text)
             self.displayThumbnail()
             if self.boletaAlreadyGenerated():
                 messagebox.showerror(title='Error', message=f'Ya existe un reporte para la boleta # {self.numBoletaEntry.get()}')
@@ -497,14 +501,20 @@ class App:
         self.thumbnailFrame.pack(side=RIGHT)
         self.thumbnail.config(image=self.boletaImage)
         self.thumbnail.pack()
+
+    def fileIsFactura(self, text: str):
+        text = text.replace('\n', ' ')
+        if FACTURAKEYPHRASE in text:
+            return True
+        return False
     
-    def getNumeroBoletaFromFile(self):
+    def getNumeroBoletaFromFile(self, text: str):
         try:
-            reader: PdfReader = PdfReader(self.boletaPath)
-            numberIndex: int = reader.pages[0].extract_text().find('°')
-            if numberIndex == -1:
-                numberIndex = reader.pages[0].extract_text().find('º')
-            subString: str = reader.pages[0].extract_text()[numberIndex::]
+            if self.fileIsFactura(text=text):
+                numberIndex: int = text.find('º')
+            else:
+                numberIndex: int = text.find('°')
+            subString: str = text[numberIndex::]
             endIndex: int = subString.find('\n')
             subString = subString[0: endIndex + 1]
             numBoleta = extractNumberFromText(subString)
@@ -514,15 +524,12 @@ class App:
         except Exception:
             pass
 
-    def getRUTBeneficiarioFromFile(self):
+    def getRUTBeneficiarioFromFile(self, text: str):
         try:
-            reader: PdfReader = PdfReader(self.boletaPath)
-            text: str = unidecode(reader.pages[0].extract_text().strip())
-            if (DUARTE in text) or (GYD in text):
-                # rutBeneficiario: str = text.split('\n')[14].split(':')[2].replace(' ', '').strip()
+            text: str = unidecode(text.strip())
+            if self.fileIsFactura(text=text):
                 rutBeneficiario: str = re.findall(r"R\.U\.T\.:(.*)$", text, re.MULTILINE)[1].strip()
             else:
-                # rutBeneficiario: str = text.split('\n')[3][5::].strip()
                 rutBeneficiario: str = re.findall(r"RUT:(.*)$", text, re.MULTILINE)[0].strip()
             rutBeneficiario = correctRUTFormat(rutBeneficiario)
             self.rutBeneficiarioEntry.delete(0, END)
@@ -537,15 +544,12 @@ class App:
         except Exception:
             pass
         
-    def getFechaFromFile(self):
+    def getFechaFromFile(self, text: str):
         try:
-            reader: PdfReader = PdfReader(self.boletaPath)
-            text: str = unidecode(reader.pages[0].extract_text().strip())
-            if (DUARTE in text) or (GYD in text):
-                # fechaEmisionString: str = text.split('\n')[19][15::].strip()
+            text: str = unidecode(text.strip())
+            if self.fileIsFactura(text=text):
                 pattern: str = r'Fecha Emision: (.+)'
             else:
-                # fechaEmisionString: str = text.split('\n')[9][7::].strip()
                 pattern: str = r'Fecha: (.+)'
             patternMatch: re.match | None = re.search(pattern, text)
             fechaEmisionString: str = patternMatch.group(1) if patternMatch else ''
@@ -555,13 +559,10 @@ class App:
         except Exception:
             pass
         
-    def getGastoTotalFromFile(self):
+    def getGastoTotalFromFile(self, text: str):
         try:
-            reader: PdfReader = PdfReader(self.boletaPath)
-            text: str = unidecode(reader.pages[0].extract_text().strip())
-            if (DUARTE in text) or (GYD in text):
-                # total: int | str = int(text.split('\n')[-1][7::].replace('.',''))
-                # pattern: str = r"TOTAL \$([\d,]+)"
+            text: str = unidecode(text.strip())
+            if self.fileIsFactura(text=text):
                 pattern: str = r'TOTAL \$(\d+(?:\.\d+)?)'
             else:
                 pattern: str = r'Total Honorarios \$: (\d+(?:\.\d+)?)'

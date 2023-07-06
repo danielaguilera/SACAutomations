@@ -87,7 +87,7 @@ class SACSenderJob:
 
         # Erasing generated reports:
         deleteIfExists(f'{DELIVEREDDATAPATH}/{nombreDestinatario}')
-    
+
     def sendReports(self):
         # Checks if there is data:
         if not os.path.exists(DELIVEREDDATAPATH):
