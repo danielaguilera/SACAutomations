@@ -188,12 +188,10 @@ class PLPManager:
             messageDate: str = message.get('Date')
             messageSubject: str = self.decodeHeader(message.get('Subject'))
 
-            if not save:
-                print(f'{int(msgnum)} - {messageSender} - {messageSubject}')
-                continue
-
             if self.isPLPRequest(messageSubject):
-                print(f'{int(msgnum)} - {messageSender} - {messageSubject}')
+                print(f'{int(msgnum)} - {messageDate} - {messageSender} - {messageSubject}')
+                if not save:
+                    continue
                 gydEmail: GYDEmail = GYDEmail(sender=messageSender,
                                               subject=messageSubject,
                                               date=messageDate,
@@ -209,7 +207,9 @@ class PLPManager:
                 plpRequests.append(plpRequest)
 
             elif self.isPLPBreached(messageSubject.upper()):
-                print(f'{int(msgnum)} - {messageSender} - {messageSubject}')
+                print(f'{int(msgnum)} - {messageDate} - {messageSender} - {messageSubject}')
+                if not save:
+                    continue
                 gydEmail: GYDEmail = GYDEmail(sender=messageSender,
                                               subject=messageSubject,
                                               date=messageDate,
