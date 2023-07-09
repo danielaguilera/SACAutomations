@@ -15,6 +15,7 @@ from Clases.Caso import Caso
 from Clases.Deudor import Deudor
 import pytz
 import openpyxl
+import pandas as pd
 
 class GYDEmail:
     def __init__(self, msgId: int, sender: str, subject: str, date: str):
@@ -53,6 +54,13 @@ class SACRequests:
 
     def __str__(self):
         return '\n'.join([str(elem) for elem in self.plpRequests + self.plpBreachedRequests])
+    
+class UnMappedRequest:
+    def __init__(self, emisor: str, tipoSolicitud: str, nombreDeudor: str, rutDeudor: str):
+        self.emisor = emisor
+        self.tipoSolicitud = tipoSolicitud
+        self.nombreDeudor = nombreDeudor
+        self.rutDeudor = rutDeudor
 
 class PLPManager:
     def __init__(self):
@@ -74,7 +82,8 @@ class PLPManager:
         self.processRequests(sacRequests=sacRequests)
 
     def sendSummary(self):
-        self.mailSender.sendPLPSummary()
+        text: str = self.generateSummary()
+        self.mailSender.sendPLPSummary(text=text, attachFile=not self.isRequestFileEmpty())
         deleteFileIfExists(PLPREQUESTSPATH)
 
     def fetchDailyMails(self, date: datetime):
@@ -324,3 +333,80 @@ class PLPManager:
             plpBreachedRequest.deudores = mappedDeudores
             processedPLPBreachedRequests.append(plpBreachedRequest)
         return processedPLPBreachedRequests
+    
+    def getRequestResults(self) -> tuple:
+        data: pd.DataFrame = pd.read_excel(PLPREQUESTSPATH)
+        plpRequests: list[UnMappedRequest] = []
+        plpBreachedRequests: list[UnMappedRequest] = []
+        totalPLPRequests: int = 0
+        totalPLPBreachedRequests: int = 0
+        for index, row in data.iterrows():
+            emisor = row['Emisor']
+            idMapsa = row['ID Mapsa']
+            tipoSolicitud = row['Tipo']
+            nombreDeudor = row['Deudor']
+            rutDeudor = row['RUT Deudor']
+            if tipoSolicitud == SOLICITUDPLP:
+                totalPLPRequests += 1
+                if idMapsa == 'No encontrado':
+                    unmappedRequest: UnMappedRequest = UnMappedRequest(tipoSolicitud=SOLICITUDPLP,
+                                                                    emisor=emisor,
+                                                                    nombreDeudor=nombreDeudor,
+                                                                    rutDeudor=rutDeudor)
+                    plpRequests.append(unmappedRequest)
+            elif tipoSolicitud == PLPINCUMPLIDO:
+                totalPLPBreachedRequests += 1
+                if idMapsa == 'No encontrado':
+                    unmappedRequest: UnMappedRequest = UnMappedRequest(tipoSolicitud=SOLICITUDPLP,
+                                                                    emisor=emisor,
+                                                                    nombreDeudor=nombreDeudor,
+                                                                    rutDeudor=rutDeudor)
+                    plpBreachedRequests.append(unmappedRequest)
+                
+        return (plpRequests, plpBreachedRequests, totalPLPRequests, totalPLPBreachedRequests)
+    
+    def isRequestFileEmpty(self) -> bool:
+        if not os.path.exists(PLPREQUESTSPATH):
+            return True
+        data = pd.read_excel(PLPREQUESTSPATH)
+        numRows: int = data.shape[0]
+        return not bool(numRows)
+    
+    def generateSummary(self) -> str:
+        data: tuple = self.getRequestResults()
+        plpRequests: list[UnMappedRequest] = data[0]
+        plpBreachedRequests: list[UnMappedRequest] = data[1]
+        totalPLPRequests: int = data[2]
+        totalPLPBreachedRequests: int = data[3]
+        totalRequests: int = totalPLPRequests + totalPLPBreachedRequests
+        totalUnmappedRequests: int = len(plpRequests) + len(plpBreachedRequests)
+        plpUnmappedRequests: int = len(plpRequests)
+        plpBreachedUnmappedRequests: int = len(plpBreachedRequests)
+        if not totalRequests:
+            text: str = f'Buenas noches, \nAl día de hoy {getCurrentSpanishTimestamp()} no se recibieron solicitudes.'
+            return text
+        if totalRequests:
+            text: str = f'Buenas noches, \nAl día de hoy {getCurrentSpanishTimestamp()} se recibieron {totalPLPRequests} solicitudes de PLP y {totalPLPBreachedRequests} PLPs incumplidos.\n\n'
+        if not totalUnmappedRequests:
+            text += 'Todas las solicitudes fueron mapeadas y procesadas correctamente.'
+            return text
+        if plpRequests:
+            text += f'{plpUnmappedRequests} solicitudes de PLP no pudieron asociarse a un caso: \n\n'
+            text += '\n'.join([plpRequest.rutDeudor for plpRequest in plpRequests])
+            text += '\n'
+        text += '\n\n'
+        if plpBreachedRequests:
+            text += f'{plpBreachedUnmappedRequests} PLPs incumplidos no pudieron asociarse a un caso: \n\n'
+            text += '\n'.join([plpBreachedRequest.nombreDeudor for plpBreachedRequest in plpBreachedRequests])
+            text += '\n'
+        return text
+        
+
+
+
+
+
+
+
+        
+        
