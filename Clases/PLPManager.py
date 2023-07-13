@@ -89,7 +89,8 @@ class PLPManager:
     def fetchDailyMails(self, date: datetime):
         sacRequests: SACRequests = self.getEmails(sinceDatetime=date)
         self.processRequests(sacRequests=sacRequests)
-        self.mailSender.sendPLPSummary(date=date)
+        text: str = self.generateSummary(date=date)
+        self.mailSender.sendPLPSummary(text=text, attachFile=not self.isRequestFileEmpty(), date=date)
         deleteFileIfExists(PLPREQUESTSPATH)
 
     def getMissingMailIds(self, originalIds: list) -> list:
@@ -198,7 +199,6 @@ class PLPManager:
             messageSubject: str = self.decodeHeader(message.get('Subject'))
 
             if self.isPLPRequest(messageSubject):
-                print(f'{int(msgnum)} - {messageDate} - {messageSender} - {messageSubject}')
                 if not save:
                     continue
                 gydEmail: GYDEmail = GYDEmail(sender=messageSender,
@@ -216,7 +216,6 @@ class PLPManager:
                 plpRequests.append(plpRequest)
 
             elif self.isPLPBreached(messageSubject.upper()):
-                print(f'{int(msgnum)} - {messageDate} - {messageSender} - {messageSubject}')
                 if not save:
                     continue
                 gydEmail: GYDEmail = GYDEmail(sender=messageSender,
@@ -372,7 +371,7 @@ class PLPManager:
         numRows: int = data.shape[0]
         return not bool(numRows)
     
-    def generateSummary(self) -> str:
+    def generateSummary(self, date = datetime.today()) -> str:
         data: tuple = self.getRequestResults()
         plpRequests: list[UnMappedRequest] = data[0]
         plpBreachedRequests: list[UnMappedRequest] = data[1]
@@ -383,10 +382,10 @@ class PLPManager:
         plpUnmappedRequests: int = len(plpRequests)
         plpBreachedUnmappedRequests: int = len(plpBreachedRequests)
         if not totalRequests:
-            text: str = f'Buenas noches, \nAl día de hoy {getCurrentSpanishTimestamp()} no se recibieron solicitudes.'
+            text: str = f'Buenas noches, \nAl día {transformDateToSpanish(date)} no se recibieron solicitudes.'
             return text
         if totalRequests:
-            text: str = f'Buenas noches, \nAl día de hoy {getCurrentSpanishTimestamp()} se recibieron {totalPLPRequests} solicitudes de PLP y {totalPLPBreachedRequests} PLPs incumplidos.\n\n'
+            text: str = f'Buenas noches, \nAl día {transformDateToSpanish(date)} se recibieron {totalPLPRequests} solicitudes de PLP y {totalPLPBreachedRequests} PLPs incumplidos.\n\n'
         if not totalUnmappedRequests:
             text += 'Todas las solicitudes fueron mapeadas y procesadas correctamente.'
             return text
