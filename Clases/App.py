@@ -5,14 +5,12 @@ import shutil
 import os
 from tkinter import filedialog
 from Clases.Boleta import Boleta
-from Clases.FileGrouper import FileGrouper
 from Clases.PDFGenerator import PDFGenerator
-from Clases.ReporteData import ReporteData
 from Clases.Destinatario import Destinatario
+from Clases.Resumen import Resumen
 from Utils.Metadata import *
 from Utils.GlobalFunctions import *
-from PyPDF2 import PdfFileReader, PdfFileWriter, PdfReader, PdfMerger, PdfWriter
-from PyPDF2.errors import PdfReadError
+from PyPDF2 import PdfReader, PdfMerger, PdfWriter
 from Clases.SACConnector import SACConnector
 from Clases.Cliente import Cliente
 from Clases.AddServicioGUI import AddServicioGUI
@@ -22,9 +20,8 @@ from Clases.Caso import Caso
 from Clases.ReportManager import ReportManager
 from Clases.SACSenderJob import SACSenderJob
 from datetime import date
-from PIL import ImageTk, Image
 from unidecode import unidecode
-import glob, sys, fitz
+import fitz
 import re
 import time
 
@@ -158,13 +155,13 @@ class App:
         self.casosFrame = Frame(master=self.master)
         self.casosFrame.pack(expand=True, fill=BOTH)
         Label(master=self.casosFrame, text='Asociar caso a boleta: ', font=('Helvetica bold', 10, 'bold')).pack(side=TOP)
-        self.casosColumns = ['ID Mapsa', 'Estado', 'Fecha Asignación', 'Bsecs', 'RUT Deudor', 'Apellido Deudor', 'Nombre Deudor', 'Cliente']
+        self.casosColumns = ['ID Mapsa', 'Estado', 'Fecha Asignación', 'Bsecs', 'RUT Deudor', 'Apellido Deudor', 'Nombre Deudor', 'Cliente', 'Facturar a']
         self.casosTable = ttk.Treeview(master=self.casosFrame, columns=self.casosColumns, show='headings', height=3)
         displayColumns: list[str] = []
         for heading in self.casosColumns:
             self.casosTable.heading(heading, text=heading)
             self.casosTable.column(heading)
-            if heading not in ['Estado', 'Bsecs']:
+            if heading not in ['Estado', 'Bsecs', 'Cliente']:
                 displayColumns.append(heading)
         self.casosTable["displaycolumns"] = displayColumns
         self.casosTable.pack(expand=True, fill=BOTH, anchor=CENTER)
@@ -291,7 +288,7 @@ class App:
             start = time.process_time() 
             if not self.validData():
                 return  
-            if not messagebox.askyesno(title='Aviso', message='¿Está segur@ de querer guardar los datos?'):
+            if not messagebox.askyesno(title='Aviso', message='¿Estás segur@ de querer guardar los datos?'):
                 return
             dataSelected: list = self.casosTable.item(self.casosTable.focus())['values']
             idMapsa: int = dataSelected[0]
@@ -322,13 +319,13 @@ class App:
             if self.anexosPaths:
                 merger.write(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{numBoleta}_{idMapsa}/Anexo_{numBoleta}.pdf')
             merger.close()
-            reader = PdfReader(self.boletaPath)
+            reader = PdfReader(self.boletaPath, strict=False)
             writer = PdfWriter()
             page = reader.pages[0]
             writer.add_page(page)
             with open(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{numBoleta}_{idMapsa}/Boleta_{numBoleta}.pdf', 'wb') as file:
                 writer.write(file)
-            self.generateReport()
+            self.generateReport(boleta=boleta)
             self.saveParams()
             print('Tiempo en subir boleta: ' + str(time.process_time() - start))
             if self.checkBoletaInDB() and self.checkBoletainFile():
@@ -426,24 +423,25 @@ class App:
         with open(f'{DELIVEREDDATAPATH}/{destinatarioSet.nombreDestinatario}/{numBoletaSet}_{idMapsaSet}/Data_{numBoletaSet}.txt', 'w') as file:
             file.write(f'{destinatarioSet.nombreDestinatario},{destinatarioSet.correoDestinatario},{numBoletaSet},{idMapsaSet},{beneficiarioSet},{clienteSet},{deudorSet},{montoTotalSet}')
 
-    def generateReport(self):  
-        dataReceived: list[str] = [dirName for dirName in os.listdir(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}')]
-        data: str
-        idMapsaSet: int = self.casosTable.item(self.casosTable.focus())['values'][0]
-        numBoletaSet: int = int(self.numBoletaEntry.get())
-        destinatarioSet: Destinatario = self.destinatario    
-        for data in dataReceived:
-            numBoleta: int = int(data.strip().split('_')[0])
-            idMapsa: int = int(data.strip().split('_')[1])
-            reporteData: ReporteData = self.sacConnector.getReporteData(numBoleta=numBoleta, idMapsa=idMapsa, destinatarioSet=destinatarioSet)
-            if reporteData and idMapsa == idMapsaSet and numBoleta == numBoletaSet:
-                pdfGenerator: PDFGenerator = PDFGenerator()
-                pdfGenerator.generateReporte(reporteData=reporteData)
-                break
-                    
+    def generateReport(self, boleta: Boleta):
+        idMapsa: int = self.casosTable.item(self.casosTable.focus())['values'][0]
+        casoSet: Caso | None = next((caso for caso in self.casos if caso.idMapsa == idMapsa), None)
+        destinatarioSet: Destinatario = self.destinatario
+        serviciosSet: list[Servicio] = boleta.servicios
+        beneficiarioSet: Beneficiario = Beneficiario(rutBeneficiario=self.rutBeneficiarioEntry.get(), 
+                                                     nombreBeneficiario=self.nombreBeneficiarioDropdown.get())
+        clienteSet: Cliente = next((cliente for cliente in self.clientes if cliente.idCliente == casoSet.idCliente), None)
+        resumenBoleta: Resumen = Resumen(boleta=boleta, caso=casoSet, 
+                                         destinatario=destinatarioSet, 
+                                         servicios=serviciosSet, 
+                                         beneficiario=beneficiarioSet, 
+                                         cliente=clienteSet)
+        pdfGenerator: PDFGenerator = PDFGenerator()
+        pdfGenerator.generateReporte(resumenBoleta=resumenBoleta)
+        
     def fileIsPDF(self, filePath: str):
         try:
-            PdfReader(filePath)
+            PdfReader(filePath, strict=False)
             return True
         except Exception:
             return False
@@ -472,7 +470,7 @@ class App:
             self.boletaPath = filePath
             messagebox.showinfo(title='Mensaje', message='Boleta subida correctamente')
             self.uploadedBoletaLabel.config(text=f'Boleta subida')
-            reader: PdfReader = PdfReader(self.boletaPath)
+            reader: PdfReader = PdfReader(self.boletaPath, strict=False)
             text: str = reader.pages[0].extract_text()
             self.getNumeroBoletaFromFile(text=text)
             self.getRUTBeneficiarioFromFile(text=text)
@@ -643,7 +641,7 @@ class App:
         caso: Caso
         self.casosTable.delete(*self.casosTable.get_children())
         for caso in self.casos:
-            self.casosTable.insert('', END, values=(caso.idMapsa, caso.nombreEstado, caso.fechaAsignado.strftime('%d-%m-%Y') if caso.fechaAsignado else '', caso.bsecs, caso.rutDeudor, caso.apellidoDeudor, caso.nombreDeudor, caso.nombreCliente))
+            self.casosTable.insert('', END, values=(caso.idMapsa, caso.nombreEstado, caso.fechaAsignado.strftime('%d-%m-%Y') if caso.fechaAsignado else '', caso.bsecs, caso.rutDeudor, caso.apellidoDeudor, caso.nombreDeudor, caso.nombreCliente, caso.factura))
 
     def assignBeneficiario(self, key=None):
         nombreBeneficiario: str = self.nombreBeneficiarioDropdown.get()

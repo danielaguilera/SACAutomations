@@ -5,8 +5,6 @@ from Utils.GlobalFunctions import *
 from PyPDF2 import PdfMerger
 import os
 
-# BUG CON NUMS BOLETAS, HAY QUE AGREGAR EL ID MAPSA!!!
-
 class FileGrouper:
     def __init__(self):
         self.documentosUnificados: list[DocumentoUnificado] = []

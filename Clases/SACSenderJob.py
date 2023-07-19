@@ -4,8 +4,6 @@ from Clases.ReporteData import ReporteData
 from Utils.Metadata import *
 from Utils.GlobalFunctions import *
 from Clases.SACConnector import SACConnector
-from Clases.PDFGenerator import PDFGenerator
-from Clases.FileGrouper import FileGrouper, DocumentoUnificado
 from Clases.MailSender import MailSender
 import os
 import shutil

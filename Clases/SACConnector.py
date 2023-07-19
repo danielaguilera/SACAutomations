@@ -80,10 +80,6 @@ class SACConnector:
                                 ''')
         ccString: str
         id, nombreDestinatario, correoDestinatario, ccString = self.cursorData.fetchall()[0]
-        if ccString:
-            cc = ccString.split(';')
-        else:
-            cc = []
         return Destinatario(id=id, nombreDestinatario=nombreDestinatario, correoDestinatario=correoDestinatario, cc=ccString.split(';') if ccString else [])
     
     def findBeneficiario(self, rutBeneficiario: str) -> Beneficiario | None:
@@ -138,13 +134,13 @@ class SACConnector:
     def getAllClientes(self) -> list[Cliente]:
         clientesData: list[Cliente] = []
         self.cursorData.execute(f"""
-                                    SELECT IdCliente, Cliente
+                                    SELECT IdCliente, Cliente, "Facturar a"
                                     FROM {self.clientesTable}
                                     WHERE RUT <> ''
                                 """)
         for data in self.cursorData.fetchall():
-            idCliente, nombreCliente = data
-            clientesData.append(Cliente(idCliente=idCliente, nombreCliente=nombreCliente))
+            idCliente, nombreCliente, factura = data
+            clientesData.append(Cliente(idCliente=idCliente, nombreCliente=nombreCliente, factura=factura))
         return clientesData
     
     def getAllCodigos(self) -> list[str]:
@@ -188,7 +184,7 @@ class SACConnector:
     def getPossibleMapsaCasos(self, rutDeudor: str = '', apellidoDeudor: str = '', nombreDeudor: str = '', idCliente: int = None, active: bool = True) -> list[Caso]:
         casosFound : list[Caso] = []
         query: str = f'''
-                        SELECT IdMapsa, Estado, Asignado, Bsecs, "Apellido Deudor", "Nombre Deudor", "RUT Deudor", Mapsa.Cliente, Clientes.Cliente
+                        SELECT IdMapsa, Estado, Asignado, Bsecs, "Apellido Deudor", "Nombre Deudor", "RUT Deudor", Mapsa.Cliente, Clientes.Cliente, "Facturar a"
                         FROM {self.mapsaTable}
                         INNER JOIN {self.clientesTable}
                         ON {self.clientesTable}.IdCliente = {self.mapsaTable}.Cliente
@@ -210,7 +206,7 @@ class SACConnector:
         
         self.cursorData.execute(query)
         for data in self.cursorData.fetchall():
-            idMapsa, nombreEstado, fechaAsignado, bsecs, apellidoDeudor, nombreDeudor, rutDeudor, idCliente, nombreCliente = data
+            idMapsa, nombreEstado, fechaAsignado, bsecs, apellidoDeudor, nombreDeudor, rutDeudor, idCliente, nombreCliente, factura = data
             casosFound.append(Caso(idMapsa=idMapsa, 
                                    nombreEstado=nombreEstado, 
                                    fechaAsignado=fechaAsignado, 
@@ -219,7 +215,8 @@ class SACConnector:
                                    nombreDeudor=nombreDeudor,
                                    apellidoDeudor=apellidoDeudor,
                                    idCliente=idCliente,
-                                   nombreCliente=nombreCliente))
+                                   nombreCliente=nombreCliente,
+                                   factura=factura))
         return casosFound
 
     def insertBoletaDataExample(self):
