@@ -114,14 +114,17 @@ class PLPManager:
         workbook.save(PLPREQUESTSPATH)
         
     def decodeHeader(self, text: str) -> str:
-        decodedParts = email.header.decode_header(text)
-        decodedSubject = ''
-        for part, encoding in decodedParts:
-            if isinstance(part, bytes):
-                decodedSubject += part.decode(encoding or 'utf-8')
-            else:
-                decodedSubject += part
-        return decodedSubject
+        try:
+            decodedParts = email.header.decode_header(text)
+            decodedSubject = ''
+            for part, encoding in decodedParts:
+                if isinstance(part, bytes):
+                    decodedSubject += part.decode(encoding or 'utf-8')
+                else:
+                    decodedSubject += part
+            return decodedSubject
+        except Exception:
+            return ''
     
     def convertToLocalTime(self, timeString: str) -> datetime:
         localTimezone = pytz.timezone('America/Santiago')

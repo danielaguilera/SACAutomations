@@ -77,5 +77,16 @@ class MailSender:
         self.sendPLPMail(receiverAddress='draguilera@uc.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
         self.sendPLPMail(receiverAddress='servidor@gydabogados.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
         self.sendPLPMail(receiverAddress='matias.gause@gmail.com', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
-        self.sendPLPMail(receiverAddress='vahumada@gydabogados.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)   
+        self.sendPLPMail(receiverAddress='vahumada@gydabogados.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
+
+    def sendMessage(self, receiverAddress: str, mailSubject: str, mailContent: str):
+        msg = MIMEMultipart()
+        msg['From'] = self.senderUserName
+        msg['To'] = receiverAddress
+        msg['Subject'] = mailSubject
+        msg.attach(MIMEText(mailContent, 'plain'))
+        server = smtplib.SMTP_SSL(self.smtpServer, self.smtpPort)
+        server.login(self.senderUserName, self.senderPassword)
+        server.sendmail(self.senderUserName, receiverAddress, msg.as_string())
+        server.quit()
 
