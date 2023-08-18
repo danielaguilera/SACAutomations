@@ -10,8 +10,8 @@ from Clases.Servicio import Servicio
 from tkinter import messagebox
 import os
 import shutil
-from PIL import ImageTk, Image
-import glob, sys, fitz
+# from PIL import ImageTk, Image
+import fitz
 
 class ReportManager:
     def __init__(self, container):
