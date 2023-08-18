@@ -56,8 +56,9 @@ class SACRequests:
         return '\n'.join([str(elem) for elem in self.plpRequests + self.plpBreachedRequests])
     
 class UnMappedRequest:
-    def __init__(self, emisor: str, tipoSolicitud: str, nombreDeudor: str, rutDeudor: str):
+    def __init__(self, emisor: str, asunto: str, tipoSolicitud: str, nombreDeudor: str, rutDeudor: str):
         self.emisor = emisor
+        self.asunto = asunto
         self.tipoSolicitud = tipoSolicitud
         self.nombreDeudor = nombreDeudor
         self.rutDeudor = rutDeudor
@@ -208,7 +209,10 @@ class PLPManager:
                                               subject=messageSubject,
                                               date=messageDate,
                                               msgId=int(msgnum))
-                rutDeudor: str = correctRUTFormat(messageSubject)
+                try:
+                    rutDeudor: str = correctRUTFormat(messageSubject)
+                except Exception:
+                    rutDeudor: str = 'RUT no encontrado'
                 casos: list[Caso] = self.sacConnector.getPossibleMapsaCasos(rutDeudor=rutDeudor, active=False)
                 caso: Caso = None
                 if len(casos) == 1:
@@ -344,6 +348,7 @@ class PLPManager:
         totalPLPBreachedRequests: int = 0
         for index, row in data.iterrows():
             emisor = row['Emisor']
+            asunto = row['Asunto']
             idMapsa = row['ID Mapsa']
             tipoSolicitud = row['Tipo']
             nombreDeudor = row['Deudor']
@@ -353,6 +358,7 @@ class PLPManager:
                 if idMapsa == 'No encontrado':
                     unmappedRequest: UnMappedRequest = UnMappedRequest(tipoSolicitud=SOLICITUDPLP,
                                                                     emisor=emisor,
+                                                                    asunto=asunto,
                                                                     nombreDeudor=nombreDeudor,
                                                                     rutDeudor=rutDeudor)
                     plpRequests.append(unmappedRequest)
@@ -361,6 +367,7 @@ class PLPManager:
                 if idMapsa == 'No encontrado':
                     unmappedRequest: UnMappedRequest = UnMappedRequest(tipoSolicitud=SOLICITUDPLP,
                                                                     emisor=emisor,
+                                                                    asunto=asunto,
                                                                     nombreDeudor=nombreDeudor,
                                                                     rutDeudor=rutDeudor)
                     plpBreachedRequests.append(unmappedRequest)
@@ -394,12 +401,12 @@ class PLPManager:
             return text
         if plpRequests:
             text += f'{plpUnmappedRequests} solicitudes de PLP no pudieron asociarse a un caso: \n\n'
-            text += '\n'.join([plpRequest.rutDeudor for plpRequest in plpRequests])
+            text += '\n'.join([f'{index + 1}) {plpRequest.emisor} - {plpRequest.asunto} - {plpRequest.rutDeudor}' for index, plpRequest in enumerate(plpRequests)])
             text += '\n'
         text += '\n\n'
         if plpBreachedRequests:
             text += f'{plpBreachedUnmappedRequests} PLPs incumplidos no pudieron asociarse a un caso: \n\n'
-            text += '\n'.join([plpBreachedRequest.nombreDeudor for plpBreachedRequest in plpBreachedRequests])
+            text += '\n'.join([f'{index + 1}) {plpBreachedRequest.emisor} - {plpBreachedRequest.asunto} - {plpBreachedRequest.nombreDeudor}' for index, plpBreachedRequest in enumerate(plpBreachedRequests)])
             text += '\n'
         return text
         
