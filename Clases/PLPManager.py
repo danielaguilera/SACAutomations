@@ -156,6 +156,7 @@ class PLPManager:
         return any(keyWord in subject for keyWord in JUDICIAL_COLLECTION_KEYWORDS)
     
     def getRUTFromJudicialCollection(self, text: str) -> str:
+        print(text)
         lines: list[str] = text.upper().split('\n')
         for line in lines:
             if 'RUT' in line:
@@ -245,11 +246,11 @@ class PLPManager:
                 for part in message.walk():
                     if part.get_content_type() == "text/plain":
                         messageString += part.as_string()
-                
+                print(messageString)
                 try:
                     rutDeudor: str = self.getRUTFromJudicialCollection(messageString.upper())
                 except Exception:
-                    rutDeudor: str = 'RUT no encontrado'
+                    rutDeudor: str = 'RUT no encontrado en el cuerpo del mensaje'
                     
                 casos: list[Caso] = self.sacConnector.getPossibleMapsaCasos(rutDeudor=rutDeudor, active=False)
                 caso: Caso = None
@@ -499,6 +500,7 @@ class PLPManager:
     
     def generateSummary(self, date = datetime.today()) -> str:
         data: tuple = self.getRequestResults()
+        recurrentGestiones: list[Gestion] = self.getRecurrentGestiones()
         plpRequests: list[UnMappedRequest] = data[0]
         plpBreachedRequests: list[UnMappedRequest] = data[1]
         judicialCollectionRequests: list[UnMappedRequest] = data[2]
@@ -532,10 +534,23 @@ class PLPManager:
             text += f'{jcUnmappedRequests} solicitudes de cobranza judicial no pudieron asociarse a un caso: \n\n'
             text += '\n'.join([f'{index + 1}) {jcRequest.emisor} - {jcRequest.asunto} - {jcRequest.nombreDeudor}' for index, jcRequest in enumerate(judicialCollectionRequests)])
             text += '\n'
+        text += '\n\n'
+        if recurrentGestiones:
+            text += f'ATENCIÓN: {len(recurrentGestiones)} casos han sido modificados en menos de {MIN_REQUEST_REPETITION_DELAY} días: \n\n'
+            text += '\n'.join([f'{index + 1}) IDCaso: {gestion.idJuicio} - Última modificación "{gestion.gestion}" por {gestion.user} en la fecha {gestion.fecha}' for index, gestion in enumerate(recurrentGestiones)])
+            text += '\n\n'
+        text += 'Saludos, SACAutomations'
         return text
     
-    def caseIsRepeated(idMapsa: int, timeDelta: int):
-        pass
+    def getRecurrentGestiones(self) -> list[Gestion]:
+        data: pd.DataFrame = pd.read_excel(PLPREQUESTSPATH)
+        idsCasos: list[int] = []
+        for index, row in data.iterrows():
+            idMapsa: str = str(row['ID Mapsa'])
+            if idMapsa.isdigit():
+                idsCasos.append(int(idMapsa))
+        recurrentGestiones: list[Gestion] = self.sacConnector.getRecurrentGestiones(delay=MIN_REQUEST_REPETITION_DELAY, idsCasos=idsCasos)
+        return recurrentGestiones
         
 
 

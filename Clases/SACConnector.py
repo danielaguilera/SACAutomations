@@ -311,6 +311,24 @@ class SACConnector:
         print(query)
         self.cursorGestiones.execute(query)
         self.connGestiones.commit()
+        
+    def getRecurrentGestiones(self, delay: timedelta, idsCasos: list[int]) -> list[Gestion]:
+        query: str = f'''
+                        SELECT Idjuicio, Control, Gestion, Usuario
+                        FROM {self.gestionesTable}
+                        WHERE Idjuicio IN ({','.join([str(x) for x in idsCasos])})
+                    '''
+        self.cursorGestiones.execute(query)
+        data = self.cursorGestiones.fetchall()
+        gestiones: list[Gestion] = []
+        for gestionData in data:
+            idJuicio: int = int(gestionData[0])
+            fechaGestion: datetime = gestionData[1]
+            gestionTipo: str = gestionData[2]
+            username: str = gestionData[3]
+            if (datetime.now() - fechaGestion).days < delay and idJuicio not in [int(gestion.idJuicio) for gestion in gestiones]:
+                gestiones.append(Gestion(idJuicio=idJuicio, timestamp=fechaGestion, tipo=gestionTipo, user=username)) 
+        return gestiones
 
     def setAllCasos(self, newState: str):
         self.cursorData.execute(f"UPDATE {self.mapsaTable} SET Estado = '{newState}'")

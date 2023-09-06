@@ -17,5 +17,5 @@ class Gestion:
         elif tipo == PLPBREACHED:
             return PLPBREACHEDCODE
         else:
-            return JUDICIAL_COLLECTION_ACTIONS[tipo]
+            return JUDICIAL_COLLECTION_ACTIONS.get(tipo, tipo)
         
