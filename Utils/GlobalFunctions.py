@@ -79,6 +79,13 @@ def correctRUTFormat(originalRUT: str) -> str:
         numbers = '0' + numbers
     return numbers[0:2] + '.' + numbers[2:5] + '.' + numbers[5:8] + '-' + numbers[8]
 
+def containsRUT(text: str):
+    try:
+        return correctRUTFormat(text)
+    except Exception:
+        return False
+
+
 def validRUTFormat(originalRUT: str) -> bool:
     return originalRUT == correctRUTFormat(originalRUT=originalRUT)
 

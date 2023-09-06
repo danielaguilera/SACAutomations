@@ -46,11 +46,22 @@ class PLPBreached:
 
     def __repr__(self):
         return self.__str__()
+    
+class JudicialCollection:
+    def __init__(self, requestType: str, payload: GYDEmail, rutDeudor: str = '', caso: Caso = None):
+        self.rutDeudor: str = rutDeudor
+        self.caso: Caso = caso
+        self.payload: GYDEmail = payload
+        self.requestType: str = requestType
+    
+    def __str__(self):
+        return f'{self.requestType}: {self.rutDeudor}'
 
 class SACRequests:
-    def __init__(self, plpRequests: list[PLPRequest], plpBreachedRequests: list[PLPBreached]):
+    def __init__(self, plpRequests: list[PLPRequest], plpBreachedRequests: list[PLPBreached], judicialCollectionRequests: list[JudicialCollection]):
         self.plpRequests = plpRequests
         self.plpBreachedRequests = plpBreachedRequests
+        self.judicialCollectionRequests = judicialCollectionRequests
 
     def __str__(self):
         return '\n'.join([str(elem) for elem in self.plpRequests + self.plpBreachedRequests])
@@ -78,8 +89,9 @@ class PLPManager:
         self.password: str = senderPassword
         self.localTimezone = pytz.timezone('America/Santiago')
 
-    def fetchMailData(self):
-        sacRequests: SACRequests = self.getEmails()
+    def fetchMailData(self, date: datetime = None):
+        date = date if date else datetime.now()
+        sacRequests: SACRequests = self.getEmails(sinceDatetime=date)
         self.processRequests(sacRequests=sacRequests)
 
     def sendSummary(self):
@@ -140,6 +152,23 @@ class PLPManager:
     def isPLPBreached(self, subject: str) -> bool:
         return any(keyWord in subject for keyWord in PLP_INCUMPLIDO_KEYWORDS)
     
+    def isJudicialCollection(self, subject: str) -> bool:
+        return any(keyWord in subject for keyWord in JUDICIAL_COLLECTION_KEYWORDS)
+    
+    def getRUTFromJudicialCollection(self, text: str) -> str:
+        lines: list[str] = text.upper().split('\n')
+        for line in lines:
+            if 'RUT' in line:
+                return correctRUTFormat(line)
+        
+    def getJudicialCollectionType(self, text: str) -> str:
+        if SOLICITUD_CONTINUAR in text:
+            return SOLICITUD_CONTINUAR
+        elif SOLICITUD_RETIRAR in text:
+            return SOLICITUD_RETIRAR
+        elif SOLICITUD_SUSPENDER in text:
+            return SOLICITUD_SUSPENDER
+    
     def isDateFormat(self, word: str) -> bool:
         try:
             datetime.strptime(word, '%d-%m-%Y')
@@ -189,6 +218,7 @@ class PLPManager:
 
         plpRequests: list[PLPRequest] = []
         plpBreachedRequests: list[PLPBreached] = []
+        judicialCollectionRequests: list[JudicialCollection] = []
 
         if save:
             msgIds = self.getMissingMailIds(msgnums[0].split())
@@ -201,8 +231,37 @@ class PLPManager:
             messageSender: str = self.decodeHeader(message.get('From'))
             messageDate: str = message.get('Date')
             messageSubject: str = self.decodeHeader(message.get('Subject'))
+            
+            if self.isJudicialCollection(messageSubject.upper()):
+                if not save:
+                    continue
+                requestType: str = self.getJudicialCollectionType(messageSubject.upper())
+                gydEmail: GYDEmail = GYDEmail(sender=messageSender,
+                                              subject=messageSubject,
+                                              date=messageDate,
+                                              msgId=int(msgnum))
+                
+                messageString: str = ''
+                for part in message.walk():
+                    if part.get_content_type() == "text/plain":
+                        messageString += part.as_string()
+                
+                try:
+                    rutDeudor: str = self.getRUTFromJudicialCollection(messageString.upper())
+                except Exception:
+                    rutDeudor: str = 'RUT no encontrado'
+                    
+                casos: list[Caso] = self.sacConnector.getPossibleMapsaCasos(rutDeudor=rutDeudor, active=False)
+                caso: Caso = None
+                if len(casos) == 1:
+                    caso: Caso = casos[0]
+                judicialCollectionRequest: JudicialCollection = JudicialCollection(payload=gydEmail,
+                                                                                   rutDeudor=rutDeudor,
+                                                                                   caso=caso,
+                                                                                   requestType=requestType)
+                judicialCollectionRequests.append(judicialCollectionRequest)
 
-            if self.isPLPRequest(messageSubject):
+            elif self.isPLPRequest(messageSubject.upper()):
                 if not save:
                     continue
                 gydEmail: GYDEmail = GYDEmail(sender=messageSender,
@@ -238,7 +297,9 @@ class PLPManager:
                 plpBreachedRequest: PLPBreached = PLPBreached(payload=gydEmail, deudores=deudoresFound)
                 plpBreachedRequests.append(plpBreachedRequest)
 
-        sacRequests: SACRequests = SACRequests(plpRequests=plpRequests, plpBreachedRequests=plpBreachedRequests)
+        sacRequests: SACRequests = SACRequests(plpRequests=plpRequests, 
+                                               plpBreachedRequests=plpBreachedRequests,
+                                               judicialCollectionRequests=judicialCollectionRequests)
         imap.close()
         return sacRequests
     
@@ -246,6 +307,7 @@ class PLPManager:
         self.touchSolicitudesFile()
         processedPLPRequests: list[PLPRequest] = self.processPLPRequests(sacRequests.plpRequests)
         processedPLPBreachedRequests: list[PLPBreached] = self.processPLPBreachedRequests(sacRequests.plpBreachedRequests)
+        processedJudicialCollectionRequests: list[JudicialCollection] = self.processJudicialCollectionRequests(sacRequests.judicialCollectionRequests)
         data = []
         for plpRequest in processedPLPRequests:
             if plpRequest.caso:
@@ -269,6 +331,30 @@ class PLPManager:
                              plpRequest.rutDeudor, 
                              'No encontrado', 
                              'No encontrado', 
+                             'No encontrado'])
+                
+        for request in processedJudicialCollectionRequests:
+            if request.caso:
+                data.append([request.payload.msgId,
+                             request.payload.date,
+                             request.payload.sender,
+                             request.payload.subject,
+                             request.requestType,
+                             request.caso.nombreDeudor + ' ' + request.caso.apellidoDeudor,
+                             request.caso.rutDeudor,
+                             request.caso.idMapsa,
+                             request.caso.nombreEstadoAnterior,
+                             request.caso.nombreEstado])
+            else:
+                data.append([request.payload.msgId,
+                             request.payload.date,
+                             request.payload.sender,
+                             request.payload.subject,
+                             request.requestType,
+                             'No encontrado',
+                             request.rutDeudor,
+                             'No encontrado',
+                             'No encontrado',
                              'No encontrado'])
             
         for plpBreachedRequest in processedPLPBreachedRequests:
@@ -320,6 +406,24 @@ class PLPManager:
             processedPLPRequests.append(plpRequest)
         return processedPLPRequests
     
+    def processJudicialCollectionRequests(self, judicialCollectionRequests: list[JudicialCollection]) -> list[JudicialCollection]:
+        request: JudicialCollection
+        requests: list[JudicialCollection] = judicialCollectionRequests
+        processedRequests: list[JudicialCollection] = []
+        for request in requests:
+            rutDeudor: str = request.rutDeudor
+            casos: list[Caso] = self.sacConnector.getPossibleMapsaCasos(rutDeudor=rutDeudor, active=False)
+            if len(casos) == 1:
+                caso: Caso = casos[0]
+                request.caso = caso
+                newState: str = JUDICIAL_COLLECTION_STATES[request.requestType]
+                self.sacConnector.setMapsaCasoState(idMapsa=caso.idMapsa, newState=newState.lower().capitalize())
+                gestion: Gestion = Gestion(idJuicio=caso.idMapsa, timestamp=datetime.now(), tipo=request.requestType)
+                self.sacConnector.addGestion(gestion=gestion)
+                request.caso.nombreEstado = newState.lower().capitalize()
+            processedRequests.append(request)
+        return processedRequests
+                
     def processPLPBreachedRequests(self, plpBreachedRequests: list[PLPBreached]) -> list[PLPBreached]:
         plpBreachedRequest: PLPBreached
         processedPLPBreachedRequests: list[PLPBreached] = []
@@ -344,8 +448,10 @@ class PLPManager:
         data: pd.DataFrame = pd.read_excel(PLPREQUESTSPATH)
         plpRequests: list[UnMappedRequest] = []
         plpBreachedRequests: list[UnMappedRequest] = []
+        judicialCollectionRequests: list[UnMappedRequest] = []
         totalPLPRequests: int = 0
         totalPLPBreachedRequests: int = 0
+        totalJCRequests: int = 0
         for index, row in data.iterrows():
             emisor = row['Emisor']
             asunto = row['Asunto']
@@ -371,8 +477,18 @@ class PLPManager:
                                                                     nombreDeudor=nombreDeudor,
                                                                     rutDeudor=rutDeudor)
                     plpBreachedRequests.append(unmappedRequest)
+                    
+            else:
+                totalJCRequests += 1
+                if idMapsa == 'No encontrado':
+                    unmappedRequest: UnMappedRequest = UnMappedRequest(tipoSolicitud=tipoSolicitud,
+                                                                       emisor=emisor,
+                                                                       asunto=asunto,
+                                                                       nombreDeudor=nombreDeudor,
+                                                                       rutDeudor=rutDeudor)
+                    judicialCollectionRequests.append(unmappedRequest)
                 
-        return (plpRequests, plpBreachedRequests, totalPLPRequests, totalPLPBreachedRequests)
+        return (plpRequests, plpBreachedRequests, judicialCollectionRequests, totalPLPRequests, totalPLPBreachedRequests, totalJCRequests)
     
     def isRequestFileEmpty(self) -> bool:
         if not os.path.exists(PLPREQUESTSPATH):
@@ -385,17 +501,20 @@ class PLPManager:
         data: tuple = self.getRequestResults()
         plpRequests: list[UnMappedRequest] = data[0]
         plpBreachedRequests: list[UnMappedRequest] = data[1]
-        totalPLPRequests: int = data[2]
-        totalPLPBreachedRequests: int = data[3]
-        totalRequests: int = totalPLPRequests + totalPLPBreachedRequests
-        totalUnmappedRequests: int = len(plpRequests) + len(plpBreachedRequests)
+        judicialCollectionRequests: list[UnMappedRequest] = data[2]
+        totalPLPRequests: int = data[3]
+        totalPLPBreachedRequests: int = data[4]
+        totalJCRequests: int = data[5]
+        totalRequests: int = totalPLPRequests + totalPLPBreachedRequests + totalJCRequests
+        totalUnmappedRequests: int = len(plpRequests) + len(plpBreachedRequests) + len(judicialCollectionRequests)
         plpUnmappedRequests: int = len(plpRequests)
         plpBreachedUnmappedRequests: int = len(plpBreachedRequests)
+        jcUnmappedRequests: int = len(judicialCollectionRequests)
         if not totalRequests:
             text: str = f'Buenas noches, \nAl día {transformDateToSpanish(date)} no se recibieron solicitudes.'
             return text
         if totalRequests:
-            text: str = f'Buenas noches, \nAl día {transformDateToSpanish(date)} se recibieron {totalPLPRequests} solicitudes de PLP y {totalPLPBreachedRequests} PLPs incumplidos.\n\n'
+            text: str = f'Buenas noches, \nAl día {transformDateToSpanish(date)} se recibieron {totalPLPRequests} solicitudes de PLP, {totalPLPBreachedRequests} PLPs incumplidos y {totalJCRequests} solicitudes de cobranza judicial.\n\n'
         if not totalUnmappedRequests:
             text += 'Todas las solicitudes fueron mapeadas y procesadas correctamente.'
             return text
@@ -408,7 +527,15 @@ class PLPManager:
             text += f'{plpBreachedUnmappedRequests} PLPs incumplidos no pudieron asociarse a un caso: \n\n'
             text += '\n'.join([f'{index + 1}) {plpBreachedRequest.emisor} - {plpBreachedRequest.asunto} - {plpBreachedRequest.nombreDeudor}' for index, plpBreachedRequest in enumerate(plpBreachedRequests)])
             text += '\n'
+        text += '\n\n'
+        if judicialCollectionRequests:
+            text += f'{jcUnmappedRequests} solicitudes de cobranza judicial no pudieron asociarse a un caso: \n\n'
+            text += '\n'.join([f'{index + 1}) {jcRequest.emisor} - {jcRequest.asunto} - {jcRequest.nombreDeudor}' for index, jcRequest in enumerate(judicialCollectionRequests)])
+            text += '\n'
         return text
+    
+    def caseIsRepeated(idMapsa: int, timeDelta: int):
+        pass
         
 
 

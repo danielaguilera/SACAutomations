@@ -294,11 +294,13 @@ class SACConnector:
     
     def setMapsaCasoState(self, idMapsa: int, newState: str):
         timestamp: str = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
-        self.cursorData.execute(f'''
-                                    UPDATE {self.mapsaTable}
-                                    SET Estado = '{newState}', FechaModificacion = '{timestamp}'
-                                    WHERE IdMapsa = {idMapsa}
-                                ''')
+        query: str = f'''
+                    UPDATE {self.mapsaTable}
+                    SET Estado = '{newState}', FechaModificacion = '{timestamp}'
+                    WHERE IdMapsa = {idMapsa}
+                '''
+        print(query)
+        self.cursorData.execute(query)
         self.connData.commit()
 
     def addGestion(self, gestion: Gestion):
