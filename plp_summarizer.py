@@ -8,11 +8,8 @@ from datetime import datetime
 if __name__ == '__main__':
     plp = PLPManager()
     if len(sys.argv) == 2:
-        try:
-            date: datetime = datetime.strptime(sys.argv[1], '%d-%m-%Y')
-            print('date overwritten')
-            plp.fetchDailyMails(date=date)
-        except Exception as e:
-            print(e)
+        date: datetime = datetime.strptime(sys.argv[1], '%d-%m-%Y')
+        print('date overwritten')
+        plp.fetchDailyMails(date=date)
     else:
         plp.sendSummary()

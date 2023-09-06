@@ -234,6 +234,7 @@ class PLPManager:
             messageSubject: str = self.decodeHeader(message.get('Subject'))
             
             if self.isJudicialCollection(messageSubject.upper()):
+                print(messageSubject)
                 if not save:
                     continue
                 requestType: str = self.getJudicialCollectionType(messageSubject.upper())
@@ -250,7 +251,7 @@ class PLPManager:
                 try:
                     rutDeudor: str = self.getRUTFromJudicialCollection(messageString.upper())
                 except Exception:
-                    rutDeudor: str = 'RUT no encontrado en el cuerpo del mensaje'
+                    rutDeudor: str = 'RUT no encontrado'
                     
                 casos: list[Caso] = self.sacConnector.getPossibleMapsaCasos(rutDeudor=rutDeudor, active=False)
                 caso: Caso = None
@@ -514,12 +515,10 @@ class PLPManager:
         jcUnmappedRequests: int = len(judicialCollectionRequests)
         if not totalRequests:
             text: str = f'Buenas noches, \nAl día {transformDateToSpanish(date)} no se recibieron solicitudes.'
-            return text
         if totalRequests:
             text: str = f'Buenas noches, \nAl día {transformDateToSpanish(date)} se recibieron {totalPLPRequests} solicitudes de PLP, {totalPLPBreachedRequests} PLPs incumplidos y {totalJCRequests} solicitudes de cobranza judicial.\n\n'
         if not totalUnmappedRequests:
             text += 'Todas las solicitudes fueron mapeadas y procesadas correctamente.'
-            return text
         if plpRequests:
             text += f'{plpUnmappedRequests} solicitudes de PLP no pudieron asociarse a un caso: \n\n'
             text += '\n'.join([f'{index + 1}) {plpRequest.emisor} - {plpRequest.asunto} - {plpRequest.rutDeudor}' for index, plpRequest in enumerate(plpRequests)])

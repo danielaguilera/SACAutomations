@@ -313,6 +313,8 @@ class SACConnector:
         self.connGestiones.commit()
         
     def getRecurrentGestiones(self, delay: timedelta, idsCasos: list[int]) -> list[Gestion]:
+        if not idsCasos:
+            return []
         query: str = f'''
                         SELECT Idjuicio, Control, Gestion, Usuario
                         FROM {self.gestionesTable}
