@@ -16,6 +16,7 @@ from Clases.Deudor import Deudor
 import pytz
 import openpyxl
 import pandas as pd
+from openpyxl.styles import PatternFill
 
 class GYDEmail:
     def __init__(self, msgId: int, sender: str, subject: str, date: str):
@@ -120,7 +121,7 @@ class PLPManager:
             return
         workbook = openpyxl.Workbook()
         worksheet = workbook.active
-        headers = ['ID', 'Timestamp', 'Emisor', 'Asunto', 'Tipo', 'Deudor', 'RUT Deudor', 'ID Mapsa', 'Estado Anterior', 'Estado Actual']
+        headers = ['ID', 'Timestamp', 'Emisor', 'Asunto', 'Tipo', 'Deudor', 'RUT Deudor', 'ID Mapsa', 'Estado Anterior', 'Estado Actual', 'Última modificación']
         for colNum, header in enumerate(headers, 1):
             cell = worksheet.cell(row=1, column=colNum)
             cell.value = header
@@ -234,7 +235,6 @@ class PLPManager:
             messageSubject: str = self.decodeHeader(message.get('Subject'))
             
             if self.isJudicialCollection(messageSubject.upper()):
-                print(messageSubject)
                 if not save:
                     continue
                 requestType: str = self.getJudicialCollectionType(messageSubject.upper())
@@ -247,10 +247,11 @@ class PLPManager:
                 for part in message.walk():
                     if part.get_content_type() == "text/plain":
                         messageString += part.as_string()
-                print(messageString)
                 try:
                     rutDeudor: str = self.getRUTFromJudicialCollection(messageString.upper())
-                except Exception:
+                    if not rutDeudor:
+                        rutDeudor: str = self.getRUTFromJudicialCollection(str(message).upper())
+                except Exception:    
                     rutDeudor: str = 'RUT no encontrado'
                     
                 casos: list[Caso] = self.sacConnector.getPossibleMapsaCasos(rutDeudor=rutDeudor, active=False)
@@ -322,7 +323,9 @@ class PLPManager:
                              plpRequest.rutDeudor, 
                              plpRequest.caso.idMapsa, 
                              plpRequest.caso.nombreEstadoAnterior, 
-                             plpRequest.caso.nombreEstado])
+                             plpRequest.caso.nombreEstado,
+                             plpRequest.caso.lastGestionDate.date().strftime('%d-%m-%Y') if plpRequest.caso.lastGestionDate else 'N/A'
+                            ])
             else:
                 data.append([plpRequest.payload.msgId,
                              plpRequest.payload.date, 
@@ -333,7 +336,8 @@ class PLPManager:
                              plpRequest.rutDeudor, 
                              'No encontrado', 
                              'No encontrado', 
-                             'No encontrado'])
+                             'No encontrado',
+                             'N/A'])
                 
         for request in processedJudicialCollectionRequests:
             if request.caso:
@@ -346,7 +350,9 @@ class PLPManager:
                              request.caso.rutDeudor,
                              request.caso.idMapsa,
                              request.caso.nombreEstadoAnterior,
-                             request.caso.nombreEstado])
+                             request.caso.nombreEstado,
+                             request.caso.lastGestionDate.date().strftime('%d-%m-%Y') if request.caso.lastGestionDate else 'N/A'
+                            ])
             else:
                 data.append([request.payload.msgId,
                              request.payload.date,
@@ -357,7 +363,8 @@ class PLPManager:
                              request.rutDeudor,
                              'No encontrado',
                              'No encontrado',
-                             'No encontrado'])
+                             'No encontrado',
+                             'N/A'])
             
         for plpBreachedRequest in processedPLPBreachedRequests:
             deudor: Deudor
@@ -372,7 +379,8 @@ class PLPManager:
                                  deudor.casoAsociado.rutDeudor,
                                  deudor.casoAsociado.idMapsa,
                                  deudor.casoAsociado.nombreEstadoAnterior,
-                                 deudor.casoAsociado.nombreEstado
+                                 deudor.casoAsociado.nombreEstado,
+                                 deudor.casoAsociado.lastGestionDate.date().strftime('%d-%m-%Y') if deudor.casoAsociado.lastGestionDate else 'N/A',
                                  ])
                 else:
                     data.append([plpBreachedRequest.payload.msgId,
@@ -385,11 +393,21 @@ class PLPManager:
                                  'No encontrado',
                                  'No encontrado',
                                  'No encontrado',
+                                 'N/A'
                                  ])
         workbook = openpyxl.load_workbook(PLPREQUESTSPATH)
         worksheet = workbook.active
+        alertColor = PatternFill(start_color='FFFFFF00', end_color='FFFFFF00', fill_type='solid')
         for rowData in data:
             worksheet.append(rowData)
+            newRowIndex = worksheet.max_row
+            if rowData[-1] != 'N/A':
+                lastDate = datetime.strptime(rowData[-1], '%d-%m-%Y')
+                if (datetime.today().date() - lastDate.date()).days < MIN_REQUEST_REPETITION_DELAY:
+                    for columnIndex in range(1, len(rowData) + 1):
+                        cell = worksheet.cell(row=newRowIndex, column=columnIndex)
+                        cell.fill = alertColor
+            
         workbook.save(PLPREQUESTSPATH)
             
     def processPLPRequests(self, plpRequests: list[PLPRequest]) -> list[PLPRequest]:
@@ -400,9 +418,10 @@ class PLPManager:
             casos: list[Caso] = self.sacConnector.getPossibleMapsaCasos(rutDeudor=rutDeudor, active=False)
             if len(casos) == 1:
                 caso: Caso = casos[0]
+                caso.lastGestionDate = self.sacConnector.getLastGestionControl(idMapsa=caso.idMapsa)
                 plpRequest.caso = caso
                 self.sacConnector.setMapsaCasoState(idMapsa=caso.idMapsa, newState=SUSPENDIDO.lower().capitalize())
-                gestion: Gestion = Gestion(idJuicio=caso.idMapsa, timestamp=datetime.now(), tipo=PLP)
+                gestion: Gestion = Gestion(idJuicio=caso.idMapsa, timestamp=datetime.now(), tipo=PLP, rutDeudor=caso.rutDeudor, nombreDeudor=caso.nombreDeudor + ' ' + caso.apellidoDeudor)
                 self.sacConnector.addGestion(gestion=gestion)
                 plpRequest.caso.nombreEstado = SUSPENDIDO.lower().capitalize()
             processedPLPRequests.append(plpRequest)
@@ -417,10 +436,11 @@ class PLPManager:
             casos: list[Caso] = self.sacConnector.getPossibleMapsaCasos(rutDeudor=rutDeudor, active=False)
             if len(casos) == 1:
                 caso: Caso = casos[0]
+                caso.lastGestionDate = self.sacConnector.getLastGestionControl(idMapsa=caso.idMapsa)
                 request.caso = caso
                 newState: str = JUDICIAL_COLLECTION_STATES[request.requestType]
                 self.sacConnector.setMapsaCasoState(idMapsa=caso.idMapsa, newState=newState.lower().capitalize())
-                gestion: Gestion = Gestion(idJuicio=caso.idMapsa, timestamp=datetime.now(), tipo=request.requestType)
+                gestion: Gestion = Gestion(idJuicio=caso.idMapsa, timestamp=datetime.now(), tipo=request.requestType, rutDeudor=caso.rutDeudor, nombreDeudor=caso.nombreDeudor + ' ' + caso.apellidoDeudor)
                 self.sacConnector.addGestion(gestion=gestion)
                 request.caso.nombreEstado = newState.lower().capitalize()
             processedRequests.append(request)
@@ -436,9 +456,10 @@ class PLPManager:
                 casos: list[Caso] = self.sacConnector.getPossibleMapsaCasos(apellidoDeudor=deudor.apellidoDeudor, nombreDeudor=deudor.nombreDeudor, active=False)
                 if len(casos) == 1:
                     caso: Caso = casos[0]
+                    caso.lastGestionDate = self.sacConnector.getLastGestionControl(idMapsa=caso.idMapsa)
                     deudor.casoAsociado = caso
                     self.sacConnector.setMapsaCasoState(idMapsa=caso.idMapsa, newState=ACTIVO.lower().capitalize())
-                    gestion: Gestion = Gestion(idJuicio=caso.idMapsa, timestamp=datetime.now(), tipo=PLPBREACHED)
+                    gestion: Gestion = Gestion(idJuicio=caso.idMapsa, timestamp=datetime.now(), tipo=PLPBREACHED, rutDeudor=caso.rutDeudor, nombreDeudor=caso.nombreDeudor + ' ' + caso.apellidoDeudor)
                     self.sacConnector.addGestion(gestion=gestion)
                     deudor.casoAsociado.nombreEstado = ACTIVO.lower().capitalize()
                 mappedDeudores.append(deudor)
@@ -501,7 +522,7 @@ class PLPManager:
     
     def generateSummary(self, date = datetime.today()) -> str:
         data: tuple = self.getRequestResults()
-        recurrentGestiones: list[Gestion] = self.getRecurrentGestiones()
+        recurrentCasos: list = self.getRecurrentCasos()
         plpRequests: list[UnMappedRequest] = data[0]
         plpBreachedRequests: list[UnMappedRequest] = data[1]
         judicialCollectionRequests: list[UnMappedRequest] = data[2]
@@ -534,14 +555,14 @@ class PLPManager:
             text += '\n'.join([f'{index + 1}) {jcRequest.emisor} - {jcRequest.asunto} - {jcRequest.nombreDeudor}' for index, jcRequest in enumerate(judicialCollectionRequests)])
             text += '\n'
         text += '\n\n'
-        if recurrentGestiones:
-            text += f'ATENCIÓN: {len(recurrentGestiones)} casos han sido modificados en menos de {MIN_REQUEST_REPETITION_DELAY} días: \n\n'
-            text += '\n'.join([f'{index + 1}) IDCaso: {gestion.idJuicio} - Última modificación "{gestion.gestion}" por {gestion.user} en la fecha {gestion.fecha}' for index, gestion in enumerate(recurrentGestiones)])
+        if recurrentCasos:
+            text += f'ATENCIÓN: {len(recurrentCasos)} casos han sido modificados en menos de {MIN_REQUEST_REPETITION_DELAY} días, cuyas gestiones fueron marcadas con amarillo: \n\n'
+            text += '\n'.join([f'{index + 1}) {recurrentCaso[7]} - {recurrentCaso[6]} - {recurrentCaso[5]}' for index, recurrentCaso in enumerate(recurrentCasos)])
             text += '\n\n'
         text += 'Saludos, SACAutomations'
         return text
     
-    def getRecurrentGestiones(self) -> list[Gestion]:
+    def getRecurrentGestionesFromDB(self) -> list[Gestion]:
         data: pd.DataFrame = pd.read_excel(PLPREQUESTSPATH)
         idsCasos: list[int] = []
         for index, row in data.iterrows():
@@ -550,6 +571,23 @@ class PLPManager:
                 idsCasos.append(int(idMapsa))
         recurrentGestiones: list[Gestion] = self.sacConnector.getRecurrentGestiones(delay=MIN_REQUEST_REPETITION_DELAY, idsCasos=idsCasos)
         return recurrentGestiones
+    
+    def getRecurrentCasos(self) -> list:
+        workbook = openpyxl.load_workbook(PLPREQUESTSPATH)
+        worksheet = workbook.active
+        rowsColored = []
+        for row in worksheet.iter_rows():
+            rowColored = False
+            for cell in row:
+                if cell.fill is not None and cell.fill.start_color.rgb == 'FFFFFF00':
+                    rowColored = True
+                    break
+            if rowColored:
+                rowData = [cell.value for cell in row]
+                rowsColored.append(rowData)
+        return rowsColored
+    
+    
         
 
 
