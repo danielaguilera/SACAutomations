@@ -234,6 +234,14 @@ class PLPManager:
             messageDate: str = message.get('Date')
             messageSubject: str = self.decodeHeader(message.get('Subject'))
             
+            messageString: str = ''
+            for part in message.walk():
+                if part.get_content_type() == "text/plain":
+                    messageString += part.as_string()
+                        
+            if "NO TOMAR EN CUENTA LA REACTIVACIÓN" in messageString.upper() or "NO TOMAR EN CUENTA LA REACTIVACION" in messageString.upper():
+                continue
+            
             if self.isJudicialCollection(messageSubject.upper()):
                 if not save:
                     continue
@@ -291,10 +299,6 @@ class PLPManager:
                                               subject=messageSubject,
                                               date=messageDate,
                                               msgId=int(msgnum))
-                messageString: str = ''
-                for part in message.walk():
-                    if part.get_content_type() == "text/plain":
-                        messageString += part.as_string()
 
                 deudoresFound: list[Deudor] = self.getDeudoresFromPLPBreachedContent(content=messageString)
                 plpBreachedRequest: PLPBreached = PLPBreached(payload=gydEmail, deudores=deudoresFound)
