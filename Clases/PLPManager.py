@@ -213,7 +213,7 @@ class PLPManager:
         imap = imaplib.IMAP4_SSL(self.smtpServer)
         imap.login(self.username, self.password)
         imap.select("Inbox")
-        beforeDatetime: datetime = sinceDatetime + timedelta(days=1)
+        beforeDatetime: datetime = datetime.now()
         sinceDate: str = sinceDatetime.strftime('%d-%b-%Y')
         beforeDate: str = beforeDatetime.strftime('%d-%b-%Y')
         _, msgnums = imap.search(None, f'(SINCE {sinceDate} BEFORE {beforeDate})')
