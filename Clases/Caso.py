@@ -1,7 +1,19 @@
 from datetime import datetime
 
 class Caso:
-    def __init__(self, idMapsa: int, nombreEstado: str, fechaAsignado: datetime, bsecs: str | int, apellidoDeudor: str, nombreDeudor: str, rutDeudor: str, idCliente: int, nombreCliente: str, factura: str = '', lastGestionDate: datetime = None):
+    def __init__(self, idMapsa: int, 
+                 nombreEstado: str, 
+                 fechaAsignado: datetime, 
+                 bsecs: str | int, 
+                 apellidoDeudor: str, 
+                 nombreDeudor: str, 
+                 rutDeudor: str, 
+                 idCliente: int, 
+                 nombreCliente: str, 
+                 factura: str = '', 
+                 lastGestionDate: datetime = None,
+                 nOperacion: str = '',
+                 folio: str = ''):
         self.idMapsa = idMapsa
         self.nombreEstado = nombreEstado
         self.fechaAsignado = fechaAsignado
@@ -14,6 +26,8 @@ class Caso:
         self.nombreEstadoAnterior = nombreEstado
         self.factura = factura
         self.lastGestionDate = lastGestionDate
+        self.nOperacion = nOperacion
+        self.folio = folio
         
     def __repr__(self):
         return f'{self.idMapsa} - {self.rutDeudor} - {self.apellidoDeudor} - Estado actual: {self.nombreEstado}'

@@ -4,6 +4,9 @@ from Utils.GlobalFunctions import *
 from Clases.Servicio import Servicio
 from Utils.Metadata import *
 import os
+import pandas as pd
+import openpyxl
+from openpyxl.styles import Alignment
 
 class PDFGenerator:
     def __init__(self):
@@ -124,5 +127,71 @@ class PDFGenerator:
         pdf.output(f'{DELIVEREDDATAPATH}/{resumenBoleta.destinatario.nombreDestinatario}/{resumenBoleta.boleta.numBoleta}_{resumenBoleta.caso.idMapsa}/Reporte_{resumenBoleta.boleta.numBoleta}.pdf')
         
         print(f'Reporte n°{resumenBoleta.boleta.numBoleta} generado!')
+        self.addBoletaDataToExcelMatrix(resumenBoleta=resumenBoleta)
         
+    def createExcelMatrix(self, resumenBoleta: Resumen):
+        if os.path.exists(f'{DELIVEREDDATAPATH}/{resumenBoleta.destinatario.nombreDestinatario}/Rendicion.xlsx'):
+            return
+        workbook = openpyxl.Workbook()
+        worksheet = workbook.active
+        headers = [' NOMBRE DEUDOR ', ' OPERACIÓN ', ' FOLIO ', ' ITEM ', ' SERVICIO ', ' RUT PRESTADOR ', ' PRESTADOR ', ' N°DOC ', ' MONTO ', ' N°BOLETA ', ' FECHA PAGO ']
+        for colNum, header in enumerate(headers, 1):
+            cell = worksheet.cell(row=1, column=colNum)
+            cell.value = header
+        workbook.save(f'{DELIVEREDDATAPATH}/{resumenBoleta.destinatario.nombreDestinatario}/Rendicion.xlsx')
+        
+    def addBoletaDataToExcelMatrix(self, resumenBoleta: Resumen):
+        if not os.path.exists(f'{DELIVEREDDATAPATH}/{resumenBoleta.destinatario.nombreDestinatario}/Rendicion.xlsx'):
+            self.createExcelMatrix(resumenBoleta=resumenBoleta)
+        excelMatrixRoot : str = f'{DELIVEREDDATAPATH}/{resumenBoleta.destinatario.nombreDestinatario}/Rendicion.xlsx'
+        workbook = openpyxl.load_workbook(excelMatrixRoot)
+        sheet = workbook.active
+        servicio: Servicio
+        try:
+           filaNDoc = sheet.cell(row=sheet.max_row, column=8).value + 1
+        except Exception:
+           filaNDoc = 1
+        for servicio in resumenBoleta.servicios:
+            filaNombreDeudor = resumenBoleta.caso.apellidoDeudor + ' ' + resumenBoleta.caso.nombreDeudor
+            filaOperacion = resumenBoleta.caso.nOperacion
+            filaFolio = resumenBoleta.caso.folio
+            filaItem = servicio.codigo.split(' ')[0].upper()
+            filaServicio = servicio.codigo.upper()
+            filaServicio = filaServicio.replace(filaItem, '')
+            filaRUTPrestador = resumenBoleta.beneficiario.rutBeneficiario
+            filaPrestador = resumenBoleta.beneficiario.nombreBeneficiario
+            filaMonto = servicio.monto
+            filaNBoleta = resumenBoleta.boleta.numBoleta
+            filaFechaPago = resumenBoleta.boleta.fechaEmision.strftime("%d-%m-%Y")
+            newRow = [filaNombreDeudor, 
+                    filaOperacion, 
+                    filaFolio, 
+                    filaItem, 
+                    filaServicio, 
+                    filaRUTPrestador, 
+                    filaPrestador, 
+                    filaNDoc, 
+                    filaMonto, 
+                    filaNBoleta, 
+                    filaFechaPago]
+            sheet.append(newRow)
+        
+        for column in sheet.columns:
+            header = str(column[0].value)
+            maxLength = len(header)
+            column = [cell for cell in column]
+            for cell in column:
+                if len(str(cell.value)) > maxLength:
+                    maxLength = len(cell.value)
+            adjustedWidth = (maxLength + 2)
+            sheet.column_dimensions[openpyxl.utils.get_column_letter(cell.column)].width = adjustedWidth
+            for cell in column:
+                cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        
+        workbook.save(excelMatrixRoot)
+        
+            
+            
+        
+
             

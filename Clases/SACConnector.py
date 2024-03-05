@@ -184,7 +184,7 @@ class SACConnector:
     def getPossibleMapsaCasos(self, rutDeudor: str = '', apellidoDeudor: str = '', nombreDeudor: str = '', idCliente: int = None, active: bool = True) -> list[Caso]:
         casosFound : list[Caso] = []
         query: str = f'''
-                        SELECT IdMapsa, Estado, Asignado, Bsecs, "Apellido Deudor", "Nombre Deudor", "RUT Deudor", Mapsa.Cliente, Clientes.Cliente, "Facturar a"
+                        SELECT IdMapsa, Estado, Asignado, Bsecs, "Apellido Deudor", "Nombre Deudor", "RUT Deudor", Mapsa.Cliente, Clientes.Cliente, "Facturar a", Num, Folio
                         FROM {self.mapsaTable}
                         INNER JOIN {self.clientesTable}
                         ON {self.clientesTable}.IdCliente = {self.mapsaTable}.Cliente
@@ -206,7 +206,7 @@ class SACConnector:
         
         self.cursorData.execute(query)
         for data in self.cursorData.fetchall():
-            idMapsa, nombreEstado, fechaAsignado, bsecs, apellidoDeudor, nombreDeudor, rutDeudor, idCliente, nombreCliente, factura = data
+            idMapsa, nombreEstado, fechaAsignado, bsecs, apellidoDeudor, nombreDeudor, rutDeudor, idCliente, nombreCliente, factura, nOperacion, folio = data
             casosFound.append(Caso(idMapsa=idMapsa, 
                                    nombreEstado=nombreEstado, 
                                    fechaAsignado=fechaAsignado, 
@@ -216,7 +216,9 @@ class SACConnector:
                                    apellidoDeudor=apellidoDeudor,
                                    idCliente=idCliente,
                                    nombreCliente=nombreCliente,
-                                   factura=factura))
+                                   factura=factura,
+                                   nOperacion=nOperacion,
+                                   folio=folio))
         return casosFound
 
     def insertBoletaDataExample(self):
