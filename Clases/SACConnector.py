@@ -1,3 +1,4 @@
+from Clases.BoletaMatrixRow import BoletaMatrixRow
 from Clases.Gestion import Gestion
 from Utils.Metadata import *
 import pyodbc
@@ -12,6 +13,7 @@ from Clases.Boleta import Boleta
 from datetime import datetime
 from Utils.GlobalFunctions import *
 from Clases.Caso import Caso
+from Clases.Resumen import Resumen
 
 class SACConnector:
     def __init__(self):
@@ -57,7 +59,6 @@ class SACConnector:
     
     def getBeneficiarioData(self, numBoleta: int, idMapsa: int) -> Beneficiario | None:
         query: str = f"SELECT * FROM {self.boletasTable} WHERE Numero = {numBoleta} AND Check = False AND Idboleta = {idMapsa}"
-        print(query)
         self.cursorBoleta.execute(query)
         rutBeneficiario: str = ''
         for dataReceived in self.cursorBoleta.fetchall(): 
@@ -226,7 +227,6 @@ class SACConnector:
                     INSERT INTO {self.boletasTable} (IdBoleta, Numero, Fecha, Monto, Nota, Check, Mes, "RUT Beneficiario")
                     VALUES (1111, 1111, '{transformDateToSpanishBrief(date=datetime.now(), point=True)}' , 88888, 'Test Daniel', False, '{getFormattedMonthFromDate(datetime.now())}', '19.618.378-7')                              
                 '''
-        print(query)
         self.cursorBoleta.execute(query)
         self.connBoleta.commit()
         
@@ -240,7 +240,6 @@ class SACConnector:
                         INSERT INTO {self.boletasTable} (IdBoleta, Numero, Fecha, Monto, Nota, Check, Mes, "RUT Beneficiario", Codigo, "Valor Ref")
                         VALUES ({boleta.idMapsa}, {boleta.numBoleta}, '{formattedDate}', {servicio.monto}, '{servicio.nota if servicio.nota else " "}', False, '{formattedMonth}', '{boleta.rutBeneficiario}', '{servicio.codigo}', '{servicio.codigoHeader}')
                     '''
-            print(query)
             self.cursorBoleta.execute(query)
             self.connBoleta.commit()
             
@@ -277,7 +276,6 @@ class SACConnector:
                     SELECT CC FROM {self.destinatariosTable}
                     WHERE Nombre LIKE '%{nombreDestinatario}%'
                 """
-        print(query)
         self.cursorData.execute(query)
         rawData = self.cursorData.fetchall()
         if not rawData:
@@ -301,7 +299,6 @@ class SACConnector:
                     SET Estado = '{newState}', FechaModificacion = '{timestamp}'
                     WHERE IdMapsa = {idMapsa}
                 '''
-        print(query)
         self.cursorData.execute(query)
         self.connData.commit()
 
@@ -310,7 +307,6 @@ class SACConnector:
                         INSERT INTO {self.gestionesTable} (IdJuicio, Fecha, Gestion, Nota, Usuario)
                         VALUES ({gestion.idJuicio}, '{gestion.fecha}', '{gestion.gestion}', '{gestion.nota}', '{gestion.user}')
                      '''
-        print(query)
         self.cursorGestiones.execute(query)
         self.connGestiones.commit()
         
@@ -321,13 +317,102 @@ class SACConnector:
                         WHERE Idjuicio = {idMapsa}
                         ORDER BY Fecha DESC
                     '''
-        print(query)
         self.cursorGestiones.execute(query)
         data = self.cursorGestiones.fetchall()
         if data:
             return data[0][0]
         else:
             return None
+        
+    def getBoletaMatrixRows(self, numBoleta: int) -> list[BoletaMatrixRow]:
+        query = f'''
+                    SELECT IdBoleta, Numero, Fecha, Monto, "RUT Beneficiario", Codigo
+                    FROM {self.boletasTable}
+                    WHERE Numero = {numBoleta}
+                '''
+        self.cursorBoleta.execute(query)
+        dataServicios = self.cursorBoleta.fetchall()
+        if not dataServicios:
+            return []
+        idMapsa = int(dataServicios[0][0])
+        nBoleta = int(dataServicios[0][1])
+        fechaPago = dataServicios[0][2].strftime("%d-%m-%Y")
+        rutBeneficiario = dataServicios[0][4]
+        nombreBeneficiario = ''
+        beneficiario : Beneficiario
+        for beneficiario in self.getAllBeneficiarios():
+            if beneficiario.rutBeneficiario == rutBeneficiario:
+                nombreBeneficiario = beneficiario.nombreBeneficiario
+        query = f'''
+                    SELECT m.Num, m.Folio, m."Apellido Deudor", m."Nombre Deudor"
+                    FROM {self.mapsaTable} as m
+                    WHERE IdMapsa = {idMapsa}
+                '''
+        self.cursorData.execute(query)
+        dataCaso = self.cursorData.fetchall()[0]
+        nOperacion = str(dataCaso[0])
+        nFolio = str(dataCaso[1])
+        apellidoDeudor = dataCaso[2]
+        nombreDeudor = dataCaso[3]
+        rows: list[BoletaMatrixRow] = []
+        for dataServicio in dataServicios:
+            codigo: str = dataServicio[5]
+            item, nombreServicio = codigo.split(' ')[0:2]
+            monto: int = int(dataServicio[3])
+            row: BoletaMatrixRow = BoletaMatrixRow(nombreDeudor=apellidoDeudor + ' ' + nombreDeudor,
+                                                   nOperacion=nOperacion,
+                                                   nFolio=nFolio,
+                                                   item=item,
+                                                   nombreServicio=nombreServicio,
+                                                   rutPrestador=rutBeneficiario,
+                                                   nombrePrestador=nombreBeneficiario,
+                                                   monto=monto,
+                                                   nBoleta=nBoleta,
+                                                   fechaPago=fechaPago)
+            rows.append(row)
+        return rows
+            
+    def getClienteMatrixRows(self, nombreDestinatario: str, nombreCliente: str) -> list[BoletaMatrixRow]:
+        rows: list[BoletaMatrixRow] = []
+        for dirName in os.listdir(path=f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
+            print(dirName)
+            if dirName[0] == 'R':
+                 continue
+            numBoleta, idCaso = dirName.split('_')
+            numBoleta = int(numBoleta)
+            idCaso = int(idCaso)
+            filename = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{dirName}/Data_{numBoleta}.txt'
+            if not os.path.exists(filename):
+                print(f"NO EXISTE {filename}")
+                continue
+            with open(file=filename) as file:
+                fileNombreCliente = file.readline().strip().split(',')[5]
+                if nombreCliente != fileNombreCliente:
+                    print(f"{nombreCliente} != {fileNombreCliente}")
+                    continue
+            print("COINCIDE")
+            rows.extend(self.getBoletaMatrixRows(numBoleta=numBoleta))
+        return rows
+    
+    def getClienteFromCasoId(self, idMapsa: int) -> Cliente | None:
+        self.cursorData.execute(f'''
+                                    SELECT m.Cliente, c.Cliente
+                                    FROM {self.mapsaTable} AS m
+                                    INNER JOIN {self.clientesTable} AS c
+                                    ON m.Cliente = c.IdCliente
+                                    WHERE m.IdMapsa = {idMapsa} 
+                                ''')
+        data = self.cursorData.fetchall()
+        if data:
+            idCliente: int = data[0][0]
+            nombreCliente: str = data[0][1]
+            return Cliente(idCliente=idCliente, nombreCliente=nombreCliente)
+        else:
+            return None
+                    
+        
+        
+        
         
     def getRecurrentGestiones(self, delay: timedelta, idsCasos: list[int]) -> list[Gestion]:
         if not idsCasos:

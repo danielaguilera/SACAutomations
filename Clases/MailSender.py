@@ -19,7 +19,7 @@ class MailSender:
         self.session: smtplib.SMTP = None
         self.sacConnector: SACConnector = SACConnector()
     
-    def sendMail(self, receiverAddress: str, mailSubject: str, mailContent: str, mailAttachment: str):
+    def sendMail(self, receiverAddress: str, mailSubject: str, mailContent: str, mailAttachment: str, excelAttachments: list[str] = []):
         msg = MIMEMultipart()
         msg['From'] = self.senderUserName
         msg['To'] = receiverAddress
@@ -29,6 +29,14 @@ class MailSender:
             attach = MIMEApplication(f.read(),_subtype="pdf")
             attach.add_header('Content-Disposition','attachment',filename='Resumen.pdf')
             msg.attach(attach)
+        excelAttachment: str
+        for excelAttachment in excelAttachments:
+            filename = excelAttachment.split('/')[-1]
+            print(filename)           
+            with open(excelAttachment, "rb") as f:
+                attach = MIMEApplication(f.read(),_subtype="xlsx")
+                attach.add_header('Content-Disposition','attachment',filename=filename)
+                msg.attach(attach)
         server = smtplib.SMTP_SSL(self.smtpServer, self.smtpPort)
         server.login(self.senderUserName, self.senderPassword)
         server.sendmail(self.senderUserName, receiverAddress, msg.as_string())
@@ -51,20 +59,24 @@ class MailSender:
         server.quit()
         
     def sendUnifiedDocument(self, destinatario: Destinatario):
+        excelMatrixRoots: list[str] =[]
+        for filename in os.listdir(f'{DELIVEREDDATAPATH}/{destinatario.nombreDestinatario}'):
+            if filename[0] == 'R':
+                excelMatrixRoots.append(f'{DELIVEREDDATAPATH}/{destinatario.nombreDestinatario}/{filename}')
         receiverAddress: str = destinatario.correoDestinatario
         mailSubject: str = f'{"DEMO - ESTE EMAIL ES UNA PRUEBA Y NO CUENTA - " if SEND != "send" else ""}Envío reportes semana {getWeekMondayTimeStamp()}'
-        mailContent: str = f'Estimad@ {destinatario.nombreDestinatario}: \n\n Junto con saludar, se adjunta el resumen de las facturas correspondientes a la semana de {getWeekMondayTimeStamp("long")}'
+        mailContent: str = f'Estimad@ {destinatario.nombreDestinatario}: \n\nJunto con saludar, se adjunta el resumen de las facturas correspondientes a la semana de {getWeekMondayTimeStamp("long")} y sus respectivas rendiciones de gastos.\nSaludos cordiales,\nGause y Abogados'
         mailAttachment: str = f'{DELIVEREDDATAPATH}/{destinatario.nombreDestinatario}/Documento.pdf'
         if SEND == 'send':
-            self.sendMail(receiverAddress=receiverAddress, mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
+            self.sendMail(receiverAddress=receiverAddress, mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment, excelAttachments=excelMatrixRoots)
             ccs: list[str] = self.sacConnector.getCCByDestinatario(nombreDestinatario=destinatario.nombreDestinatario)
             for cc in ccs:
-                self.sendMail(receiverAddress=cc, mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
-        self.sendMail(receiverAddress='daniel.aguilera.habbo@gmail.com', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
-        self.sendMail(receiverAddress='draguilera@uc.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
-        self.sendMail(receiverAddress='servidor@gydabogados.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
-        self.sendMail(receiverAddress='matias.gause@gmail.com', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
-        self.sendMail(receiverAddress='vahumada@gydabogados.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment)
+                self.sendMail(receiverAddress=cc, mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment, excelAttachments=excelMatrixRoots)
+        self.sendMail(receiverAddress='daniel.aguilera.habbo@gmail.com', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment, excelAttachments=excelMatrixRoots)
+        self.sendMail(receiverAddress='draguilera@uc.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment, excelAttachments=excelMatrixRoots)
+        self.sendMail(receiverAddress='servidor@gydabogados.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment, excelAttachments=excelMatrixRoots)
+        self.sendMail(receiverAddress='matias.gause@gmail.com', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment, excelAttachments=excelMatrixRoots)
+        self.sendMail(receiverAddress='vahumada@gydabogados.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment, excelAttachments=excelMatrixRoots)
         with open(ACTIVITYLOGFILE, 'a') as file:
             file.write(f'{str(datetime.now())}: {USER} envió los resúmenes de la semana {getWeekMondayTimeStamp()} a {destinatario.correoDestinatario} ({"OFICIAL" if SEND == "send" else "DEMO"})\n')
         print(f'Email a {destinatario.correoDestinatario} enviado!')

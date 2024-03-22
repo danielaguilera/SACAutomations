@@ -38,7 +38,10 @@ class SACSenderJob:
             sys.exit() 
         pdfMerger: PdfMerger = PdfMerger()
         for path in os.listdir(path=f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
+            if path[0] == 'R':
+                continue
             if path != 'Documento.pdf':
+                print(path)
                 numBoleta, idMapsa = (int(x) for x in path.strip().split('_'))
                 reportePath: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{path}/Reporte_{numBoleta}.pdf'
                 boletaPath: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{path}/Boleta_{numBoleta}.pdf'
@@ -65,6 +68,8 @@ class SACSenderJob:
         boletasSent = []
         
         for path in os.listdir(path=f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
+            if path[0] == 'R':
+                continue
             if path != 'Documento.pdf':
                 numBoleta, idMapsa = (int(x) for x in path.strip().split('_'))
                 with open(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{path}/Data_{numBoleta}.txt','r') as file:
@@ -102,6 +107,8 @@ class SACSenderJob:
         
         for nombreDestinatario in os.listdir(path=f'{DELIVEREDDATAPATH}'):
             for path in os.listdir(path=f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
+                if path[0] == 'R':
+                    continue
                 if path != 'Documento.pdf':
                     numBoleta, idMapsa = (int(x) for x in path.strip().split('_'))
                     with open(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{path}/Data_{numBoleta}.txt','r') as file:

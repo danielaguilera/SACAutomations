@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import ttk
 
 from PyPDF2 import PdfMerger
+from Clases.PDFGenerator import PDFGenerator
 from Clases.SACConnector import SACConnector
 from Clases.SACSenderJob import SACSenderJob
 from Utils.GlobalFunctions import *
@@ -12,6 +13,12 @@ import os
 import shutil
 # from PIL import ImageTk, Image
 import fitz
+
+import openpyxl
+from openpyxl.styles import Alignment
+from openpyxl.styles import PatternFill
+from openpyxl.styles import Font
+from openpyxl.styles import Border, Side, Alignment, NamedStyle
 
 class ReportManager:
     def __init__(self, container):
@@ -55,7 +62,8 @@ class ReportManager:
         nombreDestinatario: str
         for nombreDestinatario in os.listdir(DELIVEREDDATAPATH):
             self.reportTable.insert('', END, iid=nombreDestinatario, values=(nombreDestinatario,'','','','','','',''), open=True)
-            for dirName in os.listdir(f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
+            reportsFound: list = [dirName for dirName in os.listdir(f'{DELIVEREDDATAPATH}/{nombreDestinatario}') if dirName[0] != 'R']
+            for dirName in reportsFound:
                 if dirName != 'Documento.pdf':
                     numBoleta, idMapsa = [int(x) for x in dirName.strip().split('_')]
                     with open(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{numBoleta}_{idMapsa}/Data_{numBoleta}.txt') as file:
@@ -107,10 +115,19 @@ class ReportManager:
         numBoleta: int = int(data[2])
         idMapsa: int = int(data[3])
         nombreDestinatario: str = self.reportTable.item(self.reportTable.parent(self.reportTable.selection()[0]))['values'][0]
+        nombreCliente: str = data[5]
         self.sacConnector.deleteBoletaData(numBoleta=numBoleta, idMapsa=idMapsa)
         deleteIfExists(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{numBoleta}_{idMapsa}')
+        rows = self.sacConnector.getClienteMatrixRows(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente)
+        if rows:
+            fileGenerator: PDFGenerator = PDFGenerator()
+            fileGenerator.updateExcelMatrix(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente)
+        else:
+            print('NO HAY FILAS, ELIMINANDO...')
+            deleteFileIfExists(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Rendición {nombreCliente}.xlsx')
         deleteIfEmpty(f'{DELIVEREDDATAPATH}/{nombreDestinatario}')
         deleteIfEmpty(f'{DELIVEREDDATAPATH}')
+        
         messagebox.showinfo(title='INFO', message='Reporte borrado')
         self.resetForm()
         with open(ACTIVITYLOGFILE, 'a') as file:
@@ -196,7 +213,5 @@ class ReportManager:
                 os.makedirs(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}')
             shutil.copy(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf', f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}/Documento.pdf')
         pdfMerger.close()
-        
                 
-        
                     

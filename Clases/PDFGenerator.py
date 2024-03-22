@@ -1,5 +1,7 @@
 from fpdf import FPDF
+from Clases.BoletaMatrixRow import BoletaMatrixRow
 from Clases.Resumen import Resumen
+from Clases.SACConnector import SACConnector
 from Utils.GlobalFunctions import *
 from Clases.Servicio import Servicio
 from Utils.Metadata import *
@@ -128,20 +130,53 @@ class PDFGenerator:
         if not os.path.exists(f'{DELIVEREDDATAPATH}/{resumenBoleta.destinatario.nombreDestinatario}/{resumenBoleta.boleta.numBoleta}_{resumenBoleta.caso.idMapsa}'):
             os.makedirs(f'{DELIVEREDDATAPATH}/{resumenBoleta.destinatario.nombreDestinatario}/{resumenBoleta.boleta.numBoleta}_{resumenBoleta.caso.idMapsa}')
         pdf.output(f'{DELIVEREDDATAPATH}/{resumenBoleta.destinatario.nombreDestinatario}/{resumenBoleta.boleta.numBoleta}_{resumenBoleta.caso.idMapsa}/Reporte_{resumenBoleta.boleta.numBoleta}.pdf')
-        
         print(f'Reporte n°{resumenBoleta.boleta.numBoleta} generado!')
-        self.addBoletaDataToExcelMatrix(resumenBoleta=resumenBoleta)
+        self.updateExcelMatrix(nombreDestinatario=resumenBoleta.destinatario.nombreDestinatario,
+                               nombreCliente=resumenBoleta.cliente.nombreCliente)
         
-    def createExcelMatrix(self, resumenBoleta: Resumen):
+    def updateExcelMatrix(self, nombreDestinatario: str, nombreCliente: str):
+        excelMatrixRoot: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Rendición {nombreCliente}.xlsx'
+        deleteFileIfExists(excelMatrixRoot)
+        self.createExcelMatrix(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente)
+        conn: SACConnector = SACConnector()
+        for dirName in os.listdir(path=f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
+            if dirName[0] == 'R': # AQUI SE DEBEN PONER SOLO DEL CLIENTE
+                 continue
+            numBoleta, idMapsa = dirName.split('_')
+            numBoleta = int(numBoleta)
+            idMapsa = int(idMapsa)
+            boletaNombreCliente = conn.getClienteFromCasoId(idMapsa=idMapsa).nombreCliente
+            if boletaNombreCliente == nombreCliente:
+                self.addBoletaDataToExcelMatrix(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente, numBoleta=numBoleta)
+        self.updateMatrixTotalValues(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente)
+        
+    def createExcelMatrix2(self, resumenBoleta: Resumen):
         workbook = openpyxl.Workbook()
         worksheet = workbook.active
         headers = [' NOMBRE DEUDOR ', ' OPERACIÓN ', ' FOLIO ', ' ITEM ', ' SERVICIO ', ' RUT PRESTADOR ', ' PRESTADOR ', ' N°DOC ', ' MONTO ', ' N°BOLETA ', ' FECHA PAGO ']
-        i: bool = False
+        cell = worksheet.cell(row = 1, column = 1)
+        cell.value = resumenBoleta.cliente.nombreCliente.upper()
+        cell = worksheet.cell(row = 1, column = 2)
+        cell.value = 'Reembolso - MVSERVICIOS'
+        cell = worksheet.cell(row = 1, column = 8)
+        cell.value = 'R N° 0/0-0'
+        cell = worksheet.cell(row = 1, column = 10)
+        cell.value = datetime.strftime(datetime.now(), '%d-%m-%Y')
+        for colNum, header in enumerate(headers):
+            cell = worksheet.cell(row=3, column=colNum + 1)
+            cell.value = header
+        workbook.save(f'{DELIVEREDDATAPATH}/{resumenBoleta.destinatario.nombreDestinatario}/Rendición {resumenBoleta.cliente.nombreCliente}.xlsx')
         
+        
+    def createExcelMatrix(self, nombreDestinatario: str, nombreCliente: str):
+        workbook = openpyxl.Workbook()
+        worksheet = workbook.active
+
+        headers = [' NOMBRE DEUDOR ', ' OPERACIÓN ', ' FOLIO ', ' ITEM ', ' SERVICIO ', ' RUT PRESTADOR ', ' PRESTADOR ', ' N°DOC ', ' MONTO ', ' N°BOLETA ', ' FECHA PAGO ']
         cell = worksheet.cell(row = 1, column = 1)
         pattern = PatternFill(start_color=YELLOW, end_color=YELLOW, fill_type='solid')
         cell.fill = pattern
-        cell.value = resumenBoleta.cliente.nombreCliente
+        cell.value = nombreCliente.upper()
         cell = worksheet.cell(row = 1, column = 2)
         cell.fill = pattern
         cell.value = 'Reembolso - MVSERVICIOS'
@@ -154,9 +189,11 @@ class PDFGenerator:
         cell.fill = pattern
         cell.value = datetime.strftime(datetime.now(), '%d-%m-%Y')
         worksheet.merge_cells(f'J1:K1')
+        worksheet.merge_cells(f'A2:K2')
+        i: bool = False
         
-        for colNum, header in enumerate(headers, 1):
-            cell = worksheet.cell(row=3, column=colNum)
+        for colNum, header in enumerate(headers):
+            cell = worksheet.cell(row=3, column=colNum + 1)
             cell.value = header
             patternColor = SKY_BLUE if i else RED
             fontColor = BLACK if i else WHITE
@@ -165,28 +202,28 @@ class PDFGenerator:
             cell.font = font
             cell.fill = pattern
             i = not i
-        workbook.save(f'{DELIVEREDDATAPATH}/{resumenBoleta.destinatario.nombreDestinatario}/Rendición {resumenBoleta.cliente.nombreCliente}.xlsx')
+        workbook.save(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Rendición {nombreCliente}.xlsx')
         
-    def addBoletaDataToExcelMatrix(self, resumenBoleta: Resumen):
-        excelMatrixRoot: str = f'{DELIVEREDDATAPATH}/{resumenBoleta.destinatario.nombreDestinatario}/Rendición {resumenBoleta.cliente.nombreCliente}.xlsx'
+    def addBoletaDataToExcelMatrix(self, nombreDestinatario: str, nombreCliente: str, numBoleta: int):
+        excelMatrixRoot: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Rendición {nombreCliente}.xlsx'
         if not os.path.exists(excelMatrixRoot):
-            self.createExcelMatrix(resumenBoleta=resumenBoleta)
+            self.createExcelMatrix(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente)
         workbook = openpyxl.load_workbook(excelMatrixRoot)
         sheet: openpyxl.worksheet.worksheet.Worksheet = workbook.active
-        servicio: Servicio
+        conn: SACConnector = SACConnector()
+        rows: list[BoletaMatrixRow] = conn.getBoletaMatrixRows(numBoleta=numBoleta)
         filaNDoc = max([x for x in [sheet.cell(row=row, column=8).value for row in range(4, sheet.max_row + 1)] if x] + [0]) + 1
-        for servicio in resumenBoleta.servicios:
-            filaNombreDeudor = (resumenBoleta.caso.apellidoDeudor + ' ' + resumenBoleta.caso.nombreDeudor).upper()
-            filaOperacion = resumenBoleta.caso.nOperacion
-            filaFolio = resumenBoleta.caso.folio
-            filaItem = servicio.codigo.split(' ')[0].upper()
-            filaServicio = servicio.codigo.upper()
-            filaServicio = filaServicio.replace(filaItem, '')
-            filaRUTPrestador = resumenBoleta.beneficiario.rutBeneficiario
-            filaPrestador = resumenBoleta.beneficiario.nombreBeneficiario.upper()
-            filaMonto = servicio.monto
-            filaNBoleta = resumenBoleta.boleta.numBoleta
-            filaFechaPago = resumenBoleta.boleta.fechaEmision.strftime("%d-%m-%Y")
+        for row in rows:
+            filaNombreDeudor = row.nombreDeudor.upper()
+            filaOperacion = row.nOperacion
+            filaFolio = row.nFolio
+            filaItem = row.item
+            filaServicio = row.nombreServicio
+            filaRUTPrestador = row.rutPrestador
+            filaPrestador = row.nombrePrestador
+            filaMonto = row.monto
+            filaNBoleta = row.nBoleta
+            filaFechaPago = row.fechaPago
             newRow = [filaNombreDeudor, 
                     filaOperacion, 
                     filaFolio, 
@@ -210,9 +247,6 @@ class PDFGenerator:
             style = NamedStyle(name=currencyStyle, number_format=" _-$* #,##0_-")
             workbook.add_named_style(style)
         
-        #moneyStyle = NamedStyle(name='moneyStyle', number_format = " _-$* #,##0_-")
-        #      _-$*#.##0_-;-$*#.##0_-;_-$*'-'??_-;_-@_-
-        
         for columnIndex, column in enumerate(sheet.columns):
             header = str(column[0].value)
             maxLength = len(header)
@@ -225,23 +259,55 @@ class PDFGenerator:
             sheet.column_dimensions[openpyxl.utils.get_column_letter(cell.column)].width = adjustedWidth
             for rowIndex, cell in enumerate(column):
                 cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=False)
-                if rowIndex > 0 and columnIndex == 3:
+                if rowIndex > 2 and columnIndex == 3:
                     color = MATRIX_COLORS.get(str(cell.value).split('-')[0], '000000')
                     pattern = PatternFill(start_color=color, end_color=color, fill_type='solid')
                     cell.fill = pattern
-                if rowIndex > 0 and columnIndex in [0,4,6]:
+                if rowIndex > 2 and columnIndex in [0,4,6]:
                     alignment = Alignment(horizontal='left')
                     cell.alignment = alignment
-                if rowIndex > 0 and columnIndex == 8:
+                if rowIndex > 2 and columnIndex == 8:
                     cell.style = currencyStyle
                     cell.border = border
-        nServicios: int = len(resumenBoleta.servicios)
+        nServicios: int = len(rows)
         maxRow: int = sheet.max_row
         sheet.merge_cells(f'H{maxRow - nServicios + 1}:H{maxRow}')
         sheet.merge_cells(f'J{maxRow - nServicios + 1}:J{maxRow}')
         sheet.merge_cells(f'K{maxRow - nServicios + 1}:K{maxRow}')
-        
         workbook.save(excelMatrixRoot)
+
+    def updateMatrixTotalValues(self, nombreDestinatario: str, nombreCliente: str):
+        excelMatrixRoot: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Rendición {nombreCliente}.xlsx'
+        if not os.path.exists(excelMatrixRoot):
+            self.createExcelMatrix(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente)
+        workbook = openpyxl.load_workbook(excelMatrixRoot)
+        sheet: openpyxl.worksheet.worksheet.Worksheet = workbook.active
+        nBoletas = max([x for x in [sheet.cell(row=row, column=8).value for row in range(4, sheet.max_row + 1)] if x] + [0])
+        cell = sheet.cell(row = 1, column = 8)
+        cell.value = f'R N° 100/1-{nBoletas}'
+        workbook.save(excelMatrixRoot)
+        workbook = openpyxl.load_workbook(excelMatrixRoot)
+        sheet: openpyxl.worksheet.worksheet.Worksheet = workbook.active
+        total = sum([sheet.cell(row = i, column = 9).value for i in range(4, sheet.max_row + 1)])
+        newRow = ['TOTAL', '', '', '', '', '', '', '', total, '', '']
+        sheet.append(newRow)
+        workbook.save(excelMatrixRoot)
+        workbook = openpyxl.load_workbook(excelMatrixRoot)
+        sheet: openpyxl.worksheet.worksheet.Worksheet = workbook.active
+        currencyStyle = 'currencyStyle'
+        if currencyStyle not in workbook.named_styles:
+            style = NamedStyle(name=currencyStyle, number_format=" _-$* #,##0_-")
+            workbook.add_named_style(style)
+        pattern = PatternFill(start_color=BLUE, end_color=BLUE, fill_type='solid')
+        font = Font(color=WHITE)
+        for j in range(1, 12):
+            cell = sheet.cell(row = sheet.max_row, column = j)
+            if j == 9:
+                cell.style = currencyStyle
+            cell.fill = pattern
+            cell.font = font
+        workbook.save(excelMatrixRoot)    
+    
         
             
             

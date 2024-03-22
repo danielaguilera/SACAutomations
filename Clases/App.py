@@ -284,7 +284,6 @@ class App:
         return bool(self.sacConnector.getBoletaData(numBoleta=numBoleta))
                 
     def saveChanges(self):
-        try:
             start = time.process_time() 
             if not self.validData():
                 return  
@@ -337,10 +336,10 @@ class App:
                 messagebox.showinfo(title='Error', message=f'Boleta n°{numBoleta} no se pudo subir correctamente. Por favor intentar nuevamente')
                 self.clearBoletaFiles()
                 self.clearBoletaFromDB()
-        except Exception as e:
-            messagebox.showinfo(title='Error', message=str(e))
-            self.clearBoletaFiles()
-            self.clearBoletaFromDB()
+        #except Exception as e:
+        #    messagebox.showinfo(title='Error', message=str(e))
+        #    self.clearBoletaFiles()
+        #    self.clearBoletaFromDB()
 
     def checkBoletainFile(self) -> bool:
         boletaExists: bool = os.path.exists(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{self.numBoleta}_{self.idMapsa}/Boleta_{self.numBoleta}.pdf')
