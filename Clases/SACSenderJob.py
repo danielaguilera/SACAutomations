@@ -20,6 +20,8 @@ class SACSenderJob:
         for nombreDestinatario in os.listdir(path=f'{DELIVEREDDATAPATH}'):
             pdfMerger: PdfMerger = PdfMerger()
             for path in os.listdir(path=f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
+                if path[0] == 'R':
+                    continue
                 if path != 'Documento.pdf':
                     numBoleta, idMapsa = (int(x) for x in path.strip().split('_'))
                     reportePath: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{path}/Reporte_{numBoleta}.pdf'

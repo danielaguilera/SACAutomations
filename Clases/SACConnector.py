@@ -375,8 +375,7 @@ class SACConnector:
     def getClienteMatrixRows(self, nombreDestinatario: str, nombreCliente: str) -> list[BoletaMatrixRow]:
         rows: list[BoletaMatrixRow] = []
         for dirName in os.listdir(path=f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
-            print(dirName)
-            if dirName[0] == 'R':
+            if dirName[0] == 'R' or dirName == 'Documento.pdf':
                  continue
             numBoleta, idCaso = dirName.split('_')
             numBoleta = int(numBoleta)
