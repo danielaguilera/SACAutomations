@@ -24,6 +24,11 @@ from unidecode import unidecode
 import fitz
 import re
 import time
+import openpyxl
+from openpyxl.styles import Alignment
+from openpyxl.styles import PatternFill
+from openpyxl.styles import Font
+from openpyxl.styles import Border, Side, Alignment, NamedStyle
 
 
 class App:
@@ -129,6 +134,11 @@ class App:
         self.clienteDropdown = ttk.Combobox(master=self.clienteFrame, state='readonly', values=[cliente.nombreCliente for cliente in self.clientes] + ['Ninguno'])
         self.clienteDropdown.pack(side=LEFT, padx=5)
         self.clienteDropdown.bind("<<ComboboxSelected>>", self.clienteSelectionEvent)
+        self.rendicionLabel = Label(master=self.clienteFrame, text='# Rendición')
+        self.rendicionLabel.pack(side=LEFT, padx=5)
+        self.rendicionEntry = Entry(master=self.clienteFrame, justify='center')
+        self.rendicionEntry.pack(side=LEFT, padx=5)
+        self.rendicionEntry.insert(0, '-')
         
         self.gastoTotalFrame = Frame(master=self.stateFrame)
         self.gastoTotalFrame.pack(expand=True, fill=BOTH)
@@ -224,6 +234,22 @@ class App:
     def addedServicios(self) -> int:
         return len(self.serviciosTable.get_children())
     
+    def getClienteRendicion(self) -> int:
+        idMapsa: int = self.casosTable.item(self.casosTable.focus())['values'][0]
+        casoSet: Caso | None = next((caso for caso in self.casos if caso.idMapsa == idMapsa), None)
+        if not casoSet:
+            return 0
+        nombreDestinatario = self.destinatario.nombreDestinatario
+        nombreCliente = casoSet.nombreCliente
+        excelMatrixRoot = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Rendición {nombreCliente}.xlsx'
+        if not os.path.exists(excelMatrixRoot):
+            return 0
+        workbook = openpyxl.load_workbook(excelMatrixRoot)
+        sheet = workbook.active
+        cell = sheet.cell(row = 1, column = 8)
+        label: str = cell.value
+        return int(label.split(' ')[2].split('/')[0])
+    
     def runReportManager(self):
         if not os.path.exists(DELIVEREDDATAPATH):
             messagebox.showerror(title='ERROR', message='No se han cargado boletas para enviar.\nNo hay nada que mostrar.')
@@ -284,6 +310,7 @@ class App:
         return bool(self.sacConnector.getBoletaData(numBoleta=numBoleta))
                 
     def saveChanges(self):
+        try:
             start = time.process_time() 
             if not self.validData():
                 return  
@@ -300,6 +327,7 @@ class App:
                     continue
                 codigo, nota, monto = self.serviciosTable.item(iid)['values']
                 servicios.append(Servicio(codigo=codigo, nota=nota, monto=monto))
+            numeroRendicion = int(self.rendicionEntry.get())
             boleta: Boleta = Boleta(idMapsa=idMapsa, 
                                     numBoleta=numBoleta, 
                                     fechaEmision=fechaEmision, 
@@ -336,10 +364,10 @@ class App:
                 messagebox.showinfo(title='Error', message=f'Boleta n°{numBoleta} no se pudo subir correctamente. Por favor intentar nuevamente')
                 self.clearBoletaFiles()
                 self.clearBoletaFromDB()
-        #except Exception as e:
-        #    messagebox.showinfo(title='Error', message=str(e))
-        #    self.clearBoletaFiles()
-        #    self.clearBoletaFromDB()
+        except Exception as e:
+           messagebox.showinfo(title='Error', message=str(e))
+           self.clearBoletaFiles()
+           self.clearBoletaFromDB()
 
     def checkBoletainFile(self) -> bool:
         boletaExists: bool = os.path.exists(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{self.numBoleta}_{self.idMapsa}/Boleta_{self.numBoleta}.pdf')
@@ -427,6 +455,7 @@ class App:
         casoSet: Caso | None = next((caso for caso in self.casos if caso.idMapsa == idMapsa), None)
         destinatarioSet: Destinatario = self.destinatario
         serviciosSet: list[Servicio] = boleta.servicios
+        numeroRendicion: int = int(self.rendicionEntry.get())
         beneficiarioSet: Beneficiario = Beneficiario(rutBeneficiario=self.rutBeneficiarioEntry.get(), 
                                                      nombreBeneficiario=self.nombreBeneficiarioDropdown.get())
         clienteSet: Cliente = next((cliente for cliente in self.clientes if cliente.idCliente == casoSet.idCliente), None)
@@ -434,7 +463,8 @@ class App:
                                          destinatario=destinatarioSet, 
                                          servicios=serviciosSet, 
                                          beneficiario=beneficiarioSet, 
-                                         cliente=clienteSet)
+                                         cliente=clienteSet,
+                                         numeroRendicion=numeroRendicion)
         pdfGenerator: PDFGenerator = PDFGenerator()
         pdfGenerator.generateReporte(resumenBoleta=resumenBoleta)
         
@@ -674,6 +704,9 @@ class App:
             self.nombreDeudorEntry.insert(0, nombreDeudor)
             self.apellidoDeudorEntry.delete(0, END)
             self.apellidoDeudorEntry.insert(0, apellidoDeudor)
+            rendicionNumero = self.getClienteRendicion()
+            self.rendicionEntry.delete(0, END)
+            self.rendicionEntry.insert(0, rendicionNumero)
             self.setDestinatario()
     
     def beginClearForm(self):

@@ -132,9 +132,9 @@ class PDFGenerator:
         pdf.output(f'{DELIVEREDDATAPATH}/{resumenBoleta.destinatario.nombreDestinatario}/{resumenBoleta.boleta.numBoleta}_{resumenBoleta.caso.idMapsa}/Reporte_{resumenBoleta.boleta.numBoleta}.pdf')
         print(f'Reporte n°{resumenBoleta.boleta.numBoleta} generado!')
         self.updateExcelMatrix(nombreDestinatario=resumenBoleta.destinatario.nombreDestinatario,
-                               nombreCliente=resumenBoleta.cliente.nombreCliente)
+                               nombreCliente=resumenBoleta.cliente.nombreCliente, numeroRendicion=resumenBoleta.numeroRendicion)
         
-    def updateExcelMatrix(self, nombreDestinatario: str, nombreCliente: str):
+    def updateExcelMatrix(self, nombreDestinatario: str, nombreCliente: str, numeroRendicion: int = 0):
         excelMatrixRoot: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Rendición {nombreCliente}.xlsx'
         deleteFileIfExists(excelMatrixRoot)
         self.createExcelMatrix(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente)
@@ -148,25 +148,7 @@ class PDFGenerator:
             boletaNombreCliente = conn.getClienteFromCasoId(idMapsa=idMapsa).nombreCliente
             if boletaNombreCliente == nombreCliente:
                 self.addBoletaDataToExcelMatrix(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente, numBoleta=numBoleta)
-        self.updateMatrixTotalValues(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente)
-        
-    def createExcelMatrix2(self, resumenBoleta: Resumen):
-        workbook = openpyxl.Workbook()
-        worksheet = workbook.active
-        headers = [' NOMBRE DEUDOR ', ' OPERACIÓN ', ' FOLIO ', ' ITEM ', ' SERVICIO ', ' RUT PRESTADOR ', ' PRESTADOR ', ' N°DOC ', ' MONTO ', ' N°BOLETA ', ' FECHA PAGO ']
-        cell = worksheet.cell(row = 1, column = 1)
-        cell.value = resumenBoleta.cliente.nombreCliente.upper()
-        cell = worksheet.cell(row = 1, column = 2)
-        cell.value = 'Reembolso - MVSERVICIOS'
-        cell = worksheet.cell(row = 1, column = 8)
-        cell.value = 'R N° 0/0-0'
-        cell = worksheet.cell(row = 1, column = 10)
-        cell.value = datetime.strftime(datetime.now(), '%d-%m-%Y')
-        for colNum, header in enumerate(headers):
-            cell = worksheet.cell(row=3, column=colNum + 1)
-            cell.value = header
-        workbook.save(f'{DELIVEREDDATAPATH}/{resumenBoleta.destinatario.nombreDestinatario}/Rendición {resumenBoleta.cliente.nombreCliente}.xlsx')
-        
+        self.updateMatrixTotalValues(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente, numeroRendicion=numeroRendicion)
         
     def createExcelMatrix(self, nombreDestinatario: str, nombreCliente: str):
         workbook = openpyxl.Workbook()
@@ -276,7 +258,7 @@ class PDFGenerator:
         sheet.merge_cells(f'K{maxRow - nServicios + 1}:K{maxRow}')
         workbook.save(excelMatrixRoot)
 
-    def updateMatrixTotalValues(self, nombreDestinatario: str, nombreCliente: str):
+    def updateMatrixTotalValues(self, nombreDestinatario: str, nombreCliente: str, numeroRendicion: int = 0):
         excelMatrixRoot: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Rendición {nombreCliente}.xlsx'
         if not os.path.exists(excelMatrixRoot):
             self.createExcelMatrix(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente)
@@ -284,7 +266,7 @@ class PDFGenerator:
         sheet: openpyxl.worksheet.worksheet.Worksheet = workbook.active
         nBoletas = max([x for x in [sheet.cell(row=row, column=8).value for row in range(4, sheet.max_row + 1)] if x] + [0])
         cell = sheet.cell(row = 1, column = 8)
-        cell.value = f'R N° 100/1-{nBoletas}'
+        cell.value = f'R N° {numeroRendicion}/1-{nBoletas}'
         workbook.save(excelMatrixRoot)
         workbook = openpyxl.load_workbook(excelMatrixRoot)
         sheet: openpyxl.worksheet.worksheet.Worksheet = workbook.active

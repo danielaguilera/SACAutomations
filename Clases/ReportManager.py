@@ -80,6 +80,16 @@ class ReportManager:
                         self.reportTable.insert(nombreDestinatario, END, values=tableData, open=True)
                     self.reportTable.item(nombreDestinatario, values=(nombreDestinatario, mailDestinatario,'','','','','',''))
     
+    def getRendicionNumberFromMatrix(self, nombreDestinatario: str, nombreCliente: str):
+        excelMatrixRoot = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Rendición {nombreCliente}.xlsx'
+        if not os.path.exists(excelMatrixRoot):
+            return 0
+        workbook = openpyxl.load_workbook(excelMatrixRoot)
+        sheet = workbook.active
+        cell = sheet.cell(row = 1, column = 8)
+        label: str = cell.value
+        return int(label.split(' ')[2].split('/')[0])
+    
     def displayThumbnail(self, key=None):
         data = self.reportTable.item(self.reportTable.selection()[0])['values']
         if not(data[2] and data[3]):
@@ -119,9 +129,10 @@ class ReportManager:
         self.sacConnector.deleteBoletaData(numBoleta=numBoleta, idMapsa=idMapsa)
         deleteIfExists(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{numBoleta}_{idMapsa}')
         rows = self.sacConnector.getClienteMatrixRows(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente)
+        numeroRendicion: int = self.getRendicionNumberFromMatrix(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente)
         if rows:
             fileGenerator: PDFGenerator = PDFGenerator()
-            fileGenerator.updateExcelMatrix(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente)
+            fileGenerator.updateExcelMatrix(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente, numeroRendicion=numeroRendicion)
         else:
             print('NO HAY FILAS, ELIMINANDO...')
             deleteFileIfExists(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Rendición {nombreCliente}.xlsx')
