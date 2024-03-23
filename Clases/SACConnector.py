@@ -350,14 +350,15 @@ class SACConnector:
                 '''
         self.cursorData.execute(query)
         dataCaso = self.cursorData.fetchall()[0]
-        nOperacion = str(dataCaso[0])
-        nFolio = str(dataCaso[1])
+        nOperacion = str(dataCaso[0]) if dataCaso[0] else '-'
+        nFolio = str(dataCaso[1]) if dataCaso else '-'
         apellidoDeudor = dataCaso[2]
         nombreDeudor = dataCaso[3]
         rows: list[BoletaMatrixRow] = []
         for dataServicio in dataServicios:
             codigo: str = dataServicio[5]
-            item, nombreServicio = codigo.split(' ')[0:2]
+            item: str = codigo.split(' ')[0]
+            nombreServicio: str = ' '.join(codigo.split(' ')[1::])
             monto: int = int(dataServicio[3])
             row: BoletaMatrixRow = BoletaMatrixRow(nombreDeudor=apellidoDeudor + ' ' + nombreDeudor,
                                                    nOperacion=nOperacion,
