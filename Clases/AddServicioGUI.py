@@ -22,10 +22,10 @@ class AddServicioGUI:
                 self.codigoDropdown.grid(row=1, column=index, padx=5, pady=5)
                 self.codigoDropdown.bind("<<ComboboxSelected>>", self.writeCodeNote)
             elif index == 1:
-                self.notaEntry = Entry(master=self.formFrame)
+                self.notaEntry = Entry(master=self.formFrame, justify='center')
                 self.notaEntry.grid(row=1, column=index, padx=5, pady=5)
             elif index == 2:
-                self.montoEntry = Entry(master=self.formFrame)
+                self.montoEntry = Entry(master=self.formFrame, justify='center')
                 self.montoEntry.grid(row=1, column=index, padx=5, pady=5)
             elif index == 3:
                 self.setTotalButton = Button(master=self.formFrame, text='Poner monto restante', fg = 'black', bg='RoyalBlue1', command=self.setTotalAmount)

@@ -77,21 +77,21 @@ class App:
         self.numBoletaFrame.pack(expand=True, fill=BOTH)
         self.numBoletaLabel = Label(master=self.numBoletaFrame, text='N° Boleta')
         self.numBoletaLabel.pack(side=LEFT)
-        self.numBoletaEntry = Entry(master=self.numBoletaFrame)
+        self.numBoletaEntry = Entry(master=self.numBoletaFrame, justify='center')
         self.numBoletaEntry.pack(side=LEFT, padx=5)
         
         self.fechaBoletaFrame = Frame(master=self.stateFrame)
         self.fechaBoletaFrame.pack(expand=True, fill=BOTH)
         self.fechaBoletaLabel = Label(master=self.fechaBoletaFrame, text='Fecha emisión (dd-mm-AAAA)')
         self.fechaBoletaLabel.pack(side=LEFT) 
-        self.fechaBoletaEntry: Entry = Entry(master=self.fechaBoletaFrame)
+        self.fechaBoletaEntry: Entry = Entry(master=self.fechaBoletaFrame, justify='center')
         self.fechaBoletaEntry.pack(side=LEFT, padx=5)
         
         self.rutBeneficiarioFrame = Frame(master=self.stateFrame)
         self.rutBeneficiarioFrame.pack(expand=True, fill=BOTH)
         self.rutBeneficiarioLabel = Label(master=self.rutBeneficiarioFrame, text='RUT Beneficiario')
         self.rutBeneficiarioLabel.pack(side=LEFT) 
-        self.rutBeneficiarioEntry = Entry(master=self.rutBeneficiarioFrame)
+        self.rutBeneficiarioEntry = Entry(master=self.rutBeneficiarioFrame, justify='center')
         self.rutBeneficiarioEntry.pack(side=LEFT, padx=5)
         self.rutBeneficiarioEntry.bind("<KeyRelease>", self.findBeneficiario)
         
@@ -107,7 +107,7 @@ class App:
         self.rutDeudorFrame.pack(expand=True, fill=BOTH)
         self.rutDeudorLabel = Label(master=self.rutDeudorFrame, text='RUT Deudor')
         self.rutDeudorLabel.pack(side=LEFT) 
-        self.rutDeudorEntry = Entry(master=self.rutDeudorFrame)
+        self.rutDeudorEntry = Entry(master=self.rutDeudorFrame, justify='center')
         self.rutDeudorEntry.pack(side=LEFT, padx=5)
         self.rutDeudorEntry.bind("<KeyRelease>", self.populateCasos) 
         
@@ -115,7 +115,7 @@ class App:
         self.nombreDeudorFrame.pack(expand=True, fill=BOTH)
         self.nombreDeudorLabel = Label(master=self.nombreDeudorFrame, text='Nombre deudor')
         self.nombreDeudorLabel.pack(side=LEFT) 
-        self.nombreDeudorEntry = Entry(master=self.nombreDeudorFrame)
+        self.nombreDeudorEntry = Entry(master=self.nombreDeudorFrame, justify='center')
         self.nombreDeudorEntry.pack(side=LEFT, padx=5)
         self.nombreDeudorEntry.bind("<KeyRelease>", self.populateCasos) 
 
@@ -123,7 +123,7 @@ class App:
         self.apellidoDeudorFrame.pack(expand=True, fill=BOTH)
         self.apellidoDeudorLabel = Label(master=self.apellidoDeudorFrame, text='Apellido deudor')
         self.apellidoDeudorLabel.pack(side=LEFT) 
-        self.apellidoDeudorEntry = Entry(master=self.apellidoDeudorFrame)
+        self.apellidoDeudorEntry = Entry(master=self.apellidoDeudorFrame, justify='center')
         self.apellidoDeudorEntry.pack(side=LEFT, padx=5)
         self.apellidoDeudorEntry.bind("<KeyRelease>", self.populateCasos)
         
@@ -144,7 +144,7 @@ class App:
         self.gastoTotalFrame.pack(expand=True, fill=BOTH)
         self.gastoTotalLabel = Label(master=self.gastoTotalFrame, text='Total ($)')
         self.gastoTotalLabel.pack(side=LEFT)
-        self.gastoTotalEntry = Entry(master=self.gastoTotalFrame)
+        self.gastoTotalEntry = Entry(master=self.gastoTotalFrame, justify='center')
         self.gastoTotalEntry.pack(side=LEFT, padx=5)
         
         self.destinatarioFrame = Frame(master=self.stateFrame)
