@@ -10,6 +10,7 @@ from Clases.Beneficiario import Beneficiario
 from Clases.Destinatario import Destinatario
 from Clases.ReporteData import ReporteData
 from Clases.Boleta import Boleta
+from Clases.Codigo import Codigo
 from datetime import datetime
 from Utils.GlobalFunctions import *
 from Clases.Caso import Caso
@@ -33,6 +34,7 @@ class SACConnector:
         self.mapsaTable: str = 'Mapsa'
         self.boletasTable: str = 'Boletas'
         self.gastosTable: str = 'ITEM-Gastos'
+        self.valoresTable: str = 'ITEM-Valores'
         self.destinatariosTable: str = 'Destinatarios'
         self.gestionesTable: str = 'Gestiones'
         
@@ -144,15 +146,27 @@ class SACConnector:
             clientesData.append(Cliente(idCliente=idCliente, nombreCliente=nombreCliente, factura=factura))
         return clientesData
     
-    def getAllCodigos(self) -> list[str]:
-        codigosData: list[str] = []
+    def getAllCodigos(self) -> list[Codigo]:
+        codigos: list[Codigo] = []
+        precios: dict = dict()
+        self.cursorData.execute(f'''
+                                    SELECT *
+                                    FROM "{self.valoresTable}"
+                                ''')
+        for data in self.cursorData.fetchall():
+            precio = int(data[0].replace('$','').replace('.','')) if data[0] else 0
+            item = data[1]
+            precios[item] = precio
         self.cursorData.execute(f'''
                                     SELECT ITEM
                                     FROM "{self.gastosTable}"
                                 ''')
         for data in self.cursorData.fetchall():
-            codigosData.append(data[0])
-        return codigosData
+            item = data[0][0:4]
+            descripcion = data[0][5::]
+            valor = precios.get(item, 0)
+            codigos.append(Codigo(item=item, descripcion=descripcion, montoReferencial=valor))
+        return codigos
     
     def getAllBeneficiarios(self) -> list[Beneficiario]:
         beneficiariosData: list[Beneficiario] = []
@@ -394,6 +408,15 @@ class SACConnector:
             rows.extend(self.getBoletaMatrixRows(numBoleta=numBoleta))
         return rows
     
+    def getCodigoMontoReferencial(self, codigo: str) -> int:
+        self.cursorData.execute(f'''
+                                    SELECT "$  REFERENCIA"
+                                    FROM "ITEM-VALORES"
+                                    WHERE ITEM = {codigo}
+                                ''')
+        result = self.cursorData.fetchall()[0][0]
+        return int(result)
+    
     def getClienteFromCasoId(self, idMapsa: int) -> Cliente | None:
         self.cursorData.execute(f'''
                                     SELECT m.Cliente, c.Cliente
@@ -409,10 +432,6 @@ class SACConnector:
             return Cliente(idCliente=idCliente, nombreCliente=nombreCliente)
         else:
             return None
-                    
-        
-        
-        
         
     def getRecurrentGestiones(self, delay: timedelta, idsCasos: list[int]) -> list[Gestion]:
         if not idsCasos:

@@ -36,7 +36,6 @@ class App:
         
         self.sacConnector: SACConnector = SACConnector()
         self.clientes: list[Cliente] = self.sacConnector.getAllClientes()
-        self.codigos: list[str] = self.sacConnector.getAllCodigos()
         self.beneficiarios: list[Beneficiario] = self.sacConnector.getAllBeneficiarios()
         self.destinatarios: list[Destinatario] = self.sacConnector.getAllDestinatarios()
         self.casos: list[Caso] = []
