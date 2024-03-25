@@ -85,9 +85,11 @@ def containsRUT(text: str):
     except Exception:
         return False
 
-
 def validRUTFormat(originalRUT: str) -> bool:
     return originalRUT == correctRUTFormat(originalRUT=originalRUT)
+
+def validRendicionNumber(rendicionNumber: str) -> bool:
+    return rendicionNumber.isdigit()
 
 def validDateFormat(dateString: str) -> bool:
     try:

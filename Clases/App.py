@@ -130,7 +130,7 @@ class App:
         self.clienteFrame.pack(expand=True, fill=BOTH)
         self.clienteLabel = Label(master=self.clienteFrame, text='Cliente')
         self.clienteLabel.pack(side=LEFT)
-        self.clienteDropdown = ttk.Combobox(master=self.clienteFrame, state='readonly', values=[cliente.nombreCliente for cliente in self.clientes] + ['Ninguno'])
+        self.clienteDropdown = ttk.Combobox(master=self.clienteFrame, state='readonly', values=[cliente.nombreCliente for cliente in self.clientes] + ['Ninguno'], justify='center')
         self.clienteDropdown.pack(side=LEFT, padx=5)
         self.clienteDropdown.bind("<<ComboboxSelected>>", self.clienteSelectionEvent)
         self.rendicionLabel = Label(master=self.clienteFrame, text='# Rendición')
@@ -238,6 +238,8 @@ class App:
         casoSet: Caso | None = next((caso for caso in self.casos if caso.idMapsa == idMapsa), None)
         if not casoSet:
             return 0
+        if not self.destinatario:
+            return 0
         nombreDestinatario = self.destinatario.nombreDestinatario
         nombreCliente = casoSet.nombreCliente
         excelMatrixRoot = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Rendición {nombreCliente}.xlsx'
@@ -296,6 +298,9 @@ class App:
             return False
         if not validDateFormat(self.fechaBoletaEntry.get()):
             messagebox.showerror(title='Error', message='Debes poner la fecha en formato dd-mm-AAAA')
+            return False
+        if not validRendicionNumber(self.rendicionEntry.get()):
+            messagebox.showerror(title='Error', message='El número de rendición debe ser un entero')
             return False
         if self.boletaAlreadyGenerated():
             messagebox.showerror(title='Error', message=f'Ya existe un reporte para la boleta # {self.numBoletaEntry.get()}')
