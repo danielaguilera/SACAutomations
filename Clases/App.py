@@ -302,10 +302,17 @@ class App:
         if not validRendicionNumber(self.rendicionEntry.get()):
             messagebox.showerror(title='Error', message='El número de rendición debe ser un entero')
             return False
+        if self.casoAlreadyInBoleta():
+            messagebox.showerror(title='Error', message='Ya hay una boleta asociada a este caso')
+            return False
         if self.boletaAlreadyGenerated():
             messagebox.showerror(title='Error', message=f'Ya existe un reporte para la boleta # {self.numBoletaEntry.get()}')
             return False
         return True     
+    
+    def casoAlreadyInBoleta(self) -> bool:
+        idMapsaSelected: int = int(self.casosTable.item(self.casosTable.focus())['values'][0])
+        return bool(self.sacConnector.getBoletasFromCaso(idCaso=idMapsaSelected))
     
     def boletaAlreadyGenerated(self):
         if not self.numBoletaEntry.get().isdigit():
@@ -330,8 +337,8 @@ class App:
                 if iid == 'total':
                     continue
                 codigo, nota, monto = self.serviciosTable.item(iid)['values']
+                codigo = codigo.replace(': ','')
                 servicios.append(Servicio(codigo=codigo, nota=nota, monto=monto))
-            numeroRendicion = int(self.rendicionEntry.get())
             boleta: Boleta = Boleta(idMapsa=idMapsa, 
                                     numBoleta=numBoleta, 
                                     fechaEmision=fechaEmision, 

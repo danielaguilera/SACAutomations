@@ -365,7 +365,7 @@ class SACConnector:
         self.cursorData.execute(query)
         dataCaso = self.cursorData.fetchall()[0]
         nOperacion = str(dataCaso[0]) if dataCaso[0] else '-'
-        nFolio = str(dataCaso[1]) if dataCaso else '-'
+        nFolio = str(dataCaso[1]) if dataCaso[1] else '-'
         apellidoDeudor = dataCaso[2]
         nombreDeudor = dataCaso[3]
         rows: list[BoletaMatrixRow] = []
@@ -410,13 +410,22 @@ class SACConnector:
     
     def getCodigoMontoReferencial(self, codigo: str) -> int:
         self.cursorData.execute(f'''
-                                    SELECT "$  REFERENCIA"
+                                    SELECT "$    REFERENCIA"
                                     FROM "ITEM-VALORES"
                                     WHERE ITEM = {codigo}
                                 ''')
         result = self.cursorData.fetchall()[0][0]
         return int(result)
     
+    def getBoletasFromCaso(self, idCaso: int) -> list[int]:
+        self.cursorBoleta.execute(f'''
+                                    SELECT Numero
+                                    FROM {self.boletasTable}
+                                    WHERE Idboleta = {idCaso} AND Check = False
+                                  ''')
+        data = [elem[0] for elem in self.cursorBoleta.fetchall()]
+        return data
+            
     def getClienteFromCasoId(self, idMapsa: int) -> Cliente | None:
         self.cursorData.execute(f'''
                                     SELECT m.Cliente, c.Cliente
