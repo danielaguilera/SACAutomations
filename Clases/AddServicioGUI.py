@@ -32,7 +32,7 @@ class AddServicioGUI:
                 self.setTotalButton = Button(master=self.formFrame, text='Poner monto restante', fg = 'black', bg='RoyalBlue1', command=self.setTotalAmount)
                 self.setTotalButton.grid(row=1, column=index, padx=5, pady=5)
             elif index == 4:
-                self.setReferenceButton = Button(master=self.formFrame, text='Poner monto referencial', fg = 'black', bg='RoyalBlue2', command=self.setReferenceAmount)
+                self.setReferenceButton = Button(master=self.formFrame, text='Poner monto referencial', fg = 'black', bg='deep sky blue', command=self.setReferenceAmount)
                 self.setReferenceButton.grid(row=1, column=index, padx=5, pady=5)
         self.actionFrame = Frame(master=self.toplevel)
         self.actionFrame.pack(expand=True, fill=BOTH)
@@ -64,6 +64,8 @@ class AddServicioGUI:
             
     def setReferenceAmount(self):
         item: str = self.codigoDropdown.get().strip().split(':')[0].strip()
+        if not item:
+            return
         valor: int = self.valores[item]
         self.montoEntry.delete(0, END)
         self.montoEntry.insert(0, valor)
