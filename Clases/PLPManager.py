@@ -157,7 +157,6 @@ class PLPManager:
         return any(keyWord in subject for keyWord in JUDICIAL_COLLECTION_KEYWORDS)
     
     def getRUTFromJudicialCollection(self, text: str) -> str:
-        print(text)
         lines: list[str] = text.upper().split('\n')
         for line in lines:
             if 'RUT' in line:

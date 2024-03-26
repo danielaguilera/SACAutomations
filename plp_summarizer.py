@@ -9,7 +9,6 @@ if __name__ == '__main__':
     plp = PLPManager()
     if len(sys.argv) == 2:
         date: datetime = datetime.strptime(sys.argv[1], '%d-%m-%Y')
-        print('date overwritten')
         plp.fetchDailyMails(date=date)
     else:
         plp.sendSummary()

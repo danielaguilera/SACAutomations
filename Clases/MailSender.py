@@ -31,8 +31,7 @@ class MailSender:
             msg.attach(attach)
         excelAttachment: str
         for excelAttachment in excelAttachments:
-            filename = excelAttachment.split('/')[-1]
-            print(filename)           
+            filename = excelAttachment.split('/')[-1]         
             with open(excelAttachment, "rb") as f:
                 attach = MIMEApplication(f.read(),_subtype="xlsx")
                 attach.add_header('Content-Disposition','attachment',filename=filename)
@@ -79,7 +78,6 @@ class MailSender:
         self.sendMail(receiverAddress='vahumada@gydabogados.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment, excelAttachments=excelMatrixRoots)
         with open(ACTIVITYLOGFILE, 'a') as file:
             file.write(f'{str(datetime.now())}: {USER} envió los resúmenes de la semana {getWeekMondayTimeStamp()} a {destinatario.correoDestinatario} ({"OFICIAL" if SEND == "send" else "DEMO"})\n')
-        print(f'Email a {destinatario.correoDestinatario} enviado!')
 
     def sendPLPSummary(self, text: str, attachFile: bool, date: datetime = datetime.now()):
         mailSubject: str = f'{"DEMO - ESTE EMAIL ES UNA PRUEBA Y NO CUENTA - " if SEND != "send" else ""}Resumen de solicitudes - {date.strftime("%d-%b-%Y")}'

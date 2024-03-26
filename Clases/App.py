@@ -365,7 +365,6 @@ class App:
                 writer.write(file)
             self.generateReport(boleta=boleta)
             self.saveParams()
-            print('Tiempo en subir boleta: ' + str(time.process_time() - start))
             if self.checkBoletaInDB() and self.checkBoletainFile():
                 messagebox.showinfo(title='Mensaje', message=f'Boleta n°{numBoleta} ingresada exitosamente')
                 with open(ACTIVITYLOGFILE, 'a') as file:
@@ -624,7 +623,6 @@ class App:
             messagebox.showinfo(title='Éxito', message='Reportes enviados')
             self.clearForm()
         except Exception as e:
-            print(e)
             messagebox.showerror(title='Error', message='SAC Sender no pudo ejecutarse')
         
     def openServicioGUI(self):

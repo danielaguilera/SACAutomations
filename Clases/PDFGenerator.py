@@ -130,7 +130,6 @@ class PDFGenerator:
         if not os.path.exists(f'{DELIVEREDDATAPATH}/{resumenBoleta.destinatario.nombreDestinatario}/{resumenBoleta.boleta.numBoleta}_{resumenBoleta.caso.idMapsa}'):
             os.makedirs(f'{DELIVEREDDATAPATH}/{resumenBoleta.destinatario.nombreDestinatario}/{resumenBoleta.boleta.numBoleta}_{resumenBoleta.caso.idMapsa}')
         pdf.output(f'{DELIVEREDDATAPATH}/{resumenBoleta.destinatario.nombreDestinatario}/{resumenBoleta.boleta.numBoleta}_{resumenBoleta.caso.idMapsa}/Reporte_{resumenBoleta.boleta.numBoleta}.pdf')
-        print(f'Reporte n°{resumenBoleta.boleta.numBoleta} generado!')
         self.updateExcelMatrix(nombreDestinatario=resumenBoleta.destinatario.nombreDestinatario,
                                nombreCliente=resumenBoleta.cliente.nombreCliente, numeroRendicion=resumenBoleta.numeroRendicion)
         

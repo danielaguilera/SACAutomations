@@ -10,14 +10,12 @@ if __name__ == '__main__':
     plp = PLPManager()
     try:
         sinceDate = datetime.strptime(sys.argv[1], '%d-%m-%Y')
-        print('date overwritten')
     except Exception:
         sinceDate = None
               
     try:
         plp.fetchMailData(date=sinceDate)
     except Exception as e:
-        print(str(e))
         with open('Params/mail_data.txt') as file:
             username, password = file.readline().strip().split(',')
         server = SMTPSERVERGYD

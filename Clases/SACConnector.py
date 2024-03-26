@@ -397,14 +397,11 @@ class SACConnector:
             idCaso = int(idCaso)
             filename = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{dirName}/Data_{numBoleta}.txt'
             if not os.path.exists(filename):
-                print(f"NO EXISTE {filename}")
                 continue
             with open(file=filename) as file:
                 fileNombreCliente = file.readline().strip().split(',')[5]
                 if nombreCliente != fileNombreCliente:
-                    print(f"{nombreCliente} != {fileNombreCliente}")
                     continue
-            print("COINCIDE")
             rows.extend(self.getBoletaMatrixRows(numBoleta=numBoleta))
         return rows
     

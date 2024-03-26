@@ -15,7 +15,6 @@ class SACSenderJob:
 
     def generateUnifiedDocument(self):
         if not os.path.exists(DELIVEREDDATAPATH):
-            print('No hay datos para enviar')
             sys.exit() 
         for nombreDestinatario in os.listdir(path=f'{DELIVEREDDATAPATH}'):
             pdfMerger: PdfMerger = PdfMerger()
@@ -36,14 +35,12 @@ class SACSenderJob:
 
     def generateSingleUnifiedDocument(self, nombreDestinatario: str):
         if not os.path.exists(DELIVEREDDATAPATH):
-            print('No hay datos para enviar')
             sys.exit() 
         pdfMerger: PdfMerger = PdfMerger()
         for path in os.listdir(path=f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
             if path[0] == 'R':
                 continue
             if path != 'Documento.pdf':
-                print(path)
                 numBoleta, idMapsa = (int(x) for x in path.strip().split('_'))
                 reportePath: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{path}/Reporte_{numBoleta}.pdf'
                 boletaPath: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{path}/Boleta_{numBoleta}.pdf'
@@ -58,7 +55,6 @@ class SACSenderJob:
     def sendSingleDestinatarioReports(self, nombreDestinatario: str):
         # Checks if there is data:
         if not os.path.exists(f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
-            print('No hay datos para enviar')
             sys.exit()        
 
         # Sending emails:
@@ -96,7 +92,6 @@ class SACSenderJob:
     def sendReports(self):
         # Checks if there is data:
         if not os.path.exists(DELIVEREDDATAPATH):
-            print('No hay datos para enviar')
             sys.exit()        
 
         # Sending emails:

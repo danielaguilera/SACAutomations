@@ -134,7 +134,6 @@ class ReportManager:
             fileGenerator: PDFGenerator = PDFGenerator()
             fileGenerator.updateExcelMatrix(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente, numeroRendicion=numeroRendicion)
         else:
-            print('NO HAY FILAS, ELIMINANDO...')
             deleteFileIfExists(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Rendición {nombreCliente}.xlsx')
         deleteIfEmpty(f'{DELIVEREDDATAPATH}/{nombreDestinatario}')
         deleteIfEmpty(f'{DELIVEREDDATAPATH}')
@@ -165,7 +164,6 @@ class ReportManager:
             messagebox.showinfo(title='Éxito', message='Reportes enviados')
             self.resetForm()
         except Exception as e:
-            print(e)
             messagebox.showerror(title='Error', message='SAC Sender no pudo ejecutarse')
 
     def sendAllReports(self):
@@ -181,7 +179,6 @@ class ReportManager:
             messagebox.showinfo(title='Éxito', message='Reportes enviados')
             self.resetForm()
         except Exception as e:
-            print(e)
             messagebox.showerror(title='Error', message='SAC Sender no pudo ejecutarse')
         
     def updateUnifiedDocument(self, nombreDestinatario: str):
