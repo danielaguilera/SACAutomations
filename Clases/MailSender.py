@@ -57,7 +57,7 @@ class MailSender:
         server.sendmail(self.senderUserName, receiverAddress, msg.as_string())
         server.quit()
         
-    def sendUnifiedDocument(self, destinatario: Destinatario):
+    def sendUnifiedDocument(self, destinatario: Destinatario, user: str):
         excelMatrixRoots: list[str] =[]
         for filename in os.listdir(f'{DELIVEREDDATAPATH}/{destinatario.nombreDestinatario}'):
             if filename[0] == 'R':
@@ -77,7 +77,7 @@ class MailSender:
         self.sendMail(receiverAddress='matias.gause@gmail.com', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment, excelAttachments=excelMatrixRoots)
         self.sendMail(receiverAddress='vahumada@gydabogados.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment, excelAttachments=excelMatrixRoots)
         with open(ACTIVITYLOGFILE, 'a') as file:
-            file.write(f'{str(datetime.now())}: {USER} envió los resúmenes de la semana {getWeekMondayTimeStamp()} a {destinatario.correoDestinatario} ({"OFICIAL" if SEND == "send" else "DEMO"})\n')
+            file.write(f'{str(datetime.now())}: {user} envió los resúmenes de la semana {getWeekMondayTimeStamp()} a {destinatario.correoDestinatario} ({"OFICIAL" if SEND == "send" else "DEMO"})\n')
 
     def sendPLPSummary(self, text: str, attachFile: bool, date: datetime = datetime.now()):
         mailSubject: str = f'{"DEMO - ESTE EMAIL ES UNA PRUEBA Y NO CUENTA - " if SEND != "send" else ""}Resumen de solicitudes - {date.strftime("%d-%b-%Y")}'

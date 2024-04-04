@@ -141,7 +141,7 @@ class ReportManager:
         messagebox.showinfo(title='INFO', message='Reporte borrado')
         self.resetForm()
         with open(ACTIVITYLOGFILE, 'a') as file:
-            file.write(f'{str(datetime.now())}: {USER} eliminó los archivos de boleta a enviar (NUMERO BOLETA: {numBoleta} - ID MAPSA: {idMapsa}) del destinatario {nombreDestinatario}\n')
+            file.write(f'{str(datetime.now())}: {self.container.user} eliminó los archivos de boleta a enviar (NUMERO BOLETA: {numBoleta} - ID MAPSA: {idMapsa}) del destinatario {nombreDestinatario}\n')
         
     def resetForm(self):
         self.toplevel.destroy()
@@ -160,7 +160,7 @@ class ReportManager:
         try:
             senderJob: SACSenderJob = SACSenderJob()
             senderJob.generateSingleUnifiedDocument(nombreDestinatario=nombreDestinatario)
-            senderJob.sendSingleDestinatarioReports(nombreDestinatario=nombreDestinatario)
+            senderJob.sendSingleDestinatarioReports(user=self.container.user, nombreDestinatario=nombreDestinatario)
             messagebox.showinfo(title='Éxito', message='Reportes enviados')
             self.resetForm()
         except Exception as e:

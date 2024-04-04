@@ -32,8 +32,8 @@ from openpyxl.styles import Border, Side, Alignment, NamedStyle
 
 
 class App:
-    def __init__(self):
-        
+    def __init__(self, user: str):
+        self.user = user
         self.sacConnector: SACConnector = SACConnector()
         self.clientes: list[Cliente] = self.sacConnector.getAllClientes()
         self.beneficiarios: list[Beneficiario] = self.sacConnector.getAllBeneficiarios()
@@ -368,7 +368,7 @@ class App:
             if self.checkBoletaInDB() and self.checkBoletainFile():
                 messagebox.showinfo(title='Mensaje', message=f'Boleta n°{numBoleta} ingresada exitosamente')
                 with open(ACTIVITYLOGFILE, 'a') as file:
-                    file.write(f'{str(datetime.now())}: {USER} añadió boleta a enviar (NUMERO BOLETA: {numBoleta} - ID MAPSA: {idMapsa}) para {self.destinatario.nombreDestinatario}\n')
+                    file.write(f'{str(datetime.now())}: {self.user} añadió boleta a enviar (NUMERO BOLETA: {numBoleta} - ID MAPSA: {idMapsa}) para {self.destinatario.nombreDestinatario}\n')
                     self.clearForm()
             else:
                 messagebox.showinfo(title='Error', message=f'Boleta n°{numBoleta} no se pudo subir correctamente. Por favor intentar nuevamente')
@@ -752,4 +752,4 @@ class App:
 
         self.master.destroy()
         self.master.update()
-        app: App = App()
+        app: App = App(user=self.user)

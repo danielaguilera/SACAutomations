@@ -52,7 +52,7 @@ class SACSenderJob:
         pdfMerger.write(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf')
         pdfMerger.close()
 
-    def sendSingleDestinatarioReports(self, nombreDestinatario: str):
+    def sendSingleDestinatarioReports(self, user: str, nombreDestinatario: str):
         # Checks if there is data:
         if not os.path.exists(f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
             sys.exit()        
@@ -74,7 +74,7 @@ class SACSenderJob:
                     correoDestinatario: str = file.readline().strip().split(',')[1] 
                 boletasSent.append((numBoleta, idMapsa))
         destinatario: Destinatario = Destinatario(nombreDestinatario=nombreDestinatario, correoDestinatario=correoDestinatario)
-        mailSender.sendUnifiedDocument(destinatario=destinatario)  
+        mailSender.sendUnifiedDocument(user=user,destinatario=destinatario)  
         if not os.path.exists(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}'):
             os.makedirs(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}')
         shutil.copy(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf', f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}/Documento.pdf')     
