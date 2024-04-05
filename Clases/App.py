@@ -302,12 +302,12 @@ class App:
         if not validRendicionNumber(self.rendicionEntry.get()):
             messagebox.showerror(title='Error', message='El número de rendición debe ser un entero')
             return False
-        if self.casoAlreadyInBoleta():
-            messagebox.showerror(title='Error', message='Ya hay una boleta asociada a este caso')
-            return False
-        if self.boletaAlreadyGenerated():
-            messagebox.showerror(title='Error', message=f'Ya existe un reporte para la boleta # {self.numBoletaEntry.get()}')
-            return False
+        # if self.casoAlreadyInBoleta():
+        #     messagebox.showerror(title='Error', message='Ya hay una boleta asociada a este caso')
+        #     return False
+        # if self.boletaAlreadyGenerated():
+        #     messagebox.showerror(title='Error', message=f'Ya existe un reporte para la boleta # {self.numBoletaEntry.get()}')
+        #     return False
         return True     
     
     def casoAlreadyInBoleta(self) -> bool:
