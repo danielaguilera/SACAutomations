@@ -11,6 +11,8 @@ from Clases.Servicio import Servicio
 from tkinter import messagebox
 import os
 import shutil
+import traceback
+import io
 # from PIL import ImageTk, Image
 import fitz
 
@@ -164,7 +166,11 @@ class ReportManager:
             messagebox.showinfo(title='Éxito', message='Reportes enviados')
             self.resetForm()
         except Exception as e:
-            messagebox.showerror(title='Error', message='SAC Sender no pudo ejecutarse')
+            stringBuffer = io.StringIO()
+            traceback.print_exc(file=stringBuffer)
+            tracebackString = stringBuffer.getvalue()
+            stringBuffer.close()
+            messagebox.showerror(title='Error', message=tracebackString)
 
     def sendAllReports(self):
         if not messagebox.askyesno(title='Aviso', message='Se enviarán todas las boletas de esta semana.\nEsto puede tardar unos minutos.\n¿Deseas continuar?'):
@@ -179,7 +185,15 @@ class ReportManager:
             messagebox.showinfo(title='Éxito', message='Reportes enviados')
             self.resetForm()
         except Exception as e:
-            messagebox.showerror(title='Error', message='SAC Sender no pudo ejecutarse')
+        # Crear un objeto StringIO para almacenar la salida
+            string_buffer = io.StringIO()
+            # Utilizar traceback para escribir la traza en el buffer de texto
+            traceback.print_exc(file=string_buffer)
+            # Obtener la traza como un string
+            traceback_string = string_buffer.getvalue()
+            # Cerrar el buffer
+            string_buffer.close()
+            messagebox.showerror(title='Error', message=traceback_string)
         
     def updateUnifiedDocument(self, nombreDestinatario: str):
         if not os.path.exists(DELIVEREDDATAPATH):

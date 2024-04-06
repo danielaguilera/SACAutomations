@@ -29,7 +29,8 @@ from openpyxl.styles import Alignment
 from openpyxl.styles import PatternFill
 from openpyxl.styles import Font
 from openpyxl.styles import Border, Side, Alignment, NamedStyle
-
+import traceback
+import io
 
 class App:
     def __init__(self, user: str):
@@ -623,7 +624,11 @@ class App:
             messagebox.showinfo(title='Éxito', message='Reportes enviados')
             self.clearForm()
         except Exception as e:
-            messagebox.showerror(title='Error', message='SAC Sender no pudo ejecutarse')
+            stringBuffer = io.StringIO()
+            traceback.print_exc(file=stringBuffer)
+            tracebackString = stringBuffer.getvalue()
+            stringBuffer.close()
+            messagebox.showerror(title='Error', message=tracebackString)
         
     def openServicioGUI(self):
         addServicioGUI: AddServicioGUI = AddServicioGUI(container=self)
