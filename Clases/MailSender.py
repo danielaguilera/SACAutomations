@@ -57,7 +57,7 @@ class MailSender:
         server.sendmail(self.senderUserName, receiverAddress, msg.as_string())
         server.quit()
         
-    def sendUnifiedDocument(self, destinatario: Destinatario, user: str):
+    def sendUnifiedDocument(self, destinatario: Destinatario, user: str = 'Servidor'):
         excelMatrixRoots: list[str] =[]
         for filename in os.listdir(f'{DELIVEREDDATAPATH}/{destinatario.nombreDestinatario}'):
             if filename[0] == 'R':
