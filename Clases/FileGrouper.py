@@ -47,7 +47,7 @@ class DocumentoUnificado:
         paths: list[str] = []
         pdfMerger: PdfMerger = PdfMerger()
         for numBoleta, idMapsa in zip(self.numsBoletas, self.idsMapsa):
-            reportePath: str = f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/Reporte_{numBoleta}_{idMapsa}.pdf'
+            reportePath: str = f'{DELIVEREDDATAPATH}/{numBoleta}_{idMapsa}/Reporte_{numBoleta}.pdf'
             boletaPath: str = f'{DELIVEREDDATAPATH}/{numBoleta}_{idMapsa}/Boleta_{numBoleta}.pdf'
             anexoPath: str = f'{DELIVEREDDATAPATH}/{numBoleta}_{idMapsa}/Anexo_{numBoleta}.pdf'
             paths.append(reportePath)
