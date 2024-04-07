@@ -1,3 +1,4 @@
+import openpyxl
 from Clases.BoletaMatrixRow import BoletaMatrixRow
 from Clases.Gestion import Gestion
 from Utils.Metadata import *

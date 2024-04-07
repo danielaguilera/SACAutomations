@@ -139,7 +139,7 @@ class PDFGenerator:
         self.createExcelMatrix(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente)
         conn: SACConnector = SACConnector()
         for dirName in os.listdir(path=f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
-            if dirName[0] == 'R': # AQUI SE DEBEN PONER SOLO DEL CLIENTE
+            if dirName[0] in ['R', 'D']: # AQUI SE DEBEN PONER SOLO DEL CLIENTE
                  continue
             numBoleta, idMapsa = dirName.split('_')
             numBoleta = int(numBoleta)

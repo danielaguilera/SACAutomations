@@ -376,9 +376,13 @@ class App:
                 self.clearBoletaFiles()
                 self.clearBoletaFromDB()
         except Exception as e:
-           messagebox.showinfo(title='Error', message=str(e))
-           self.clearBoletaFiles()
-           self.clearBoletaFromDB()
+            stringBuffer = io.StringIO()
+            traceback.print_exc(file=stringBuffer)
+            tracebackString = stringBuffer.getvalue()
+            stringBuffer.close()
+            messagebox.showinfo(title='Error', message=tracebackString)
+            self.clearBoletaFiles()
+            self.clearBoletaFromDB()
 
     def checkBoletainFile(self) -> bool:
         boletaExists: bool = os.path.exists(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{self.numBoleta}_{self.idMapsa}/Boleta_{self.numBoleta}.pdf')
