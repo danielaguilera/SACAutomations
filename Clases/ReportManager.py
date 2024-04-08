@@ -210,9 +210,9 @@ class ReportManager:
                 if os.path.exists(anexoPath):
                     pdfMerger.append(anexoPath)
         pdfMerger.write(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf')
-        if not os.path.exists(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}'):
-            os.makedirs(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}')
-        shutil.copy(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf', f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}/Documento.pdf')
+        if not os.path.exists(f'{GENERATEDREPORTSPATH}/{datetime.today().strftime("%Y-%m-%d")}/{nombreDestinatario}'):
+            os.makedirs(f'{GENERATEDREPORTSPATH}/{datetime.today().strftime("%Y-%m-%d")}/{nombreDestinatario}')
+        shutil.copy(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf', f'{GENERATEDREPORTSPATH}/{datetime.today().strftime("%Y-%m-%d")}/{nombreDestinatario}/Documento.pdf')
         pdfMerger.close()
 
     def generateUnifiedDocument(self):
@@ -231,9 +231,9 @@ class ReportManager:
                     if os.path.exists(anexoPath):
                         pdfMerger.append(anexoPath)
             pdfMerger.write(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf')
-            if not os.path.exists(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}'):
-                os.makedirs(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}')
-            shutil.copy(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf', f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}/Documento.pdf')
+            if not os.path.exists(f'{GENERATEDREPORTSPATH}/{datetime.today().strftime("%Y-%m-%d")}/{nombreDestinatario}'):
+                os.makedirs(f'{GENERATEDREPORTSPATH}/{datetime.today().strftime("%Y-%m-%d")}/{nombreDestinatario}')
+            shutil.copy(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf', f'{GENERATEDREPORTSPATH}/{datetime.today().strftime("%Y-%m-%d")}/{nombreDestinatario}/Documento.pdf')
         pdfMerger.close()
                 
                     

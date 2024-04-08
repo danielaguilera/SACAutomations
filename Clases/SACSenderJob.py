@@ -16,6 +16,9 @@ class SACSenderJob:
     def generateUnifiedDocument(self):
         if not os.path.exists(DELIVEREDDATAPATH):
             sys.exit() 
+        if not os.listdir(DELIVEREDDATAPATH):
+            os.rmdir(DELIVEREDDATAPATH)
+            sys.exit() 
         for nombreDestinatario in os.listdir(path=f'{DELIVEREDDATAPATH}'):
             pdfMerger: PdfMerger = PdfMerger()
             for path in os.listdir(path=f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
@@ -35,6 +38,9 @@ class SACSenderJob:
 
     def generateSingleUnifiedDocument(self, nombreDestinatario: str):
         if not os.path.exists(DELIVEREDDATAPATH):
+            sys.exit()
+        if not os.listdir(DELIVEREDDATAPATH):
+            os.rmdir(DELIVEREDDATAPATH)
             sys.exit() 
         pdfMerger: PdfMerger = PdfMerger()
         for path in os.listdir(path=f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
@@ -75,9 +81,12 @@ class SACSenderJob:
                 boletasSent.append((numBoleta, idMapsa))
         destinatario: Destinatario = Destinatario(nombreDestinatario=nombreDestinatario, correoDestinatario=correoDestinatario)
         mailSender.sendUnifiedDocument(user=user,destinatario=destinatario)  
-        if not os.path.exists(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}'):
-            os.makedirs(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}')
-        shutil.copy(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf', f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}/Documento.pdf')     
+        if not os.path.exists(f'{GENERATEDREPORTSPATH}/{datetime.today().strftime("%Y-%m-%d")}/{nombreDestinatario}'):
+            os.makedirs(f'{GENERATEDREPORTSPATH}/{datetime.today().strftime("%Y-%m-%d")}/{nombreDestinatario}')
+        shutil.copy(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf', f'{GENERATEDREPORTSPATH}/{datetime.today().strftime("%Y-%m-%d")}/{nombreDestinatario}/Documento.pdf')     
+        for filename in os.listdir(path=f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
+            if filename[0] == 'R':
+                shutil.copy(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{filename}', f'{GENERATEDREPORTSPATH}/{datetime.today().strftime("%Y-%m-%d")}/{nombreDestinatario}/{filename}')
         
         # Setting boleta data as printed:
         boletaData: tuple
@@ -113,10 +122,13 @@ class SACSenderJob:
                     boletasSent.append((numBoleta, idMapsa))
             destinatario: Destinatario = Destinatario(nombreDestinatario=nombreDestinatario, correoDestinatario=correoDestinatario)
             mailSender.sendUnifiedDocument(destinatario=destinatario)  
-            if not os.path.exists(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}'):
-                os.makedirs(f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}')
-            shutil.copy(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf', f'{GENERATEDREPORTSPATH}/Semana_{getWeekMondayTimeStamp()}/{nombreDestinatario}/Documento.pdf')     
-        
+            if not os.path.exists(f'{GENERATEDREPORTSPATH}/{datetime.today().strftime("%Y-%m-%d")}/{nombreDestinatario}'):
+                os.makedirs(f'{GENERATEDREPORTSPATH}/{datetime.today().strftime("%Y-%m-%d")}/{nombreDestinatario}')
+            shutil.copy(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf', f'{GENERATEDREPORTSPATH}/{datetime.today().strftime("%Y-%m-%d")}/{nombreDestinatario}/Resumen_{datetime.today().strftime("%Y-%m-%d")}.pdf')     
+            for filename in os.listdir(path=f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
+                if filename[0] == 'R':
+                    shutil.copy(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{filename}', f'{GENERATEDREPORTSPATH}/{datetime.today().strftime("%Y-%m-%d")}/{nombreDestinatario}/{filename}')
+            
         # Setting boleta data as printed:
         boletaData: tuple
         sacConnector: SACConnector = SACConnector()

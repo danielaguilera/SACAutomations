@@ -136,9 +136,8 @@ class App:
         self.clienteDropdown.bind("<<ComboboxSelected>>", self.clienteSelectionEvent)
         self.rendicionLabel = Label(master=self.clienteFrame, text='# Rendición')
         self.rendicionLabel.pack(side=LEFT, padx=5)
-        self.rendicionEntry = Entry(master=self.clienteFrame, justify='center')
-        self.rendicionEntry.pack(side=LEFT, padx=5)
-        self.rendicionEntry.insert(0, '-')
+        self.rendicionLabel = Label(master=self.clienteFrame, text='-')
+        self.rendicionLabel.pack(side=LEFT, padx=5)
         
         self.gastoTotalFrame = Frame(master=self.stateFrame)
         self.gastoTotalFrame.pack(expand=True, fill=BOTH)
@@ -243,14 +242,7 @@ class App:
             return 0
         nombreDestinatario = self.destinatario.nombreDestinatario
         nombreCliente = casoSet.nombreCliente
-        excelMatrixRoot = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Rendición {nombreCliente}.xlsx'
-        if not os.path.exists(excelMatrixRoot):
-            return 0
-        workbook = openpyxl.load_workbook(excelMatrixRoot)
-        sheet = workbook.active
-        cell = sheet.cell(row = 1, column = 8)
-        label: str = cell.value
-        return int(label.split(' ')[2].split('/')[0])
+        return self.sacConnector.getRendicionNumber(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente)
     
     def runReportManager(self):
         if not os.path.exists(DELIVEREDDATAPATH):
@@ -299,9 +291,6 @@ class App:
             return False
         if not validDateFormat(self.fechaBoletaEntry.get()):
             messagebox.showerror(title='Error', message='Debes poner la fecha en formato dd-mm-AAAA')
-            return False
-        if not validRendicionNumber(self.rendicionEntry.get()):
-            messagebox.showerror(title='Error', message='El número de rendición debe ser un entero')
             return False
         # if self.casoAlreadyInBoleta():
         #     messagebox.showerror(title='Error', message='Ya hay una boleta asociada a este caso')
@@ -470,7 +459,7 @@ class App:
         casoSet: Caso | None = next((caso for caso in self.casos if caso.idMapsa == idMapsa), None)
         destinatarioSet: Destinatario = self.destinatario
         serviciosSet: list[Servicio] = boleta.servicios
-        numeroRendicion: int = int(self.rendicionEntry.get())
+        numeroRendicion: int = int(self.rendicionLabel.cget("text"))
         beneficiarioSet: Beneficiario = Beneficiario(rutBeneficiario=self.rutBeneficiarioEntry.get(), 
                                                      nombreBeneficiario=self.nombreBeneficiarioDropdown.get())
         clienteSet: Cliente = next((cliente for cliente in self.clientes if cliente.idCliente == casoSet.idCliente), None)
@@ -723,8 +712,7 @@ class App:
             self.apellidoDeudorEntry.delete(0, END)
             self.apellidoDeudorEntry.insert(0, apellidoDeudor)
             rendicionNumero = self.getClienteRendicion()
-            self.rendicionEntry.delete(0, END)
-            self.rendicionEntry.insert(0, rendicionNumero)
+            self.rendicionLabel.config(text=rendicionNumero)
             self.setDestinatario()
     
     def beginClearForm(self):

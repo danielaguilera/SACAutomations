@@ -406,6 +406,28 @@ class SACConnector:
             rows.extend(self.getBoletaMatrixRows(numBoleta=numBoleta))
         return rows
     
+    def getRendicionNumber(self, nombreDestinatario: str, nombreCliente: str) -> int:
+        if not os.path.exists(GENERATEDREPORTSPATH):
+            return 1
+        if not os.listdir(GENERATEDREPORTSPATH):
+            return 1
+        dirNames = list(filter(lambda x:x[0] != 'S', os.listdir(GENERATEDREPORTSPATH)))
+        dates: list[datetime] = [datetime.strptime(dirName, '%Y-%m-%d') for dirName in os.listdir(GENERATEDREPORTSPATH)]
+        dates.sort(reverse=True)
+        date: datetime
+        for date in dates:
+            dirName = str(date).split(' ')[0]
+            for destinatarioName in os.listdir(f'{GENERATEDREPORTSPATH}/{dirName}'):
+                if destinatarioName == nombreDestinatario:
+                    maxNumber: int = 0
+                    for filename in os.listdir(f'{GENERATEDREPORTSPATH}/{dirName}/{nombreDestinatario}'):
+                        if nombreCliente in filename:
+                            number = int(filename.replace('.xlsx', '')[-1])
+                            if number > maxNumber:
+                                maxNumber = number
+                    return maxNumber + 1
+        return 1
+    
     def getCodigoMontoReferencial(self, codigo: str) -> int:
         self.cursorData.execute(f'''
                                     SELECT "$    REFERENCIA"

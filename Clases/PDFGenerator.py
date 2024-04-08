@@ -15,7 +15,7 @@ from openpyxl.styles import Border, Side, Alignment, NamedStyle
 
 class PDFGenerator:
     def __init__(self):
-        pass
+        self.sacConnector = SACConnector()
         
     def generateReporte(self, resumenBoleta: Resumen):
         contactoReporte : str = resumenBoleta.destinatario.nombreDestinatario
@@ -131,10 +131,11 @@ class PDFGenerator:
             os.makedirs(f'{DELIVEREDDATAPATH}/{resumenBoleta.destinatario.nombreDestinatario}/{resumenBoleta.boleta.numBoleta}_{resumenBoleta.caso.idMapsa}')
         pdf.output(f'{DELIVEREDDATAPATH}/{resumenBoleta.destinatario.nombreDestinatario}/{resumenBoleta.boleta.numBoleta}_{resumenBoleta.caso.idMapsa}/Reporte_{resumenBoleta.boleta.numBoleta}.pdf')
         self.updateExcelMatrix(nombreDestinatario=resumenBoleta.destinatario.nombreDestinatario,
-                               nombreCliente=resumenBoleta.cliente.nombreCliente, numeroRendicion=resumenBoleta.numeroRendicion)
+                               nombreCliente=resumenBoleta.cliente.nombreCliente)
         
-    def updateExcelMatrix(self, nombreDestinatario: str, nombreCliente: str, numeroRendicion: int = 0):
-        excelMatrixRoot: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Rendición {nombreCliente}.xlsx'
+    def updateExcelMatrix(self, nombreDestinatario: str, nombreCliente: str):
+        numeroRendicion = self.sacConnector.getRendicionNumber(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente)
+        excelMatrixRoot: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Rendición_{nombreCliente}_{numeroRendicion}.xlsx'
         deleteFileIfExists(excelMatrixRoot)
         self.createExcelMatrix(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente)
         conn: SACConnector = SACConnector()
@@ -152,7 +153,7 @@ class PDFGenerator:
     def createExcelMatrix(self, nombreDestinatario: str, nombreCliente: str):
         workbook = openpyxl.Workbook()
         worksheet = workbook.active
-
+        numeroRendicion = self.sacConnector.getRendicionNumber(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente)
         headers = [' NOMBRE DEUDOR ', ' OPERACIÓN ', ' FOLIO ', ' ITEM ', ' SERVICIO ', ' RUT PRESTADOR ', ' PRESTADOR ', ' N°DOC ', ' MONTO ', ' N°BOLETA ', ' FECHA PAGO ']
         cell = worksheet.cell(row = 1, column = 1)
         pattern = PatternFill(start_color=YELLOW, end_color=YELLOW, fill_type='solid')
@@ -164,7 +165,7 @@ class PDFGenerator:
         worksheet.merge_cells(f'B1:G1')
         cell = worksheet.cell(row = 1, column = 8)
         cell.fill = pattern
-        cell.value = 'R N° 0/0-0'
+        cell.value = f'R N° {numeroRendicion}/0-0'
         worksheet.merge_cells(f'H1:I1')
         cell = worksheet.cell(row = 1, column = 10)
         cell.fill = pattern
@@ -183,10 +184,11 @@ class PDFGenerator:
             cell.font = font
             cell.fill = pattern
             i = not i
-        workbook.save(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Rendición {nombreCliente}.xlsx')
+        workbook.save(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Rendición_{nombreCliente}_{numeroRendicion}.xlsx')
         
     def addBoletaDataToExcelMatrix(self, nombreDestinatario: str, nombreCliente: str, numBoleta: int):
-        excelMatrixRoot: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Rendición {nombreCliente}.xlsx'
+        numeroRendicion = self.sacConnector.getRendicionNumber(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente)
+        excelMatrixRoot: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Rendición_{nombreCliente}_{numeroRendicion}.xlsx'
         if not os.path.exists(excelMatrixRoot):
             self.createExcelMatrix(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente)
         workbook = openpyxl.load_workbook(excelMatrixRoot)
@@ -258,7 +260,7 @@ class PDFGenerator:
         workbook.save(excelMatrixRoot)
 
     def updateMatrixTotalValues(self, nombreDestinatario: str, nombreCliente: str, numeroRendicion: int = 0):
-        excelMatrixRoot: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Rendición {nombreCliente}.xlsx'
+        excelMatrixRoot: str = f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Rendición_{nombreCliente}_{numeroRendicion}.xlsx'
         if not os.path.exists(excelMatrixRoot):
             self.createExcelMatrix(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente)
         workbook = openpyxl.load_workbook(excelMatrixRoot)
