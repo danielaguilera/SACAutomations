@@ -248,6 +248,9 @@ class App:
         if not os.path.exists(DELIVEREDDATAPATH):
             messagebox.showerror(title='ERROR', message='No se han cargado boletas para enviar.\nNo hay nada que mostrar.')
             return
+        if not os.listdir(DELIVEREDDATAPATH):
+            messagebox.showerror(title='ERROR', message='No se han cargado boletas para enviar.\nNo hay nada que mostrar.')
+            return
         reportManager: ReportManager = ReportManager(container=self)
 
     def rootFilesOpen(self) -> bool:

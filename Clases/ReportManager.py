@@ -13,6 +13,7 @@ import os
 import shutil
 import traceback
 import io
+import threading
 # from PIL import ImageTk, Image
 import fitz
 
@@ -27,6 +28,7 @@ class ReportManager:
         self.container = container
         self.toplevel = Toplevel(background='seashell4')
         self.toplevel.title(string='Reportes a enviar')
+        self.toplevel.protocol("WM_DELETE_WINDOW", self.onClosingWindow)
         self.thumbnailFrame = Frame(master=self.toplevel)
         self.thumbnailFrame.pack(side=RIGHT)
         self.reporteImage = None
@@ -46,17 +48,24 @@ class ReportManager:
         self.actionFrame = Frame(master=self.toplevel)
         self.actionFrame.pack(expand=True, fill=BOTH)
 
-        self.sendButton = Button(master=self.actionFrame, text='Enviar todo', width=40, height=1, font=('Helvetica bold', 15), fg = 'black', bg='RoyalBlue1', command=self.sendAllReports)
+        self.sendButton = Button(master=self.actionFrame, text='Enviar todo', width=40, height=1, font=('Helvetica bold', 15), fg = 'black', bg='RoyalBlue1', command=self.triggerSendAllReports)
         self.sendButton.pack(expand=False, fill=BOTH)   
 
-        self.sendDestinatarioButton = Button(master=self.actionFrame, text='Enviar todo del destinatario', width=40, height=1, font=('Helvetica bold', 15), fg = 'black', bg='lawngreen', command=self.sendDestinatarioReports)
+        self.sendDestinatarioButton = Button(master=self.actionFrame, text='Enviar todo del destinatario', width=40, height=1, font=('Helvetica bold', 15), fg = 'black', bg='lawngreen', command=self.triggerSendDestinatarioReports)
         self.sendDestinatarioButton.pack(expand=False, fill=BOTH)      
 
         self.deleteButton = Button(master=self.actionFrame, text='Eliminar reporte', width=40, height=1, font=('Helvetica bold', 15), fg = 'black', bg='indian red', command=self.deleteReport)
         self.deleteButton.pack(expand=False, fill=BOTH)
         
+        self.toplevel.grab_set()
+        self.container.master.withdraw()
+        
         self.getReports()
         
+    def onClosingWindow(self):
+        self.container.master.deiconify()
+        self.toplevel.destroy()
+    
     def getReports(self):
         if not os.path.exists(DELIVEREDDATAPATH):
             return
@@ -141,16 +150,17 @@ class ReportManager:
         deleteIfEmpty(f'{DELIVEREDDATAPATH}')
         
         messagebox.showinfo(title='INFO', message='Reporte borrado')
-        self.resetForm()
         with open(ACTIVITYLOGFILE, 'a') as file:
             file.write(f'{str(datetime.now())}: {self.container.user} eliminó los archivos de boleta a enviar (NUMERO BOLETA: {numBoleta} - ID MAPSA: {idMapsa}) del destinatario {nombreDestinatario}\n')
+        self.toplevel.destroy()
+        self.container.master.deiconify()
         
     def resetForm(self):
         self.toplevel.destroy()
         self.toplevel.update()
         reportManager: ReportManager = ReportManager(container=self.container)
-
-    def sendDestinatarioReports(self):
+        
+    def triggerSendDestinatarioReports(self):
         if not self.reportTable.focus():
             return
         data = self.reportTable.item(self.reportTable.selection()[0])['values']
@@ -159,12 +169,44 @@ class ReportManager:
         nombreDestinatario: str = data[0]
         if not messagebox.askyesno(title='Aviso', message=f'Se enviarán todas las boletas de esta semana para {nombreDestinatario}.\nEsto puede tardar unos minutos.\n¿Deseas continuar?'):
             return
+        p = threading.Thread(target=self.sendDestinatarioReports)
+        p.start()
+        
+    def triggerSendAllReports(self):
+        if not messagebox.askyesno(title='Aviso', message='Se enviarán todas las guardadas hasta hoy.\nEsto puede tardar unos minutos.\n¿Deseas continuar?'):
+            return
+        p = threading.Thread(target=self.sendAllReports)
+        p.start()
+
+    def sendDestinatarioReports(self):
+        if not self.reportTable.focus():
+            return
+        data = self.reportTable.item(self.reportTable.selection()[0])['values']
+        if data[2]:
+            return
+        nombreDestinatario: str = data[0]
         try:
+            
+            # Mostrar la ventana emergente de carga
+            loadingWindow = Toplevel(self.container.master)
+            loadingWindow.grab_set()
+            loadingWindow.title("Cargando...")
+            
+            # Añadir animación de carga
+            loadingLabel = ttk.Label(loadingWindow, text="Enviando... Por favor no cerrar la ventana")
+            loadingLabel.pack(padx=20, pady=20)
+            progressBar = ttk.Progressbar(loadingWindow, mode="determinate")
+            progressBar.pack(padx=20, pady=10)
+            progressBar.start()
+            
             senderJob: SACSenderJob = SACSenderJob()
             senderJob.generateSingleUnifiedDocument(nombreDestinatario=nombreDestinatario)
             senderJob.sendSingleDestinatarioReports(user=self.container.user, nombreDestinatario=nombreDestinatario)
+            loadingWindow.destroy()
             messagebox.showinfo(title='Éxito', message='Reportes enviados')
-            self.resetForm()
+            self.toplevel.destroy()
+            self.container.master.deiconify()
+
         except Exception as e:
             stringBuffer = io.StringIO()
             traceback.print_exc(file=stringBuffer)
@@ -173,17 +215,33 @@ class ReportManager:
             messagebox.showerror(title='Error', message=tracebackString)
 
     def sendAllReports(self):
-        if not messagebox.askyesno(title='Aviso', message='Se enviarán todas las boletas de esta semana.\nEsto puede tardar unos minutos.\n¿Deseas continuar?'):
-            return
         try:
             if not os.path.exists(DELIVEREDDATAPATH):
                 messagebox.showerror(title='Error', message='No hay reportes para enviar')
                 return
+
+            # Mostrar la ventana emergente de carga
+            loadingWindow = Toplevel(self.container.master)
+            loadingWindow.grab_set()
+            loadingWindow.title("Cargando...")
+
+            # Añadir animación de carga
+            loadingLabel = ttk.Label(loadingWindow, text="Enviando... Por favor no cerrar la ventana")
+            loadingLabel.pack(padx=20, pady=20)
+            progressBar = ttk.Progressbar(loadingWindow, mode="determinate")
+            progressBar.pack(padx=20, pady=10)
+            progressBar.start()
+
             senderJob: SACSenderJob = SACSenderJob()
             senderJob.generateUnifiedDocument()
             senderJob.sendReports()
+            
+            loadingWindow.destroy()
+            self.container.master.deiconify()
+            self.toplevel.destroy()
+            
             messagebox.showinfo(title='Éxito', message='Reportes enviados')
-            self.resetForm()
+            
         except Exception as e:
             stringBuffer = io.StringIO()
             traceback.print_exc(file=stringBuffer)
