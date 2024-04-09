@@ -24,7 +24,7 @@ from unidecode import unidecode
 import fitz
 import re
 import time
-import openpyxl
+import threading
 from openpyxl.styles import Alignment
 from openpyxl.styles import PatternFill
 from openpyxl.styles import Font

@@ -149,7 +149,7 @@ class ReportManager:
         loadingWindow.title("Cargando...")
             
         # Añadir animación de carga
-        loadingLabel = ttk.Label(loadingWindow, text="Enviando... Por favor no cerrar la ventana")
+        loadingLabel = ttk.Label(loadingWindow, text="Borrando... Por favor no cerrar la ventana")
         loadingLabel.pack(padx=20, pady=20)
         progressBar = ttk.Progressbar(loadingWindow, mode="determinate")
         progressBar.pack(padx=20, pady=10)
