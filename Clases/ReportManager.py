@@ -54,7 +54,7 @@ class ReportManager:
         self.sendDestinatarioButton = Button(master=self.actionFrame, text='Enviar todo del destinatario', width=40, height=1, font=('Helvetica bold', 15), fg = 'black', bg='lawngreen', command=self.triggerSendDestinatarioReports)
         self.sendDestinatarioButton.pack(expand=False, fill=BOTH)      
 
-        self.deleteButton = Button(master=self.actionFrame, text='Eliminar reporte', width=40, height=1, font=('Helvetica bold', 15), fg = 'black', bg='indian red', command=self.deleteReport)
+        self.deleteButton = Button(master=self.actionFrame, text='Eliminar reporte', width=40, height=1, font=('Helvetica bold', 15), fg = 'black', bg='indian red', command=self.triggerDeleteReport)
         self.deleteButton.pack(expand=False, fill=BOTH)
         
         self.toplevel.grab_set()
@@ -124,8 +124,8 @@ class ReportManager:
         self.reporteImage = PhotoImage(file='thumbnail.png')
         self.thumbnail.config(image=self.reporteImage)
         self.thumbnail.pack()
-    
-    def deleteReport(self):
+        
+    def triggerDeleteReport(self):
         if not self.reportTable.focus():
             return
         data = self.reportTable.item(self.reportTable.selection()[0])['values']
@@ -133,6 +133,28 @@ class ReportManager:
             return
         if not messagebox.askyesno(title='Aviso', message='¿Estás segur@ de que quieres borrar los datos para esta boleta?'):
             return
+        p = threading.Thread(target=self.deleteReport)
+        p.start()
+    
+    def deleteReport(self):        
+        if not self.reportTable.focus():
+            return
+        data = self.reportTable.item(self.reportTable.selection()[0])['values']
+        if not(data[2] and data[3]):
+            return
+        
+        # Mostrar la ventana emergente de carga
+        loadingWindow = Toplevel(self.container.master)
+        loadingWindow.grab_set()
+        loadingWindow.title("Cargando...")
+            
+        # Añadir animación de carga
+        loadingLabel = ttk.Label(loadingWindow, text="Enviando... Por favor no cerrar la ventana")
+        loadingLabel.pack(padx=20, pady=20)
+        progressBar = ttk.Progressbar(loadingWindow, mode="determinate")
+        progressBar.pack(padx=20, pady=10)
+        progressBar.start()
+        
         numBoleta: int = int(data[2])
         idMapsa: int = int(data[3])
         nombreDestinatario: str = self.reportTable.item(self.reportTable.parent(self.reportTable.selection()[0]))['values'][0]
@@ -149,9 +171,12 @@ class ReportManager:
         deleteIfEmpty(f'{DELIVEREDDATAPATH}/{nombreDestinatario}')
         deleteIfEmpty(f'{DELIVEREDDATAPATH}')
         
+        loadingWindow.destroy()
+        
         messagebox.showinfo(title='INFO', message='Reporte borrado')
         with open(ACTIVITYLOGFILE, 'a') as file:
             file.write(f'{str(datetime.now())}: {self.container.user} eliminó los archivos de boleta a enviar (NUMERO BOLETA: {numBoleta} - ID MAPSA: {idMapsa}) del destinatario {nombreDestinatario}\n')
+            
         self.toplevel.destroy()
         self.container.master.deiconify()
         

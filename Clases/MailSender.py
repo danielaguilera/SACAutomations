@@ -27,7 +27,7 @@ class MailSender:
         msg.attach(MIMEText(mailContent, 'plain'))
         with open(mailAttachment, "rb") as f:
             attach = MIMEApplication(f.read(),_subtype="pdf")
-            attach.add_header('Content-Disposition','attachment',filename='Resumen.pdf')
+            attach.add_header('Content-Disposition','attachment',filename=f'Resumen_{datetime.today().strftime("%d/%m/%Y")}.pdf')
             msg.attach(attach)
         excelAttachment: str
         for excelAttachment in excelAttachments:
@@ -63,8 +63,8 @@ class MailSender:
             if filename[0] == 'R':
                 excelMatrixRoots.append(f'{DELIVEREDDATAPATH}/{destinatario.nombreDestinatario}/{filename}')
         receiverAddress: str = destinatario.correoDestinatario
-        mailSubject: str = f'{"DEMO - ESTE EMAIL ES UNA PRUEBA Y NO CUENTA - " if SEND != "send" else ""}Envío reportes semana {getWeekMondayTimeStamp()}'
-        mailContent: str = f'Estimad@ {destinatario.nombreDestinatario}: \n\nJunto con saludar, se adjunta el resumen de las facturas correspondientes a la semana de {getWeekMondayTimeStamp("long")} y sus respectivas rendiciones de gastos.\nSaludos cordiales,\nGause y Abogados'
+        mailSubject: str = f'{"DEMO - ESTE EMAIL ES UNA PRUEBA Y NO CUENTA - " if SEND != "send" else ""}Envío reportes semana {getWeekMondayTimeStamp()} - {datetime.today().strftime("%d/%m/%Y")}'
+        mailContent: str = f'Estimad@ {destinatario.nombreDestinatario}: \n\nJunto con saludar, se adjunta el resumen de las facturas correspondientes a la semana de {getWeekMondayTimeStamp("long")}, a la fecha {datetime.today().strftime("%d/%m/%Y")} y sus respectivas rendiciones de gastos.\nSaludos cordiales,\nGause y Abogados'
         mailAttachment: str = f'{DELIVEREDDATAPATH}/{destinatario.nombreDestinatario}/Documento.pdf'
         if SEND == 'send':
             self.sendMail(receiverAddress=receiverAddress, mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment, excelAttachments=excelMatrixRoots)
