@@ -185,15 +185,11 @@ class ReportManager:
             messagebox.showinfo(title='Éxito', message='Reportes enviados')
             self.resetForm()
         except Exception as e:
-        # Crear un objeto StringIO para almacenar la salida
-            string_buffer = io.StringIO()
-            # Utilizar traceback para escribir la traza en el buffer de texto
-            traceback.print_exc(file=string_buffer)
-            # Obtener la traza como un string
-            traceback_string = string_buffer.getvalue()
-            # Cerrar el buffer
-            string_buffer.close()
-            messagebox.showerror(title='Error', message=traceback_string)
+            stringBuffer = io.StringIO()
+            traceback.print_exc(file=stringBuffer)
+            tracebackString = stringBuffer.getvalue()
+            stringBuffer.close()
+            messagebox.showerror(title='Error', message=tracebackString)
         
     def updateUnifiedDocument(self, nombreDestinatario: str):
         if not os.path.exists(DELIVEREDDATAPATH):
