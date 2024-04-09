@@ -231,6 +231,7 @@ class ReportManager:
             messagebox.showinfo(title='Éxito', message='Reportes enviados')
             self.toplevel.destroy()
             self.container.master.deiconify()
+            self.container.clearForm()
 
         except Exception as e:
             stringBuffer = io.StringIO()
@@ -263,6 +264,7 @@ class ReportManager:
             
             loadingWindow.destroy()
             self.container.master.deiconify()
+            self.container.clearForm()
             self.toplevel.destroy()
             
             messagebox.showinfo(title='Éxito', message='Reportes enviados')

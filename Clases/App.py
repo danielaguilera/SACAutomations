@@ -765,6 +765,7 @@ class App:
         self.serviciosTable.delete(*self.serviciosTable.get_children())
         self.uploadedAnexosLabel.config(text='No se han subido anexos')
         self.uploadedBoletaLabel.config(text='No se ha subido boleta')
+        self.rendicionLabel.config(text='-')
         self.clearCacheFiles()
 
         #self.master.destroy()
