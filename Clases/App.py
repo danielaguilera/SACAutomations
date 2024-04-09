@@ -312,14 +312,21 @@ class App:
             return False
         numBoleta: int = int(self.numBoletaEntry.get())
         return bool(self.sacConnector.getBoletaData(numBoleta=numBoleta))
-                
-    def saveChanges(self):
+    
+    def processSaveChanges(self):
+        # Mostrar la ventana emergente de carga
+        loadingWindow = Toplevel(self.master)
+        loadingWindow.grab_set()
+        loadingWindow.title("Cargando...")
+            
+        # Añadir animación de carga
+        loadingLabel = ttk.Label(loadingWindow, text="Creando reporte... Por favor no cerrar la ventana")
+        loadingLabel.pack(padx=20, pady=20)
+        progressBar = ttk.Progressbar(loadingWindow, mode="determinate")
+        progressBar.pack(padx=20, pady=10)
+        progressBar.start()
+        
         try:
-            start = time.process_time() 
-            if not self.validData():
-                return  
-            if not messagebox.askyesno(title='Aviso', message='¿Estás segur@ de querer guardar los datos?'):
-                return
             dataSelected: list = self.casosTable.item(self.casosTable.focus())['values']
             idMapsa: int = dataSelected[0]
             numBoleta: int = int(self.numBoletaEntry.get())
@@ -358,11 +365,11 @@ class App:
                 writer.write(file)
             self.generateReport(boleta=boleta)
             self.saveParams()
+            loadingWindow.destroy()
             if self.checkBoletaInDB() and self.checkBoletainFile():
                 messagebox.showinfo(title='Mensaje', message=f'Boleta n°{numBoleta} ingresada exitosamente')
                 with open(ACTIVITYLOGFILE, 'a') as file:
                     file.write(f'{str(datetime.now())}: {self.user} añadió boleta a enviar (NUMERO BOLETA: {numBoleta} - ID MAPSA: {idMapsa}) para {self.destinatario.nombreDestinatario}\n')
-                    self.clearForm()
             else:
                 messagebox.showinfo(title='Error', message=f'Boleta n°{numBoleta} no se pudo subir correctamente. Por favor intentar nuevamente')
                 self.clearBoletaFiles()
@@ -372,9 +379,19 @@ class App:
             traceback.print_exc(file=stringBuffer)
             tracebackString = stringBuffer.getvalue()
             stringBuffer.close()
+            loadingWindow.destroy()
             messagebox.showinfo(title='Error', message=tracebackString)
             self.clearBoletaFiles()
             self.clearBoletaFromDB()
+        self.clearForm()
+            
+    def saveChanges(self): 
+        if not self.validData():
+            return  
+        if not messagebox.askyesno(title='Aviso', message='¿Estás segur@ de querer guardar los datos?'):
+            return
+        p = threading.Thread(target=self.processSaveChanges)
+        p.start()
 
     def checkBoletainFile(self) -> bool:
         boletaExists: bool = os.path.exists(f'{DELIVEREDDATAPATH}/{self.destinatario.nombreDestinatario}/{self.numBoleta}_{self.idMapsa}/Boleta_{self.numBoleta}.pdf')
@@ -750,6 +767,6 @@ class App:
         self.uploadedBoletaLabel.config(text='No se ha subido boleta')
         self.clearCacheFiles()
 
-        self.master.destroy()
-        self.master.update()
-        app: App = App(user=self.user)
+        #self.master.destroy()
+        #self.master.update()
+        #app: App = App(user=self.user)
