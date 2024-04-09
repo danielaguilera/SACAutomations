@@ -77,7 +77,7 @@ class SACSenderJob:
             if path != 'Documento.pdf':
                 numBoleta, idMapsa = (int(x) for x in path.strip().split('_'))
                 with open(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{path}/Data_{numBoleta}.txt','r') as file:
-                    correoDestinatario: str = file.readline().strip().split(',')[1] 
+                    correoDestinatario: str = file.readline().strip().split(';')[1] 
                 boletasSent.append((numBoleta, idMapsa))
         destinatario: Destinatario = Destinatario(nombreDestinatario=nombreDestinatario, correoDestinatario=correoDestinatario)
         mailSender.sendUnifiedDocument(user=user,destinatario=destinatario)  
@@ -118,7 +118,7 @@ class SACSenderJob:
                 if path != 'Documento.pdf':
                     numBoleta, idMapsa = (int(x) for x in path.strip().split('_'))
                     with open(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{path}/Data_{numBoleta}.txt','r') as file:
-                        correoDestinatario: str = file.readline().strip().split(',')[1] 
+                        correoDestinatario: str = file.readline().strip().split(';')[1] 
                     boletasSent.append((numBoleta, idMapsa))
             destinatario: Destinatario = Destinatario(nombreDestinatario=nombreDestinatario, correoDestinatario=correoDestinatario)
             mailSender.sendUnifiedDocument(destinatario=destinatario)  

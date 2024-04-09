@@ -400,7 +400,7 @@ class SACConnector:
             if not os.path.exists(filename):
                 continue
             with open(file=filename) as file:
-                fileNombreCliente = file.readline().strip().split(',')[5]
+                fileNombreCliente = file.readline().strip().split(';')[5]
                 if nombreCliente != fileNombreCliente:
                     continue
             rows.extend(self.getBoletaMatrixRows(numBoleta=numBoleta))

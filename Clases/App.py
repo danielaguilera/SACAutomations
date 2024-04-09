@@ -455,7 +455,7 @@ class App:
         deudorSet: str = self.apellidoDeudorEntry.get()
         montoTotalSet: str = self.gastoTotalEntry.get()     
         with open(f'{DELIVEREDDATAPATH}/{destinatarioSet.nombreDestinatario}/{numBoletaSet}_{idMapsaSet}/Data_{numBoletaSet}.txt', 'w') as file:
-            file.write(f'{destinatarioSet.nombreDestinatario},{destinatarioSet.correoDestinatario},{numBoletaSet},{idMapsaSet},{beneficiarioSet},{clienteSet},{deudorSet},{montoTotalSet}')
+            file.write(f'{destinatarioSet.nombreDestinatario};{destinatarioSet.correoDestinatario};{numBoletaSet};{idMapsaSet};{beneficiarioSet};{clienteSet};{deudorSet};{montoTotalSet}')
 
     def generateReport(self, boleta: Boleta):
         idMapsa: int = self.casosTable.item(self.casosTable.focus())['values'][0]

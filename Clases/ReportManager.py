@@ -78,7 +78,7 @@ class ReportManager:
                 if dirName != 'Documento.pdf':
                     numBoleta, idMapsa = [int(x) for x in dirName.strip().split('_')]
                     with open(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{numBoleta}_{idMapsa}/Data_{numBoleta}.txt') as file:
-                        data = file.readline().strip().split(',')
+                        data = file.readline().strip().split(';')
                         nombreDestinatario = data[0]
                         mailDestinatario = data[1]
                         numBoleta = data[2]
