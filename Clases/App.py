@@ -768,6 +768,8 @@ class App:
         self.uploadedAnexosLabel.config(text='No se han subido anexos')
         self.uploadedBoletaLabel.config(text='No se ha subido boleta')
         self.rendicionLabel.config(text='-')
+        self.thumbnailFrame.pack_forget()
+        self.thumbnail.pack_forget()
         self.clearCacheFiles()
 
         #self.master.destroy()
