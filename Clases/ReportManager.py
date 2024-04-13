@@ -181,6 +181,7 @@ class ReportManager:
             
         self.toplevel.destroy()
         self.container.master.deiconify()
+        self.container.master.wm_state('zoomed')
         
     def resetForm(self):
         self.toplevel.destroy()
@@ -233,6 +234,7 @@ class ReportManager:
             messagebox.showinfo(title='Éxito', message='Reportes enviados')
             self.toplevel.destroy()
             self.container.master.deiconify()
+            self.container.master.wm_state('zoomed')
             self.container.clearForm()
 
         except Exception as e:
@@ -266,6 +268,7 @@ class ReportManager:
             
             loadingWindow.destroy()
             self.container.master.deiconify()
+            self.container.master.wm_state('zoomed')
             self.container.clearForm()
             self.toplevel.destroy()
             

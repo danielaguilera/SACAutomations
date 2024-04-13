@@ -771,7 +771,3 @@ class App:
         self.thumbnailFrame.pack_forget()
         self.thumbnail.pack_forget()
         self.clearCacheFiles()
-
-        #self.master.destroy()
-        #self.master.update()
-        #app: App = App(user=self.user)
