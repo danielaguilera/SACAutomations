@@ -412,7 +412,7 @@ class SACConnector:
         if not os.listdir(GENERATEDREPORTSPATH):
             return 1
         dirNames = list(filter(lambda x:x[0] != 'S', os.listdir(GENERATEDREPORTSPATH)))
-        dates: list[datetime] = [datetime.strptime(dirName, '%Y-%m-%d') for dirName in os.listdir(GENERATEDREPORTSPATH)]
+        dates: list[datetime] = [datetime.strptime(dirName, '%Y-%m-%d') for dirName in dirNames]
         dates.sort(reverse=True)
         date: datetime
         for date in dates:
