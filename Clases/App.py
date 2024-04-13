@@ -44,6 +44,7 @@ class App:
         self.master = Tk()
         self.master.title("SAC App")
         self.master.protocol("WM_DELETE_WINDOW", self.onClosingWindow)
+        self.master.wm_state('zoomed')
         
         self.thumbnailFrame = Frame(master=self.master)
         self.thumbnailFrame.pack(side=RIGHT)

@@ -29,6 +29,7 @@ class ReportManager:
         self.toplevel = Toplevel(background='seashell4')
         self.toplevel.title(string='Reportes a enviar')
         self.toplevel.protocol("WM_DELETE_WINDOW", self.onClosingWindow)
+        self.toplevel.wm_state('zoomed')
         self.thumbnailFrame = Frame(master=self.toplevel)
         self.thumbnailFrame.pack(side=RIGHT)
         self.reporteImage = None
@@ -64,6 +65,7 @@ class ReportManager:
         
     def onClosingWindow(self):
         self.container.master.deiconify()
+        self.container.master.wm_state('zoomed')
         self.toplevel.destroy()
     
     def getReports(self):
