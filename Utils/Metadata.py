@@ -23,8 +23,8 @@ LOGPATH: str =  os.path.abspath(f"{SAC_PATH}/LogFiles")
 PLPREQUESTSPATH: str = os.path.abspath(f"{SAC_PATH}/Solicitudes.xlsx")
 PLPDATEOVERWRITEPATH: str = os.path.abspath(f"{SAC_PATH}/plp_date_overwrite.txt")
 
-LOGOPATH: str = os.path.abspath("Images/Logo.PNG")
-SIGNINGPATH: str = os.path.abspath("Images/Signing.PNG")
+LOGOPATH: str = os.path.abspath(f"{SAC_PATH}/Images/Logo.PNG")
+SIGNINGPATH: str = os.path.abspath(f"{SAC_PATH}/Images/Signing.PNG")
 
 ANEXO: str = 'Anexo'
 BOLETA: str = 'Boleta'
