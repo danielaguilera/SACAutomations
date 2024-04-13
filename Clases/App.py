@@ -763,6 +763,7 @@ class App:
         self.gastoTotalEntry.delete(0, END)
         self.casosTable.delete(*self.casosTable.get_children())
         self.serviciosTable.delete(*self.serviciosTable.get_children())
+        self.serviciosTable.insert('', END, values=('TOTAL', '-', 0), iid='total')
         self.uploadedAnexosLabel.config(text='No se han subido anexos')
         self.uploadedBoletaLabel.config(text='No se ha subido boleta')
         self.rendicionLabel.config(text='-')

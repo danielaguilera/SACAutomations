@@ -159,15 +159,15 @@ class ReportManager:
         idMapsa: int = int(data[3])
         nombreDestinatario: str = self.reportTable.item(self.reportTable.parent(self.reportTable.selection()[0]))['values'][0]
         nombreCliente: str = data[5]
+        numeroRendicion: int = self.sacConnector.getRendicionNumber(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente)
         self.sacConnector.deleteBoletaData(numBoleta=numBoleta, idMapsa=idMapsa)
         deleteIfExists(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{numBoleta}_{idMapsa}')
         rows = self.sacConnector.getClienteMatrixRows(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente)
-        numeroRendicion: int = self.getRendicionNumberFromMatrix(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente)
         if rows:
             fileGenerator: PDFGenerator = PDFGenerator()
-            fileGenerator.updateExcelMatrix(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente, numeroRendicion=numeroRendicion)
+            fileGenerator.updateExcelMatrix(nombreDestinatario=nombreDestinatario, nombreCliente=nombreCliente)
         else:
-            deleteFileIfExists(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Rendición {nombreCliente}.xlsx')
+            deleteFileIfExists(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Rendición_{nombreCliente}_{numeroRendicion}.xlsx')
         deleteIfEmpty(f'{DELIVEREDDATAPATH}/{nombreDestinatario}')
         deleteIfEmpty(f'{DELIVEREDDATAPATH}')
         
