@@ -194,6 +194,9 @@ class ReportManager:
         data = self.reportTable.item(self.reportTable.selection()[0])['values']
         if data[2]:
             return
+        if not checkInternetConnection():
+            messagebox.showerror(title='Error', message='No hay conexión a Internet.')
+            return
         nombreDestinatario: str = data[0]
         if not messagebox.askyesno(title='Aviso', message=f'Se enviarán todas las boletas de esta semana para {nombreDestinatario}.\nEsto puede tardar unos minutos.\n¿Deseas continuar?'):
             return
@@ -202,6 +205,9 @@ class ReportManager:
         
     def triggerSendAllReports(self):
         if not messagebox.askyesno(title='Aviso', message='Se enviarán todas las guardadas hasta hoy.\nEsto puede tardar unos minutos.\n¿Deseas continuar?'):
+            return
+        if not checkInternetConnection():
+            messagebox.showerror(title='Error', message='No hay conexión a Internet.')
             return
         p = threading.Thread(target=self.sendAllReports)
         p.start()
