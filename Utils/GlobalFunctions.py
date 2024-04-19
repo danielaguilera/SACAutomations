@@ -4,6 +4,14 @@ import re
 import locale
 import os
 import shutil
+import requests
+
+def checkInternetConnection():
+    try:
+        requests.get("http://google.com", timeout=8)
+        return True
+    except requests.ConnectionError:
+        return False
 
 def getCurrentSpanishTimestamp():
     now: datetime = datetime.now()
