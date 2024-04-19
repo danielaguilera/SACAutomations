@@ -34,7 +34,7 @@ class SACSenderJob:
                     if os.path.exists(anexoPath):
                         pdfMerger.append(anexoPath)
             pdfMerger.write(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf')
-        pdfMerger.close()
+            pdfMerger.close()
 
     def generateSingleUnifiedDocument(self, nombreDestinatario: str):
         if not os.path.exists(DELIVEREDDATAPATH):
@@ -101,7 +101,7 @@ class SACSenderJob:
     def sendReports(self):
         # Checks if there is data:
         if not os.path.exists(DELIVEREDDATAPATH):
-            sys.exit()        
+            sys.exit()
 
         # Sending emails:
         with open(MAILDATA, 'r') as file:
@@ -136,5 +136,5 @@ class SACSenderJob:
             numBoleta, idMapsa = boletaData
             sacConnector.setBoletaAsPrinted(numBoleta=numBoleta, idMapsa=idMapsa)
             
-        # Erasing generated folders:
+        #Erasing files:
         deleteIfExists(DELIVEREDDATAPATH)
