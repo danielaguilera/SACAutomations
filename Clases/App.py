@@ -296,6 +296,9 @@ class App:
         if not validDateFormat(self.fechaBoletaEntry.get()):
             messagebox.showerror(title='Error', message='Debes poner la fecha en formato dd-mm-AAAA')
             return False
+        if not self.rutDeudorEntry.get():
+            messagebox.showerror(title='Error', message='Debe haber un rut de deudor')
+            return False
         # if self.casoAlreadyInBoleta():
         #     messagebox.showerror(title='Error', message='Ya hay una boleta asociada a este caso')
         #     return False
@@ -768,6 +771,10 @@ class App:
         self.uploadedAnexosLabel.config(text='No se han subido anexos')
         self.uploadedBoletaLabel.config(text='No se ha subido boleta')
         self.rendicionLabel.config(text='-')
-        self.thumbnailFrame.pack_forget()
-        self.thumbnail.pack_forget()
+
+        self.boletaImage = PhotoImage(file='Images/Logo.PNG')
+        self.thumbnailFrame.pack(side=RIGHT)
+        self.thumbnail.config(image=self.boletaImage)
+        self.thumbnail.pack()
+
         self.clearCacheFiles()
