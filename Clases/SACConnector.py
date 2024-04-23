@@ -343,7 +343,7 @@ class SACConnector:
         query = f'''
                     SELECT IdBoleta, Numero, Fecha, Monto, "RUT Beneficiario", Codigo
                     FROM {self.boletasTable}
-                    WHERE Numero = {numBoleta}
+                    WHERE Numero = {numBoleta} AND Check = False
                 '''
         self.cursorBoleta.execute(query)
         dataServicios = self.cursorBoleta.fetchall()
