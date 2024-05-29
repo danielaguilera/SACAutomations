@@ -5,6 +5,7 @@ import shutil
 import os
 from tkinter import filedialog
 from Clases.Boleta import Boleta
+from Clases.MailSender import MailSender
 from Clases.PDFGenerator import PDFGenerator
 from Clases.Destinatario import Destinatario
 from Clases.Resumen import Resumen
@@ -373,6 +374,12 @@ class App:
             if self.checkBoletaInDB() and self.checkBoletainFile():
                 messagebox.showinfo(title='Mensaje', message=f'Boleta n°{numBoleta} ingresada exitosamente')
                 with open(ACTIVITYLOGFILE, 'a') as file:
+                    with open('Params/mail_data.txt') as credentials:
+                        username, password = credentials.readline().strip().split(',')
+                        server = SMTPSERVERGYD
+                        port = SMTPPORTGYD
+                        mailSender: MailSender = MailSender(senderUsername=username, senderPassword=password, smtpServer=server, smtpPort=port)
+                        mailSender.sendMessage(receiverAddress='draguilera@uc.cl', mailSubject=f'Actividad - {datetime.now()}', mailContent=f'{self.user} ingresó boleta #{self.numBoleta}, caso {idMapsa}')
                     file.write(f'{str(datetime.now())}: {self.user} añadió boleta a enviar (NUMERO BOLETA: {numBoleta} - ID MAPSA: {idMapsa}) para {self.destinatario.nombreDestinatario}\n')
             else:
                 messagebox.showinfo(title='Error', message=f'Boleta n°{numBoleta} no se pudo subir correctamente. Por favor intentar nuevamente')

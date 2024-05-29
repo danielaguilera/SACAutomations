@@ -78,6 +78,7 @@ class MailSender:
         self.sendMail(receiverAddress='vahumada@gydabogados.cl', mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment, excelAttachments=excelMatrixRoots)
         with open(ACTIVITYLOGFILE, 'a') as file:
             file.write(f'{str(datetime.now())}: {user} envió los resúmenes de la semana {getWeekMondayTimeStamp()} a {destinatario.correoDestinatario} ({"OFICIAL" if SEND == "send" else "DEMO"})\n')
+        self.sendMessage(receiverAddress='draguilera@uc.cl', mailSubject=f'Actividad - {datetime.now()}', mailContent=f'{user} envió los resúmenes de la semana {getWeekMondayTimeStamp()} a {destinatario.correoDestinatario}')
 
     def sendPLPSummary(self, text: str, attachFile: bool, date: datetime = datetime.now()):
         mailSubject: str = f'{"DEMO - ESTE EMAIL ES UNA PRUEBA Y NO CUENTA - " if SEND != "send" else ""}Resumen de solicitudes - {date.strftime("%d-%b-%Y")}'

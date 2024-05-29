@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import ttk
 
 from PyPDF2 import PdfMerger
+from Clases.MailSender import MailSender
 from Clases.PDFGenerator import PDFGenerator
 from Clases.SACConnector import SACConnector
 from Clases.SACSenderJob import SACSenderJob
@@ -177,6 +178,12 @@ class ReportManager:
         
         messagebox.showinfo(title='INFO', message='Reporte borrado')
         with open(ACTIVITYLOGFILE, 'a') as file:
+            with open('Params/mail_data.txt') as credentials:
+                username, password = credentials.readline().strip().split(',')
+                server = SMTPSERVERGYD
+                port = SMTPPORTGYD
+                mailSender: MailSender = MailSender(senderUsername=username, senderPassword=password, smtpServer=server, smtpPort=port)
+                mailSender.sendMessage(receiverAddress='draguilera@uc.cl', mailSubject=f'Actividad - {datetime.now()}', mailContent=f'{self.container.user} eliminó la boleta #{numBoleta}, caso {idMapsa}')
             file.write(f'{str(datetime.now())}: {self.container.user} eliminó los archivos de boleta a enviar (NUMERO BOLETA: {numBoleta} - ID MAPSA: {idMapsa}) del destinatario {nombreDestinatario}\n')
             
         self.toplevel.destroy()
