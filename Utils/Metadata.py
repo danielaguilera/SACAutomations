@@ -26,6 +26,8 @@ PLPDATEOVERWRITEPATH: str = os.path.abspath(f"{SAC_PATH}/plp_date_overwrite.txt"
 LOGOPATH: str = os.path.abspath(f"{SAC_PATH}/Images/Logo.PNG")
 SIGNINGPATH: str = os.path.abspath(f"{SAC_PATH}/Images/Signing.PNG")
 
+LOCKFILEPATH: str = os.path.abspath(f"{SAC_PATH}/temp.lock")
+
 ANEXO: str = 'Anexo'
 BOLETA: str = 'Boleta'
 REPORTE: str = 'Reporte'
@@ -66,6 +68,11 @@ REINICIADO: str = 'REINICIADO'
 PLPREQUESTCODE: str = '200.- Suspendido'
 PLPBREACHEDCODE: str = '201.- Reiniciado'
 FINISHEDCODE: str = '198.- Terminado/Finalizado'
+
+SENDING_ACTIVITY: str = 'sending'
+DELETING_ACTIVITY: str = 'deleting'
+ADDING_ACTIVITY: str = 'adding'
+VISUALIZING_ACTIVITY: str = 'visualizing'
 
 JUDICIAL_COLLECTION_STATES: dict[str] = {SOLICITUD_CONTINUAR: ACTIVO, SOLICITUD_RETIRAR: FINALIZADO, SOLICITUD_SUSPENDER: SUSPENDIDO}
 JUDICIAL_COLLECTION_ACTIONS: dict[str] = {SOLICITUD_CONTINUAR: PLPBREACHEDCODE, SOLICITUD_RETIRAR: FINISHEDCODE, SOLICITUD_SUSPENDER: PLPREQUESTCODE}

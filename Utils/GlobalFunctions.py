@@ -6,6 +6,29 @@ import os
 import shutil
 import requests
 
+class RunningTask:
+    def __init__(self, script: str, user: str):
+        self.script = script
+        self.user = user
+
+def createCacheFile(user: str, script: str):
+    with open(f'{SAC_PATH}/cache_{user}_{script}.txt','w') as file:
+        return
+
+def getCacheFiles() -> list[RunningTask]:
+    tasks: list[RunningTask] = []
+    for filename in os.listdir(SAC_PATH):
+        if 'cache' in filename:
+            _, user, script = filename.replace('.txt','').split('_')
+            task: RunningTask = RunningTask(script=script, user=user)
+            tasks.append(task)
+    return tasks
+
+def removeCacheFile(user: str, script: str):
+    root: str = f'{SAC_PATH}/cache_{user}_{script}.txt'
+    if os.path.exists(root):
+        os.remove(root)
+
 def checkInternetConnection():
     try:
         requests.get("http://google.com", timeout=8)

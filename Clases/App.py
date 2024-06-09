@@ -319,6 +319,9 @@ class App:
         return bool(self.sacConnector.getBoletaData(numBoleta=numBoleta))
     
     def processSaveChanges(self):
+        # Marcar actividad:
+        createCacheFile(user=self.user, script=ADDING_ACTIVITY)
+        
         # Mostrar la ventana emergente de carga
         loadingWindow = Toplevel(self.master)
         loadingWindow.grab_set()
@@ -394,7 +397,9 @@ class App:
             messagebox.showinfo(title='Error', message=tracebackString)
             self.clearBoletaFiles()
             self.clearBoletaFromDB()
-        self.clearForm()
+        finally:
+            removeCacheFile(user=self.user, script=ADDING_ACTIVITY)
+            self.clearForm()
             
     def saveChanges(self): 
         if not self.validData():
@@ -756,6 +761,7 @@ class App:
         deleteFileIfExists('result.png')
         
     def onClosingWindow(self):
+        removeCacheFile(user=self.user, script=VISUALIZING_ACTIVITY)
         self.clearCacheFiles()
         self.master.destroy()
         self.master.update()

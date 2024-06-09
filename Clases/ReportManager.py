@@ -134,6 +134,23 @@ class ReportManager:
         data = self.reportTable.item(self.reportTable.selection()[0])['values']
         if not(data[2] and data[3]):
             return
+        
+        if getCacheFiles():
+            task: RunningTask = getCacheFiles()[0]
+            print(task.script)
+            if task.script == SENDING_ACTIVITY:
+                messagebox.showerror(title='Error', message=f'{task.user} está enviando reportes.\n Por favor intente en unos segundos más.')
+                return            
+            elif task.script == DELETING_ACTIVITY:
+                messagebox.showerror(title='Error', message=f'{task.user} está eliminando reportes.\n Por favor intente en unos segundos más.')      
+                return
+            elif task.script == ADDING_ACTIVITY:
+                messagebox.showerror(title='Error', message=f'{task.user} está añadiendo reportes.\n Por favor intente en unos segundos más.')
+                return
+            elif task.script == VISUALIZING_ACTIVITY and task.user != self.container.user:
+                messagebox.showerror(title='Error', message=f'{task.user} está usando la app.\n Por favor intente más tarde.')
+                return
+        
         if not messagebox.askyesno(title='Aviso', message='¿Estás segur@ de que quieres borrar los datos para esta boleta?'):
             return
         p = threading.Thread(target=self.deleteReport)
@@ -145,6 +162,9 @@ class ReportManager:
         data = self.reportTable.item(self.reportTable.selection()[0])['values']
         if not(data[2] and data[3]):
             return
+        
+        # Marcar actividad:
+        createCacheFile(user=self.container.user, script=DELETING_ACTIVITY)
         
         # Mostrar la ventana emergente de carga
         loadingWindow = Toplevel(self.container.master)
@@ -190,6 +210,8 @@ class ReportManager:
         self.container.master.deiconify()
         self.container.master.wm_state('zoomed')
         
+        removeCacheFile(user=self.container.user, script=DELETING_ACTIVITY)
+        
     def resetForm(self):
         self.toplevel.destroy()
         self.toplevel.update()
@@ -205,16 +227,50 @@ class ReportManager:
             messagebox.showerror(title='Error', message='No hay conexión a Internet.')
             return
         nombreDestinatario: str = data[0]
+
+        if getCacheFiles():
+            task: RunningTask = getCacheFiles()[0]
+            print(task.script)
+            if task.script == SENDING_ACTIVITY:
+                messagebox.showerror(title='Error', message=f'{task.user} está enviando reportes.\n Por favor intente en unos segundos más.')
+                return            
+            elif task.script == DELETING_ACTIVITY:
+                messagebox.showerror(title='Error', message=f'{task.user} está eliminando reportes.\n Por favor intente en unos segundos más.')      
+                return
+            elif task.script == ADDING_ACTIVITY:
+                messagebox.showerror(title='Error', message=f'{task.user} está añadiendo reportes.\n Por favor intente en unos segundos más.')
+                return
+            elif task.script == VISUALIZING_ACTIVITY and task.user != self.container.user:
+                messagebox.showerror(title='Error', message=f'{task.user} está usando la app.\n Por favor intente más tarde.')
+                return
+        
         if not messagebox.askyesno(title='Aviso', message=f'Se enviarán todas las boletas de esta semana para {nombreDestinatario}.\nEsto puede tardar unos minutos.\n¿Deseas continuar?'):
             return
         p = threading.Thread(target=self.sendDestinatarioReports)
         p.start()
         
     def triggerSendAllReports(self):
-        if not messagebox.askyesno(title='Aviso', message='Se enviarán todas las guardadas hasta hoy.\nEsto puede tardar unos minutos.\n¿Deseas continuar?'):
-            return
         if not checkInternetConnection():
             messagebox.showerror(title='Error', message='No hay conexión a Internet.')
+            return
+        
+        if getCacheFiles():
+            task: RunningTask = getCacheFiles()[0]
+            print(task.script)
+            if task.script == SENDING_ACTIVITY:
+                messagebox.showerror(title='Error', message=f'{task.user} está enviando reportes.\n Por favor intente en unos segundos más.')
+                return            
+            elif task.script == DELETING_ACTIVITY:
+                messagebox.showerror(title='Error', message=f'{task.user} está eliminando reportes.\n Por favor intente en unos segundos más.')      
+                return
+            elif task.script == ADDING_ACTIVITY:
+                messagebox.showerror(title='Error', message=f'{task.user} está añadiendo reportes.\n Por favor intente en unos segundos más.')
+                return
+            elif task.script == VISUALIZING_ACTIVITY and task.user != self.container.user:
+                messagebox.showerror(title='Error', message=f'{task.user} está usando la app.\n Por favor intente más tarde.')
+                return
+        
+        if not messagebox.askyesno(title='Aviso', message='Se enviarán todas las boletas guardadas hasta hoy.\nEsto puede tardar unos minutos.\n¿Deseas continuar?'):
             return
         p = threading.Thread(target=self.sendAllReports)
         p.start()
@@ -227,6 +283,8 @@ class ReportManager:
             return
         nombreDestinatario: str = data[0]
         try:
+            # Marcar actividad:
+            createCacheFile(user=self.container.user, script=SENDING_ACTIVITY)
             
             # Mostrar la ventana emergente de carga
             loadingWindow = Toplevel(self.container.master)
@@ -256,12 +314,18 @@ class ReportManager:
             tracebackString = stringBuffer.getvalue()
             stringBuffer.close()
             messagebox.showerror(title='Error', message=tracebackString)
+            
+        finally:
+            removeCacheFile(user=self.container.user, script=SENDING_ACTIVITY)
 
     def sendAllReports(self):
         try:
             if not os.path.exists(DELIVEREDDATAPATH):
                 messagebox.showerror(title='Error', message='No hay reportes para enviar')
                 return
+            
+            # Marcar actividad:
+            createCacheFile(user=self.container.user, script=SENDING_ACTIVITY)
 
             # Mostrar la ventana emergente de carga
             loadingWindow = Toplevel(self.container.master)
@@ -293,6 +357,9 @@ class ReportManager:
             tracebackString = stringBuffer.getvalue()
             stringBuffer.close()
             messagebox.showerror(title='Error', message=tracebackString)
+            
+        finally:
+            removeCacheFile(user=self.container.user, script=SENDING_ACTIVITY)
         
     def updateUnifiedDocument(self, nombreDestinatario: str):
         if not os.path.exists(DELIVEREDDATAPATH):
