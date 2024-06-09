@@ -403,7 +403,20 @@ class App:
             
     def saveChanges(self): 
         if not self.validData():
-            return  
+            return
+        cacheTasks: list[RunningTask] = getCacheFiles()
+        if cacheTasks:
+            for task in cacheTasks:
+                if task.script == SENDING_ACTIVITY:
+                    messagebox.showerror(title='Error', message=f'{task.user} está enviando reportes.\n Por favor intente en unos segundos más.')
+                    return            
+                elif task.script == DELETING_ACTIVITY:
+                    messagebox.showerror(title='Error', message=f'{task.user} está eliminando reportes.\n Por favor intente en unos segundos más.')      
+                    return
+                elif task.script == ADDING_ACTIVITY:
+                    messagebox.showerror(title='Error', message=f'{task.user} está añadiendo reportes.\n Por favor intente en unos segundos más.')
+                    return
+          
         if not messagebox.askyesno(title='Aviso', message='¿Estás segur@ de querer guardar los datos?'):
             return
         p = threading.Thread(target=self.processSaveChanges)
