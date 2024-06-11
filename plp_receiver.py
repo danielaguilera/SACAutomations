@@ -27,5 +27,4 @@ if __name__ == '__main__':
         server = SMTPSERVERGYD
         port = SMTPPORTGYD
         mailSender: MailSender = MailSender(senderUsername=username, senderPassword=password, smtpServer=server, smtpPort=port)
-        mailSender.sendMessage(receiverAddress='draguilera@uc.cl', mailSubject=f'Error - {datetime.now()}', mailContent=tracebackString)
-        mailSender.sendMessage(receiverAddress='matias.gause@gmail.com', mailSubject=f'Error - {datetime.now()}', mailContent=tracebackString)
+        mailSender.sendMessage(receiverAddress='draguilera@uc.cl', mailSubject=f'[PLP RECEIVER] - [Error] - {datetime.now()}', mailContent=tracebackString)
