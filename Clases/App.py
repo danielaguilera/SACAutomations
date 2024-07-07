@@ -1,3 +1,4 @@
+import sys
 from tkinter import *
 from tkinter import messagebox
 from tkinter import ttk
@@ -36,6 +37,7 @@ import io
 class App:
     def __init__(self, user: str):
         self.user = user
+        self.mode = SEND
         self.sacConnector: SACConnector = SACConnector()
         self.clientes: list[Cliente] = self.sacConnector.getAllClientes()
         self.beneficiarios: list[Beneficiario] = self.sacConnector.getAllBeneficiarios()
@@ -300,12 +302,12 @@ class App:
         if not self.rutDeudorEntry.get():
             messagebox.showerror(title='Error', message='Debe haber un rut de deudor')
             return False
-        # if self.casoAlreadyInBoleta():
-        #     messagebox.showerror(title='Error', message='Ya hay una boleta asociada a este caso')
-        #     return False
-        # if self.boletaAlreadyGenerated():
-        #     messagebox.showerror(title='Error', message=f'Ya existe un reporte para la boleta # {self.numBoletaEntry.get()}')
-        #     return False
+        if self.casoAlreadyInBoleta():
+            messagebox.showerror(title='Error', message='Ya hay una boleta asociada a este caso')
+            return False
+        if self.boletaAlreadyGenerated():
+            messagebox.showerror(title='Error', message=f'Ya existe un reporte para la boleta # {self.numBoletaEntry.get()}')
+            return False
         return True     
     
     def casoAlreadyInBoleta(self) -> bool:
@@ -382,7 +384,7 @@ class App:
                         server = SMTPSERVERGYD
                         port = SMTPPORTGYD
                         mailSender: MailSender = MailSender(senderUsername=username, senderPassword=password, smtpServer=server, smtpPort=port)
-                        mailSender.sendMessage(receiverAddress='draguilera@uc.cl', mailSubject=f'Actividad - {datetime.now()}', mailContent=f'{self.user} ingresó boleta #{self.numBoleta}, caso {idMapsa}')
+                        mailSender.sendMessage(receiverAddress='draguilera@uc.cl', mailSubject=f'{"[DEMO] " if self.mode == "demo" else ""}Actividad - {datetime.now()}', mailContent=f'{self.user} ingresó boleta #{self.numBoleta}, caso {idMapsa}')
                     file.write(f'{str(datetime.now())}: {self.user} añadió boleta a enviar (NUMERO BOLETA: {numBoleta} - ID MAPSA: {idMapsa}) para {self.destinatario.nombreDestinatario}\n')
             else:
                 messagebox.showinfo(title='Error', message=f'Boleta n°{numBoleta} no se pudo subir correctamente. Por favor intentar nuevamente')
@@ -403,6 +405,9 @@ class App:
             
     def saveChanges(self): 
         if not self.validData():
+            return
+        if not checkInternetConnection():
+            messagebox.showerror(title='Error', message='No hay conexión a Internet')
             return
         cacheTasks: list[RunningTask] = getCacheFiles()
         if cacheTasks:
