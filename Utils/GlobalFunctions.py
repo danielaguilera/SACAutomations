@@ -28,6 +28,11 @@ def removeCacheFile(user: str, script: str):
     root: str = f'{SAC_PATH}/cache_{user}_{script}.txt'
     if os.path.exists(root):
         os.remove(root)
+        
+def removeAllCacheFiles():
+    for filename in os.listdir(f'{SAC_PATH}'):
+        if 'cache' in filename:
+            os.remove(f'{SAC_PATH}/{filename}')
 
 def checkInternetConnection():
     try:
