@@ -1,3 +1,4 @@
+from Clases.SACConnector import SACConnector
 from Clases.SACSenderJob import SACSenderJob
 from Clases.MailSender import MailSender
 from Utils.Metadata import *
@@ -29,6 +30,8 @@ if __name__ == '__main__':
             file.write(tracebackString)
         mailSender: MailSender = MailSender(senderUsername=username, senderPassword=password, smtpServer=server, smtpPort=port)
         mailSender.sendMessage(receiverAddress='draguilera@uc.cl', mailSubject=f'[SAC SENDER] - [Error] - {datetime.now()}', mailContent=tracebackString)
+        conn = SACConnector()
+        conn.setAllBoletasAsSent()
     finally:
         removeCacheFile(user='SERVIDOR', script=SENDING_ACTIVITY)
     
