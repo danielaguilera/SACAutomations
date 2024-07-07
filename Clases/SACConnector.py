@@ -307,6 +307,13 @@ class SACConnector:
         result: list = self.cursorBoleta.fetchall()
         return result
     
+    def setAllBoletasAsSent(self):
+        self.cursorBoleta.execute(f"""
+                                    UPDATE {self.boletasTable}
+                                    SET Sent = True
+                                  """)
+        self.cursorBoleta.commit()
+    
     def setMapsaCasoState(self, idMapsa: int, newState: str):
         timestamp: str = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
         query: str = f'''
@@ -316,6 +323,7 @@ class SACConnector:
                 '''
         self.cursorData.execute(query)
         self.connData.commit()
+        
 
     def addGestion(self, gestion: Gestion):
         query: str = f'''
