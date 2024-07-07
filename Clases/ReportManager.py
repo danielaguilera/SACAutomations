@@ -27,6 +27,7 @@ from openpyxl.styles import Border, Side, Alignment, NamedStyle
 class ReportManager:
     def __init__(self, container):
         self.container = container
+        self.mode = SEND
         self.toplevel = Toplevel(background='seashell4')
         self.toplevel.title(string='Reportes a enviar')
         self.toplevel.protocol("WM_DELETE_WINDOW", self.onClosingWindow)
@@ -134,10 +135,12 @@ class ReportManager:
         data = self.reportTable.item(self.reportTable.selection()[0])['values']
         if not(data[2] and data[3]):
             return
+        if not checkInternetConnection():
+            messagebox.showerror(title='Error', message='No hay conexión a Internet.')
+            return
         
         if getCacheFiles():
             task: RunningTask = getCacheFiles()[0]
-            print(task.script)
             if task.script == SENDING_ACTIVITY:
                 messagebox.showerror(title='Error', message=f'{task.user} está enviando reportes.\n Por favor intente en unos segundos más.')
                 return            
@@ -146,9 +149,6 @@ class ReportManager:
                 return
             elif task.script == ADDING_ACTIVITY:
                 messagebox.showerror(title='Error', message=f'{task.user} está añadiendo reportes.\n Por favor intente en unos segundos más.')
-                return
-            elif task.script == VISUALIZING_ACTIVITY and task.user != self.container.user:
-                messagebox.showerror(title='Error', message=f'{task.user} está usando la app.\n Por favor intente más tarde.')
                 return
         
         if not messagebox.askyesno(title='Aviso', message='¿Estás segur@ de que quieres borrar los datos para esta boleta?'):
@@ -203,7 +203,7 @@ class ReportManager:
                 server = SMTPSERVERGYD
                 port = SMTPPORTGYD
                 mailSender: MailSender = MailSender(senderUsername=username, senderPassword=password, smtpServer=server, smtpPort=port)
-                mailSender.sendMessage(receiverAddress='draguilera@uc.cl', mailSubject=f'Actividad - {datetime.now()}', mailContent=f'{self.container.user} eliminó la boleta #{numBoleta}, caso {idMapsa}')
+                mailSender.sendMessage(receiverAddress='draguilera@uc.cl', mailSubject=f'{"[DEMO] " if self.mode == "demo" else ""}Actividad - {datetime.now()}', mailContent=f'{self.container.user} eliminó la boleta #{numBoleta}, caso {idMapsa}')
             file.write(f'{str(datetime.now())}: {self.container.user} eliminó los archivos de boleta a enviar (NUMERO BOLETA: {numBoleta} - ID MAPSA: {idMapsa}) del destinatario {nombreDestinatario}\n')
             
         self.toplevel.destroy()
@@ -239,9 +239,6 @@ class ReportManager:
                 return
             elif task.script == ADDING_ACTIVITY:
                 messagebox.showerror(title='Error', message=f'{task.user} está añadiendo reportes.\n Por favor intente en unos segundos más.')
-                return
-            elif task.script == VISUALIZING_ACTIVITY and task.user != self.container.user:
-                messagebox.showerror(title='Error', message=f'{task.user} está usando la app.\n Por favor intente más tarde.')
                 return
         
         if not messagebox.askyesno(title='Aviso', message=f'Se enviarán todas las boletas de esta semana para {nombreDestinatario}.\nEsto puede tardar unos minutos.\n¿Deseas continuar?'):
