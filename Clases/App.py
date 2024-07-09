@@ -302,9 +302,9 @@ class App:
         if not self.rutDeudorEntry.get():
             messagebox.showerror(title='Error', message='Debe haber un rut de deudor')
             return False
-        if self.casoAlreadyInBoleta():
-            messagebox.showerror(title='Error', message='Ya hay una boleta asociada a este caso')
-            return False
+        # if self.casoAlreadyInBoleta():
+        #     messagebox.showerror(title='Error', message='Ya hay una boleta asociada a este caso')
+        #     return False
         if self.boletaAlreadyGenerated():
             messagebox.showerror(title='Error', message=f'Ya existe un reporte para la boleta # {self.numBoletaEntry.get()}')
             return False
