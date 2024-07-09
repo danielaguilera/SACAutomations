@@ -310,7 +310,7 @@ class SACConnector:
     def setAllBoletasAsSent(self):
         self.cursorBoleta.execute(f"""
                                     UPDATE {self.boletasTable}
-                                    SET Sent = True
+                                    SET Check = True
                                   """)
         self.cursorBoleta.commit()
     
