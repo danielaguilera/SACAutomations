@@ -214,7 +214,7 @@ class PLPManager:
         imap.select("Inbox")
         beforeDatetime: datetime = datetime.now()
         sinceDate: str = sinceDatetime.strftime('%d-%b-%Y')
-        beforeDate: str = beforeDatetime.strftime('%d-%b-%Y')
+        beforeDate: str = (beforeDatetime + timedelta(days=1)).strftime('%d-%b-%Y')
         _, msgnums = imap.search(None, f'(SINCE {sinceDate} BEFORE {beforeDate})')
 
         plpRequests: list[PLPRequest] = []
@@ -242,6 +242,7 @@ class PLPManager:
                 continue
             
             if self.isJudicialCollection(messageSubject.upper()):
+                print(messageSubject)
                 if not save:
                     continue
                 requestType: str = self.getJudicialCollectionType(messageSubject.upper())
@@ -272,6 +273,7 @@ class PLPManager:
                 judicialCollectionRequests.append(judicialCollectionRequest)
 
             elif self.isPLPRequest(messageSubject.upper()):
+                print(messageSubject)
                 if not save:
                     continue
                 gydEmail: GYDEmail = GYDEmail(sender=messageSender,
@@ -292,6 +294,7 @@ class PLPManager:
                 plpRequests.append(plpRequest)
 
             elif self.isPLPBreached(messageSubject.upper()):
+                print(messageSubject)
                 if not save:
                     continue
                 gydEmail: GYDEmail = GYDEmail(sender=messageSender,
