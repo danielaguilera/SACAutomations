@@ -154,3 +154,6 @@ LogFiles/
 
 # Test scripts
 test.py
+
+# Trash
+SAC_SENDER_ERROR.txt

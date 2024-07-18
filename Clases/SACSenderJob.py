@@ -99,9 +99,26 @@ class SACSenderJob:
         deleteIfExists(f'{DELIVEREDDATAPATH}/{nombreDestinatario}')
 
     def sendReports(self):
-        # Checks if there is data:
-        if not os.path.exists(DELIVEREDDATAPATH):
-            sys.exit()
+        DIR_SEND_NAME = f'{DELIVEREDDATAPATH}'.replace('boleta_data','TO_SEND')
+            
+        # Setting boleta data as printed:
+        sacConnector: SACConnector = SACConnector()
+        sacConnector.setAllBoletasAsSent()
+
+        # Copying files to history directory:
+        if os.path.exists(DELIVEREDDATAPATH):
+            print('Copiando al historial')
+            for nombreDestinatario in os.listdir(path=f'{DELIVEREDDATAPATH}'):
+                if not os.path.exists(f'{GENERATEDREPORTSPATH}/{datetime.today().strftime("%Y-%m-%d")}/{nombreDestinatario}'):
+                    os.makedirs(f'{GENERATEDREPORTSPATH}/{datetime.today().strftime("%Y-%m-%d")}/{nombreDestinatario}')
+                shutil.copy(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf', f'{GENERATEDREPORTSPATH}/{datetime.today().strftime("%Y-%m-%d")}/{nombreDestinatario}/Resumen_{datetime.today().strftime("%Y-%m-%d")}.pdf')     
+                for filename in os.listdir(path=f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
+                    if filename[0] == 'R':
+                        shutil.copy(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{filename}', f'{GENERATEDREPORTSPATH}/{datetime.today().strftime("%Y-%m-%d")}/{nombreDestinatario}/{filename}')
+
+        # Changing boleta data name:
+        if not os.path.exists(DIR_SEND_NAME):
+            os.rename(f'{DELIVEREDDATAPATH}', DIR_SEND_NAME)
 
         # Sending emails:
         with open(MAILDATA, 'r') as file:
@@ -110,31 +127,17 @@ class SACSenderJob:
         smtpPort: int = SMTPPORTGYD
         mailSender: MailSender = MailSender(senderUsername=senderUsername, senderPassword=senderPassword, smtpServer=smtpServer, smtpPort=smtpPort)
         boletasSent = []
-        
-        for nombreDestinatario in os.listdir(path=f'{DELIVEREDDATAPATH}'):
-            for path in os.listdir(path=f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
+        for nombreDestinatario in os.listdir(path=DIR_SEND_NAME):
+            for path in os.listdir(path=f'{DIR_SEND_NAME}/{nombreDestinatario}'):
                 if path[0] == 'R':
                     continue
                 if path != 'Documento.pdf':
                     numBoleta, idMapsa = (int(x) for x in path.strip().split('_'))
-                    with open(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{path}/Data_{numBoleta}.txt','r') as file:
+                    with open(f'{DIR_SEND_NAME}/{nombreDestinatario}/{path}/Data_{numBoleta}.txt','r') as file:
                         correoDestinatario: str = file.readline().strip().split(';')[1] 
                     boletasSent.append((numBoleta, idMapsa))
             destinatario: Destinatario = Destinatario(nombreDestinatario=nombreDestinatario, correoDestinatario=correoDestinatario)
-            mailSender.sendUnifiedDocument(destinatario=destinatario)  
-            if not os.path.exists(f'{GENERATEDREPORTSPATH}/{datetime.today().strftime("%Y-%m-%d")}/{nombreDestinatario}'):
-                os.makedirs(f'{GENERATEDREPORTSPATH}/{datetime.today().strftime("%Y-%m-%d")}/{nombreDestinatario}')
-            shutil.copy(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/Documento.pdf', f'{GENERATEDREPORTSPATH}/{datetime.today().strftime("%Y-%m-%d")}/{nombreDestinatario}/Resumen_{datetime.today().strftime("%Y-%m-%d")}.pdf')     
-            for filename in os.listdir(path=f'{DELIVEREDDATAPATH}/{nombreDestinatario}'):
-                if filename[0] == 'R':
-                    shutil.copy(f'{DELIVEREDDATAPATH}/{nombreDestinatario}/{filename}', f'{GENERATEDREPORTSPATH}/{datetime.today().strftime("%Y-%m-%d")}/{nombreDestinatario}/{filename}')
-            
-        # Setting boleta data as printed:
-        boletaData: tuple
-        sacConnector: SACConnector = SACConnector()
-        for boletaData in boletasSent:
-            numBoleta, idMapsa = boletaData
-            sacConnector.setBoletaAsPrinted(numBoleta=numBoleta, idMapsa=idMapsa)
+            mailSender.sendUnifiedDocument(destinatario=destinatario, server=True)  
             
         #Erasing files:
-        deleteIfExists(DELIVEREDDATAPATH)
+        deleteIfExists(DIR_SEND_NAME)

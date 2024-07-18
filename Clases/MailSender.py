@@ -57,15 +57,17 @@ class MailSender:
         server.sendmail(self.senderUserName, receiverAddress, msg.as_string())
         server.quit()
         
-    def sendUnifiedDocument(self, destinatario: Destinatario, user: str = 'Servidor'):
+    def sendUnifiedDocument(self, destinatario: Destinatario, user: str = 'Servidor', server: bool = False):
+        DIR_SEND_NAME = f'{DELIVEREDDATAPATH}'.replace('boleta_data','TO_SEND')
+        dirName = DIR_SEND_NAME if server else DELIVEREDDATAPATH
         excelMatrixRoots: list[str] =[]
-        for filename in os.listdir(f'{DELIVEREDDATAPATH}/{destinatario.nombreDestinatario}'):
+        for filename in os.listdir(f'{dirName}/{destinatario.nombreDestinatario}'):
             if filename[0] == 'R':
-                excelMatrixRoots.append(f'{DELIVEREDDATAPATH}/{destinatario.nombreDestinatario}/{filename}')
+                excelMatrixRoots.append(f'{dirName}/{destinatario.nombreDestinatario}/{filename}')
         receiverAddress: str = destinatario.correoDestinatario
         mailSubject: str = f'{"DEMO - ESTE EMAIL ES UNA PRUEBA Y NO CUENTA - " if SEND != "send" else ""}Envío reportes semana {getWeekMondayTimeStamp()} - {datetime.today().strftime("%d/%m/%Y")}'
         mailContent: str = f'Estimad@ {destinatario.nombreDestinatario}: \n\nJunto con saludar, se adjunta el resumen de las facturas correspondientes a la semana de {getWeekMondayTimeStamp("long")}, a la fecha {datetime.today().strftime("%d/%m/%Y")} y sus respectivas rendiciones de gastos.\nSaludos cordiales,\nGause y Abogados'
-        mailAttachment: str = f'{DELIVEREDDATAPATH}/{destinatario.nombreDestinatario}/Documento.pdf'
+        mailAttachment: str = f'{dirName}/{destinatario.nombreDestinatario}/Documento.pdf'
         if SEND == 'send':
             self.sendMail(receiverAddress=receiverAddress, mailSubject=mailSubject, mailContent=mailContent, mailAttachment=mailAttachment, excelAttachments=excelMatrixRoots)
             ccs: list[str] = self.sacConnector.getCCByDestinatario(nombreDestinatario=destinatario.nombreDestinatario)
